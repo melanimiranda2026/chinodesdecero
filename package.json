@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "e2e": "next build --turbopack && playwright test",
+    "e2e": "next build && playwright test",
     "audios": "tsx scripts/lista-audios.ts"
   },
   "dependencies": {

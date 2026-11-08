@@ -8,9 +8,20 @@ const hanzi = ZCOOL_KuaiLe({ weight: "400", subsets: ["latin"], variable: "--f-h
 const texto = Nunito({ weight: ["700", "900"], subsets: ["latin"], variable: "--f-texto", display: "swap" });
 const pixel = Silkscreen({ weight: ["400", "700"], subsets: ["latin"], variable: "--f-pixel", display: "swap" });
 
+const TITULO = "Chino desde cero";
+const DESCRIPCION =
+  "Tus primeras palabras en chino, jugando en una cocina: escuchas a la vaca, tocas, arrastras y las reconoces de oído.";
+
 export const metadata: Metadata = {
-  title: "Chino desde cero",
-  description: "Aprende tus primeras palabras en chino jugando en una cocina.",
+  title: TITULO,
+  description: DESCRIPCION,
+  openGraph: {
+    title: TITULO,
+    description: DESCRIPCION,
+    locale: "es_CL",
+    type: "website",
+    siteName: TITULO,
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

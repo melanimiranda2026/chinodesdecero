@@ -12,8 +12,8 @@ export default function Home() {
       {/* La casa ocupa exactamente una pantalla (100svh); abajo, una página normal que se recorre. */}
       <div className={styles.casaSeccion}>
         <Casa />
-        <a href="#metodo" className={styles.baja}>
-          baja <span aria-hidden="true">↓</span>
+        <a href="#metodo" className={styles.baja} aria-label="Bajar">
+          <span aria-hidden="true">↓</span>
         </a>
       </div>
       <div className={`papel-mural ${styles.pagina}`}>

@@ -26,3 +26,17 @@ test("entrar, tocar el 杯子, sin scroll horizontal y con correo en el pie", as
   await expect(pie.getByLabel(/tu correo/i)).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
+
+test("metadatos, ícono y flecha para bajar", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('meta[property="og:locale"]')).toHaveAttribute("content", "es_CL");
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", "Chino desde cero");
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /reconoces/);
+  await expect(page.locator('link[rel="icon"][type="image/png"]')).toHaveCount(1);
+  const bajar = page.getByRole("link", { name: "Bajar" });
+  await expect(bajar).toHaveText("↓");
+  const caja = await bajar.boundingBox();
+  expect(caja!.width).toBeGreaterThanOrEqual(44);
+  expect(caja!.height).toBeGreaterThanOrEqual(44);
+});
+

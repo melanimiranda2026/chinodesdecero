@@ -5,7 +5,7 @@ import { CocinaCuarto } from "./placeholders/Cocina";
 
 /**
  * REGISTRO DE ARTE. Para reemplazar un dibujo: cambia `{ tipo: "svg", … }` por
- * `{ tipo: "img", src: "/arte/cocina/<objeto>_<capa>.png" }`. Ver docs/arte.md.
+ * `{ tipo: "img", src: "/arte/cocina/<objeto>_<capa>.png" }` (o `.webp`). Ver docs/arte.md.
  * Las animaciones solo mueven capas por su nombre; nada depende del interior del dibujo.
  */
 export type Capa = { tipo: "svg"; Componente: FC } | { tipo: "img"; src: string };
@@ -62,3 +62,26 @@ export const ARTE_PRIMER_PLANO: Record<string, Capa> = {
 
 /** El cuarto completo en una sola capa de 1000x1000 unidades. */
 export const FONDO_CUARTO: Record<"cocina", Capa> = { cocina: svg(CocinaCuarto) };
+
+/**
+ * Capas de la vaca (todas del mismo cuadrado y centro que el cuerpo). Se cambian por nombre; PNG o WebP.
+ * Los nombres de ojos y hocico son las expresiones que usa la casa.
+ */
+export const ARTE_VACA = {
+  cuerpo: "/vaca/vaca_cuerpo.webp",
+  orejas: "/vaca/vaca_cuerpo_orejas.webp",
+  ojos: {
+    abiertos: "/vaca/vaca_ojos_abiertos.webp",
+    cerrados: "/vaca/vaca_ojos_cerrados.webp",
+    felices: "/vaca/vaca_ojos_felices.webp",
+    izquierda: "/vaca/vaca_ojos_izquierda.webp",
+    sorpresa: "/vaca/vaca_ojos_sorpresa.webp",
+  },
+  hocico: {
+    punto: "/vaca/vaca_hocico_punto.webp",
+    o: "/vaca/vaca_hocico_o.webp",
+    abierta: "/vaca/vaca_hocico_abierta.webp",
+    sonrisa: "/vaca/vaca_hocico_sonrisa.webp",
+    neutra: "/vaca/vaca_hocico_neutra.webp",
+  },
+} as const;

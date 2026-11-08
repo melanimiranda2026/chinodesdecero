@@ -1,14 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
+import { ARTE_VACA } from "./arte/registro";
 
-export type Ojos = "abiertos" | "cerrados" | "felices" | "izquierda" | "sorpresa";
-export type Hocico = "punto" | "o" | "abierta" | "sonrisa" | "neutra";
+export type Ojos = keyof typeof ARTE_VACA.ojos;
+export type Hocico = keyof typeof ARTE_VACA.hocico;
 export type Orejas = "normales" | "arriba";
 
-const OJOS: Ojos[] = ["abiertos", "cerrados", "felices", "izquierda", "sorpresa"];
-const HOCICOS: Hocico[] = ["punto", "o", "abierta", "sonrisa", "neutra"];
-const BORDE =
-  "drop-shadow(4px 0 0 #fff) drop-shadow(-4px 0 0 #fff) drop-shadow(0 4px 0 #fff) drop-shadow(0 -4px 0 #fff) drop-shadow(0 10px 8px rgba(40,25,10,.3))";
+const OJOS = Object.keys(ARTE_VACA.ojos) as Ojos[];
+const HOCICOS = Object.keys(ARTE_VACA.hocico) as Hocico[];
+/** Borde blanco de sticker en dos pasadas (antes eran cinco drop-shadow: caro de pintar en celulares). */
+export const BORDE = "drop-shadow(0 0 2px #fff) drop-shadow(0 0 2px #fff)";
 const capa = { position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" } as const;
 
 /** La vaca: todas las capas montadas, solo cambia la opacidad. */
@@ -40,13 +41,13 @@ export function Vaca({
         style={{ position: "absolute", inset: 0, transformOrigin: "50% 96%", filter: BORDE }}
       >
         {/* eslint-disable @next/next/no-img-element */}
-        <img src="/vaca/vaca_cuerpo.png" alt="" draggable={false} data-capa="cuerpo" style={{ ...capa, opacity: orejas === "normales" ? 1 : 0 }} />
-        <img src="/vaca/vaca_cuerpo_orejas.png" alt="" draggable={false} data-capa="orejas" style={{ ...capa, opacity: orejas === "arriba" ? 1 : 0 }} />
+        <img src={ARTE_VACA.cuerpo} alt="" draggable={false} data-capa="cuerpo" style={{ ...capa, opacity: orejas === "normales" ? 1 : 0 }} />
+        <img src={ARTE_VACA.orejas} alt="" draggable={false} data-capa="orejas" style={{ ...capa, opacity: orejas === "arriba" ? 1 : 0 }} />
         {OJOS.map((o) => (
-          <img key={o} src={`/vaca/vaca_ojos_${o}.png`} alt="" draggable={false} data-ojos={o} style={{ ...capa, opacity: o === ojosVistos ? 1 : 0 }} />
+          <img key={o} src={ARTE_VACA.ojos[o]} alt="" draggable={false} data-ojos={o} style={{ ...capa, opacity: o === ojosVistos ? 1 : 0 }} />
         ))}
         {HOCICOS.map((h) => (
-          <img key={h} src={`/vaca/vaca_hocico_${h}.png`} alt="" draggable={false} data-hocico={h} style={{ ...capa, opacity: h === hocico ? 1 : 0 }} />
+          <img key={h} src={ARTE_VACA.hocico[h]} alt="" draggable={false} data-hocico={h} style={{ ...capa, opacity: h === hocico ? 1 : 0 }} />
         ))}
         {/* eslint-enable @next/next/no-img-element */}
       </div>

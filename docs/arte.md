@@ -4,8 +4,8 @@ Todo lo que se ve hoy en la cocina es un dibujo provisorio hecho en código. Cua
 
 ## Cómo se cambia un dibujo
 
-1. Exporta el dibujo como PNG con fondo transparente (tamaños abajo).
-2. Guárdalo en `public/arte/cocina/` con el nombre `<objeto>_<capa>.png`, por ejemplo `public/arte/cocina/panzi_plato.png`.
+1. Exporta el dibujo como **PNG o WebP** con fondo transparente (tamaños abajo). WebP pesa mucho menos y carga más rápido en el celular; si exportas PNG, se puede convertir después (ver "La vaca").
+2. Guárdalo en `public/arte/cocina/` con el nombre `<objeto>_<capa>.png` (o `.webp`), por ejemplo `public/arte/cocina/panzi_plato.png`.
 3. Abre `components/casa/arte/registro.ts`, busca el objeto y cambia la línea de esa capa:
 
 ```ts
@@ -21,7 +21,13 @@ Listo. Puedes cambiar una capa a la vez; las que no cambies siguen con el provis
 
 - **Objetos:** 1024 x 1024 px, fondo transparente. El objeto va centrado y ocupa lo mismo que el provisorio (casi todo el cuadrado). Todas las capas de un mismo objeto usan **el mismo cuadrado y el mismo centro**, para que calcen al apilarse.
 - **El cuarto:** 2000 x 2000 px, una sola imagen (sin los objetos: ellos van aparte).
-- **La vaca:** igual a las capas actuales de `public/vaca/` (mismo tamaño y mismo centro que `vaca_cuerpo.png`).
+- **La vaca:** igual a las capas actuales de `public/vaca/` (mismo cuadrado y mismo centro que `vaca_cuerpo.webp`).
+
+## La vaca
+
+Sus capas están en `public/vaca/` como WebP de 800 x 800 px y se nombran en `ARTE_VACA` (`components/casa/arte/registro.ts`): `cuerpo`, `orejas`, cinco ojos y cinco hocicos. Para cambiar una capa, reemplaza el archivo con el mismo nombre (o cambia la ruta en `ARTE_VACA`). El borde blanco de sticker lo pone el código.
+
+Si tienes las capas en PNG, déjalas en `public/vaca/` y corre `node scripts/vaca-webp.mjs --borrar`: las convierte a WebP de 800 px de ancho (con transparencia) y borra los PNG. Si prefieres dejarlas en PNG, cambia la extensión en `ARTE_VACA`.
 
 ## Capas de cada objeto
 

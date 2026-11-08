@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
-import { ARTE, ARTE_PRIMER_PLANO, FONDO_CUARTO } from "@/components/casa/arte/registro";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { ARTE, ARTE_PRIMER_PLANO, ARTE_VACA, FONDO_CUARTO } from "@/components/casa/arte/registro";
 import { Capa, FondoCuarto } from "@/components/casa/arte/Capa";
 import { Vaca } from "@/components/casa/Vaca";
 import { estadosAlcanzables } from "@/components/casa/cocina/acciones";
@@ -9,6 +11,16 @@ import { OBJETOS, type ObjetoId } from "@/components/casa/cocina/datos";
 const ids = Object.keys(OBJETOS) as ObjetoId[];
 
 describe("registro de arte", () => {
+  it("la vaca sale del registro y cada capa existe en public/ (WebP)", () => {
+    const rutas = [ARTE_VACA.cuerpo, ARTE_VACA.orejas, ...Object.values(ARTE_VACA.ojos), ...Object.values(ARTE_VACA.hocico)];
+    for (const r of rutas) {
+      expect(r).toMatch(/\.webp$/);
+      expect(existsSync(join(process.cwd(), "public", r)), r).toBe(true);
+    }
+    const { container } = render(<Vaca ojos="abiertos" hocico="sonrisa" orejas="normales" />);
+    const srcs = [...container.querySelectorAll("img")].map((i) => i.getAttribute("src"));
+    expect(srcs.sort()).toEqual([...rutas].sort());
+  });
   it("panzi", () => {
     expect(ARTE.panzi.visibles("lleno")).toEqual(["plato", "jiaozi"]);
     expect(ARTE.panzi.visibles("sucio")).toEqual(["plato", "mugre"]);

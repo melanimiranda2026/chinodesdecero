@@ -7,7 +7,8 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "audios": "tsx scripts/lista-audios.ts"
   },
   "dependencies": {
     "next": "15.5.29",
@@ -26,6 +27,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.29",
     "jsdom": "^31.0.0",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^5.1.0"
   }

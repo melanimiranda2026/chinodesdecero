@@ -1,7 +1,9 @@
+import { Casa } from "@/components/casa/Casa";
+
 export default function Home() {
   return (
     <main>
-      <h1 className="papel-mural">Chino desde cero</h1>
+      <Casa />
     </main>
   );
 }

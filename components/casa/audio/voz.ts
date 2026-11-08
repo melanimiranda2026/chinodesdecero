@@ -36,6 +36,7 @@ export function decir(s: Silaba[], opciones: OpcionesDecir = {}): Promise<void> 
 
   return new Promise<void>((resolver) => {
     let terminado = false;
+    // eslint-disable-next-line prefer-const -- se lee en terminar() antes de asignarse
     let timeout: ReturnType<typeof setTimeout> | undefined;
     let intervalo: ReturnType<typeof setInterval> | undefined;
     let audio: HTMLAudioElement | null = null;

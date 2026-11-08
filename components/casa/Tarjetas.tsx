@@ -17,7 +17,10 @@ interface Props {
   alCerrar: () => void;
 }
 
-/** Las tarjetas viven fuera de la casa: aquí sí hay español. Son diálogos modales. */
+/**
+ * Las tarjetas son página, no casa: aquí sí hay español. Viven dentro de la ventana del juego
+ * (posición absoluta en el marco) y solo tapan el juego, no el resto de la landing.
+ */
 export function Tarjetas({ capa, anotado, aviso, formulario, alEntrar, alSeguir, alCerrar }: Props) {
   const principal = useRef<HTMLButtonElement>(null);
 
@@ -31,7 +34,9 @@ export function Tarjetas({ capa, anotado, aviso, formulario, alEntrar, alSeguir,
   useEffect(() => {
     if (!capa) return;
     const previo = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    principal.current?.focus();
+    // La entrada se pinta al cargar la landing: no le roba el foco (ni el scroll) al hero.
+    // Las demás aparecen por algo que se hizo en el juego: el foco va a su botón, sin mover la página.
+    if (capa !== "entrada") principal.current?.focus({ preventScroll: true });
     const alTeclear = (e: KeyboardEvent) => {
       if (e.key !== "Escape" || capa === "entrada") return; // la entrada no se cierra con Escape
       if (capa === "metodo") ultimos.current.alSeguir();
@@ -49,13 +54,13 @@ export function Tarjetas({ capa, anotado, aviso, formulario, alEntrar, alSeguir,
   return (
     <div className={styles.capa} data-capa={capa}>
       {capa === "entrada" && (
-        <div className={styles.tarjeta} role="dialog" aria-modal="true" aria-labelledby="t-titulo">
+        <div className={styles.tarjeta} role="dialog" aria-labelledby="t-titulo">
           <small className={styles.chica}>chino desde cero</small>
           <div className={styles.grande}>浸</div>
           <svg width="120" height="34" viewBox="0 0 120 34" aria-hidden="true" className={styles.tonoLinea}>
             <path d="M8 6 L112 28" stroke="#3A6FD6" strokeWidth="6" strokeLinecap="round" fill="none" />
           </svg>
-          <h1 id="t-titulo">Método Jìn</h1>
+          <h2 id="t-titulo">Método Jìn</h2>
           <p>Sumérgete. Toca, arrastra, escucha.</p>
           {aviso && (
             <p role="status" className={styles.avisoEntrada}>
@@ -63,7 +68,7 @@ export function Tarjetas({ capa, anotado, aviso, formulario, alEntrar, alSeguir,
             </p>
           )}
           <button ref={principal} type="button" className={styles.principal} onClick={alEntrar}>
-            Entrar a la casa
+            <span aria-hidden="true">▶ </span>Jugar
           </button>
         </div>
       )}
@@ -73,7 +78,7 @@ export function Tarjetas({ capa, anotado, aviso, formulario, alEntrar, alSeguir,
           <div className={styles.grande} style={{ fontSize: 56 }}>
             浸 jìn
           </div>
-          <h1 id="t-titulo">Lo acabas de hacer</h1>
+          <h2 id="t-titulo">Lo acabas de hacer</h2>
           <p>
             Nadie te tradujo nada: <b>escuchaste, viste y tocaste</b>, y lo reconociste. Así se aprende un idioma de verdad:
             sonido primero, significado por la imagen, y repetir jugando.
@@ -90,7 +95,7 @@ export function Tarjetas({ capa, anotado, aviso, formulario, alEntrar, alSeguir,
           <div style={{ fontSize: 54 }} aria-hidden="true">
             🔒
           </div>
-          <h1 id="t-titulo">Pronto</h1>
+          <h2 id="t-titulo">Pronto</h2>
           <p>
             {anotado
               ? "Ya estás anotada/o. Te avisamos cuando abra."

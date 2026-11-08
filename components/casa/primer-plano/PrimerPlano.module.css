@@ -47,7 +47,7 @@
   position: absolute;
   left: 50%;
   top: 57%;
-  width: min(78%, 62vh);
+  width: min(78%, 62cqh);
   aspect-ratio: 1;
   transform: translate(-50%, -50%);
   border-radius: 50%;
@@ -65,7 +65,7 @@
   position: absolute;
   left: 50%;
   top: 57%;
-  width: min(62%, 50vh);
+  width: min(62%, 50cqh);
   aspect-ratio: 1;
   transform: translate(-50%, -50%);
   pointer-events: none;
@@ -117,7 +117,7 @@
 @keyframes vapor { from { opacity: 0; translate: 0 0; } 30% { opacity: 1; } to { opacity: 0; translate: 6px -140%; } }
 .cuchara {
   position: absolute;
-  font-size: clamp(30px, 8vmin, 64px);
+  font-size: clamp(30px, 8cqmin, 64px);
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
@@ -143,9 +143,9 @@
   animation: cartel 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) backwards 0.25s;
 }
 @keyframes cartel { from { transform: translateX(-50%) translateY(-150%) rotate(-8deg); } }
-.icono { font-size: clamp(26px, 6vmin, 52px); }
-.hz { display: block; font-family: var(--f-hanzi), serif; font-weight: 400; font-size: clamp(30px, 8vmin, 70px); line-height: 1; text-align: center; }
-.py { display: block; font-weight: 900; font-size: clamp(13px, 2.8vmin, 24px); text-align: center; }
+.icono { font-size: clamp(26px, 6cqmin, 52px); }
+.hz { display: block; font-family: var(--f-hanzi), serif; font-weight: 400; font-size: clamp(30px, 8cqmin, 70px); line-height: 1; text-align: center; }
+.py { display: block; font-weight: 900; font-size: clamp(13px, 2.8cqmin, 24px); text-align: center; }
 
 .barra {
   position: absolute;
@@ -195,7 +195,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(14px, 3.4vmin, 28px);
+  font-size: clamp(14px, 3.4cqmin, 28px);
   pointer-events: none;
 }
 
@@ -205,7 +205,7 @@
   z-index: 7;
   left: 50%;
   top: 57%;
-  font-size: clamp(34px, 8vmin, 70px);
+  font-size: clamp(34px, 8cqmin, 70px);
   pointer-events: none;
   filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.25));
   translate: -50% -50%;
@@ -236,10 +236,10 @@
   pointer-events: none;
   background: radial-gradient(circle, rgba(255, 255, 255, 0.85) 0 30%, rgba(255, 240, 200, 0.3) 60%, transparent 80%);
 }
-.m { font-size: clamp(90px, 24vmin, 220px); animation: medalla 0.7s cubic-bezier(0.3, 1.7, 0.5, 1); }
+.m { font-size: clamp(90px, 24cqmin, 220px); animation: medalla 0.7s cubic-bezier(0.3, 1.7, 0.5, 1); }
 .rayos {
   position: absolute;
-  width: min(90%, 90vh);
+  width: min(90%, 90cqh);
   aspect-ratio: 1;
   background: repeating-conic-gradient(rgba(242, 193, 78, 0.35) 0 10deg, transparent 10deg 20deg);
   border-radius: 50%;
@@ -249,7 +249,7 @@
 @keyframes medalla { from { scale: 0; rotate: -30deg; } }
 @keyframes gira { to { rotate: 360deg; } }
 .confeti { position: absolute; width: 1.6%; height: 2.6%; z-index: 10; pointer-events: none; animation: confeti 1.6s ease-in forwards; }
-@keyframes confeti { from { translate: 0 0; rotate: 0deg; } to { translate: var(--dx) 110vmin; rotate: 720deg; } }
+@keyframes confeti { from { translate: 0 0; rotate: 0deg; } to { translate: var(--dx) 110cqmin; rotate: 720deg; } }
 
 /* menos movimiento: sin confeti, rayos quietos, mano y medalla sin animar */
 @media (prefers-reduced-motion: reduce) {

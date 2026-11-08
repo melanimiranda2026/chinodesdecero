@@ -1,5 +1,5 @@
 /**
- * Motor de audio compartido: UN AudioContext (se desbloquea en el toque "Entrar a la casa") y un caché
+ * Motor de audio compartido: UN AudioContext (se desbloquea en el toque de entrada ("▶ Jugar" de la tarjeta o "Jugar ahora" del hero)) y un caché
  * de buffers ya decodificados. Voz, efectos y música suenan por este grafo (también en iOS, donde un
  * HTMLAudio creado fuera de un toque queda mudo). Si el navegador no tiene Web Audio, `contexto()` es null
  * y cada módulo usa HTMLAudio como antes.
@@ -17,7 +17,7 @@ export function contexto(): AudioContext | null {
   return ctx;
 }
 
-/** Se llama DENTRO del toque "Entrar a la casa": crea/reanuda el contexto y toca un buffer mudo (iOS). */
+/** Se llama DENTRO del toque de entrada ("▶ Jugar" de la tarjeta o "Jugar ahora" del hero): crea/reanuda el contexto y toca un buffer mudo (iOS). */
 export function desbloquearAudio(): void {
   try {
     const Ctor = constructor();

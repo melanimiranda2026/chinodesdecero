@@ -49,7 +49,7 @@ describe("Casa con avance", () => {
   it("cuenta lo que dice la vaca, sin repetir, y guarda tras ~500 ms", async () => {
     render(<Casa />);
     await avanzar(10);
-    fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
     fireEvent.click(screen.getByRole("button", { name: "杯子" }));
     await avanzar(100);
     expect(cargarAvance().escuchadas).toEqual([]); // aún no pasó el debounce
@@ -71,7 +71,7 @@ describe("Casa con avance", () => {
     expect(screen.getByRole("status").closest("[data-capa]")?.getAttribute("data-capa")).toBe("entrada");
     await avanzar(5100);
     expect(screen.getByRole("status")).toBeTruthy(); // no se esfuma antes de que lo lean
-    fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
     expect(screen.queryByRole("status")).toBeNull();
   });
 
@@ -85,7 +85,7 @@ describe("Casa con avance", () => {
 
   it("la tarjeta pronto lleva el formulario de correo", async () => {
     render(<Casa />);
-    fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
     fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
     expect(screen.getByRole("button", { name: "Avísame" })).toBeTruthy();
   });

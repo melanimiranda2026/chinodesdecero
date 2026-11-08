@@ -436,7 +436,7 @@ export function PrimerPlano({
             <div
               key={i}
               className={styles.confeti}
-              style={{ left: `${c.x}%`, top: `${c.y}%`, background: c.color, animationDelay: `${c.retraso}s`, "--dx": `${c.dx}vmin` } as CSSProperties}
+              style={{ left: `${c.x}%`, top: `${c.y}%`, background: c.color, animationDelay: `${c.retraso}s`, "--dx": `${c.dx}cqmin` } as CSSProperties}
               aria-hidden="true"
             />
           ))}

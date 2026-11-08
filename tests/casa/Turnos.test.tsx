@@ -109,7 +109,7 @@ describe("efectos nunca encima del mandarín", () => {
 describe("玩: salir y respaldo mudo", () => {
   it("tocar 玩 otra vez durante el quiz lo termina sin tarjeta", async () => {
     const { api } = montar();
-    fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
     const jugar = screen.getByRole("button", { name: "玩" });
     fireEvent.click(jugar);
     await avanzar(800);
@@ -189,7 +189,7 @@ describe("escuchadas y música", () => {
     decirMock.mockImplementation(() => Promise.resolve(false));
     render(<Casa />);
     await avanzar(10);
-    fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
     fireEvent.click(screen.getByRole("button", { name: "杯子" }));
     await avanzar(3000);
     expect(JSON.parse(localStorage.getItem(CLAVE_AVANCE) ?? "{}").escuchadas ?? []).toEqual([]);
@@ -198,15 +198,15 @@ describe("escuchadas y música", () => {
   it("una frase que sonó sí cuenta", async () => {
     render(<Casa />);
     await avanzar(10);
-    fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
     await avanzar(3000);
     expect(cargarAvance().escuchadas).toContain("ni2_hao3");
   });
 
-  it("la música de la cocina empieza en el toque de 'Entrar a la casa'", () => {
+  it("la música de la cocina empieza en el toque de 'Jugar'", () => {
     render(<Casa />);
     expect(musica.tocar).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
     expect(musica.tocar).toHaveBeenCalledWith("cocina");
   });
 });

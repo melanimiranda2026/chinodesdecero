@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as EventoPuntero, type ReactNode } from "react";
+import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as EventoPuntero, type ReactNode, type Ref } from "react";
 import { textoHanzi } from "@/lib/silabas";
 import { OBJETOS, type EstadoCocina, type ObjetoId } from "./cocina/datos";
 import { aspectoDe, centroBase, encuadrar, encuadreInicial, enPantalla, objetoBajo, transformCSS } from "./camara";
@@ -43,7 +43,13 @@ const ALIAS: Record<string, NombreEvento> = { quiz_fin: "quiz_completo" };
 const ORDEN_MEDALLA = { bronce: 1, plata: 2, oro: 3 } as const;
 const GUARDAR_MS = 500;
 
-export function Casa({ onEvento }: { onEvento?: AlEvento }) {
+/** Lo que la página puede pedirle a la casa desde afuera (el "▶ Jugar ahora" del hero). */
+export interface ControlCasa {
+  /** Igual que el botón de la tarjeta de entrada; llamarlo dentro del clic (iOS). No hace nada si ya entró. */
+  entrar(): void;
+}
+
+export function Casa({ onEvento, ref }: { onEvento?: AlEvento; ref?: Ref<ControlCasa> }) {
   const avance = useRef<Avance>(avanceInicial());
   const listo = useRef(false);
   const montado = useRef(false);
@@ -234,7 +240,7 @@ export function Casa({ onEvento }: { onEvento?: AlEvento }) {
   }, [restaurar, intentarSync, programar]);
 
   // El aviso (enlace bueno o vencido) va en la tarjeta de entrada, no encima del cuarto.
-  return <CasaVista casa={casa} anotado={avisado} aviso={aviso} formulario={<Correo origen="pronto" />} />;
+  return <CasaVista ref={ref} casa={casa} anotado={avisado} aviso={aviso} formulario={<Correo origen="pronto" />} />;
 }
 
 /** La vista de la casa: recibe el estado del hook y traduce los punteros a sus funciones. */
@@ -243,8 +249,10 @@ export function CasaVista({
   anotado = false,
   aviso = null,
   formulario,
+  ref,
 }: {
   casa: CasaApi;
+  ref?: Ref<ControlCasa>;
   /** Pidió que le avisemos cuando abran los cuartos. */
   anotado?: boolean;
   /** Mensaje del enlace del correo (se muestra en la tarjeta de entrada). */
@@ -298,6 +306,15 @@ export function CasaVista({
   const piso = useRef<{ cx: number; cy: number; x0: number; y0: number; movio: boolean } | null>(null);
   const [paneando, setPaneando] = useState(false);
   const quiz = casa.quiz;
+  const entrar = () => {
+    if (!entrada) return;
+    registrar("entrar");
+    desbloquearAudio(); // dentro del toque: así iOS deja sonar el audio
+    musica.tocar("cocina");
+    setEntrada(false);
+    casa.saludar();
+  };
+  useImperativeHandle(ref, () => ({ entrar }));
   const capa: CapaTarjeta | null = entrada
     ? "entrada"
     : quiz?.fase === "fin"
@@ -617,13 +634,7 @@ export function CasaVista({
         anotado={anotado}
         aviso={aviso}
         formulario={formulario}
-        alEntrar={() => {
-          registrar("entrar");
-          desbloquearAudio(); // dentro del toque: así iOS deja sonar el audio
-          musica.tocar("cocina");
-          setEntrada(false);
-          casa.saludar();
-        }}
+        alEntrar={entrar}
         alSeguir={() => {
           // después del método, la invitación a dejar el correo
           casa.cerrarQuiz();

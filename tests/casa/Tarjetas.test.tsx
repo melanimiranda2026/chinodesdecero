@@ -18,16 +18,26 @@ describe("Tarjetas", () => {
     render(<Tarjetas {...base} capa="pronto" formulario={<div>FORM</div>} />);
     expect(screen.getByText("FORM")).toBeTruthy();
   });
-  it("entrada: botón entrar, sin cerrar con Escape", () => {
+  it("entrada: botón ▶ Jugar, sin cerrar con Escape", () => {
     const alEntrar = vi.fn();
     const alCerrar = vi.fn();
     render(<Tarjetas {...base} alEntrar={alEntrar} alCerrar={alCerrar} capa="entrada" />);
     const d = screen.getByRole("dialog");
-    expect(d.getAttribute("aria-modal")).toBe("true");
+    // en la landing la entrada solo tapa la ventana del juego: no es modal para toda la página
+    expect(d.getAttribute("aria-modal")).toBeNull();
+    expect(screen.getByRole("button", { name: "Jugar" }).textContent).toBe("▶ Jugar");
     fireEvent.keyDown(document, { key: "Escape" });
     expect(alCerrar).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
     expect(alEntrar).toHaveBeenCalled();
+  });
+  it("entrada: al cargar no le roba el foco al hero", () => {
+    const b = document.createElement("button");
+    document.body.appendChild(b);
+    b.focus();
+    render(<Tarjetas {...base} capa="entrada" />);
+    expect(document.activeElement).toBe(b);
+    b.remove();
   });
   it("pronto: Escape cierra y el botón principal recibe el foco", () => {
     const alCerrar = vi.fn();

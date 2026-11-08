@@ -243,7 +243,7 @@ describe("Casa: 玩 (quiz)", () => {
     }
     await avanzar(2500);
     expect(api().quiz!.fase).toBe("fin");
-    fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
     expect(screen.getByText("Lo acabas de hacer")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Seguir explorando" }));
     expect(api().quiz).toBeNull();
@@ -252,7 +252,7 @@ describe("Casa: 玩 (quiz)", () => {
 
   it("tocar un cuarto bloqueado del minimapa abre la tarjeta pronto", () => {
     montar();
-    fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
     fireEvent.click(screen.getByRole("button", { name: "卧室 🔒" }));
     expect(screen.getByText("Este cuarto abre pronto. Deja tu correo y marca la casilla: te avisamos.")).toBeTruthy();
   });
@@ -291,7 +291,7 @@ describe("Casa: quiz, guardas y tarjetas", () => {
   it("con una tarjeta abierta la casa queda inert y el botón 玩 no se puede usar", () => {
     const { container } = montar();
     expect(container.querySelector("[inert]")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
     expect(container.querySelector("[inert]")).toBeNull();
   });
 });

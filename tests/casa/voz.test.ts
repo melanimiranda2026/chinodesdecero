@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { S } from "@/lib/silabas";
 import { decir } from "@/components/casa/audio/voz";
+import { musica } from "@/components/casa/audio/sonido";
 
 class AudioFalso {
   static instancias: AudioFalso[] = [];
@@ -92,5 +93,48 @@ describe("decir", () => {
     AudioFalso.instancias[0].onended?.();
     await p;
     expect(valores[valores.length - 1]).toBe(0);
+  });
+
+  it("restaura la música tras el timeout y tras ser reemplazado", async () => {
+    vi.useFakeTimers();
+    musica.volumen(0.16);
+    musica.tocar("cocina");
+    const m = AudioFalso.instancias[0];
+    expect(m.volume).toBe(0.16);
+    const p1 = decir(NI_HAO);
+    expect(m.volume).toBe(0.03);
+    await vi.advanceTimersByTimeAsync(500 + 380 * 2 + 1500 + 10);
+    await p1;
+    expect(m.volume).toBe(0.16);
+    const p2 = decir(NI_HAO);
+    expect(m.volume).toBe(0.03);
+    const p3 = decir(WO);
+    await p2;
+    expect(m.volume).toBe(0.03); // la voz nueva sigue sonando
+    AudioFalso.instancias[AudioFalso.instancias.length - 1].onended?.();
+    await p3;
+    expect(m.volume).toBe(0.16);
+    musica.parar();
+  });
+
+  it("con AudioContext suspendido no enruta por el analizador y resuelve", async () => {
+    vi.resetModules();
+    const crear = vi.fn();
+    const resume = vi.fn(() => Promise.resolve());
+    class CtxFalso {
+      state = "suspended";
+      resume = resume;
+      createMediaElementSource = crear;
+    }
+    vi.stubGlobal("AudioContext", CtxFalso);
+    (window as unknown as { AudioContext: unknown }).AudioContext = CtxFalso;
+    const v = await import("@/components/casa/audio/voz");
+    v.desbloquearAudio();
+    const p = v.decir(NI_HAO, { alBoca: () => {} });
+    await Promise.resolve();
+    expect(crear).not.toHaveBeenCalled();
+    expect(resume).toHaveBeenCalled();
+    AudioFalso.instancias[AudioFalso.instancias.length - 1].onended?.();
+    await expect(p).resolves.toBeUndefined();
   });
 });

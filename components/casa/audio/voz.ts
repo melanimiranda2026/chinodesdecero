@@ -39,6 +39,8 @@ export function decir(s: Silaba[], opciones: OpcionesDecir = {}): Promise<void> 
     let timeout: ReturnType<typeof setTimeout> | undefined;
     let intervalo: ReturnType<typeof setInterval> | undefined;
     let audio: HTMLAudioElement | null = null;
+    let fuente: MediaElementAudioSourceNode | null = null;
+    let analizador: AnalyserNode | null = null;
 
     const terminar = () => {
       if (terminado) return;
@@ -56,6 +58,7 @@ export function decir(s: Silaba[], opciones: OpcionesDecir = {}): Promise<void> 
           audio.pause();
         }
       } catch { /* nada */ }
+      try { fuente?.disconnect(); analizador?.disconnect(); } catch { /* nada */ }
       try { alBoca?.(0); } catch { /* nada */ }
       resolver();
     };
@@ -70,10 +73,12 @@ export function decir(s: Silaba[], opciones: OpcionesDecir = {}): Promise<void> 
       audio.onended = terminar;
       audio.onerror = terminar;
 
-      let analizador: AnalyserNode | null = null;
-      if (ctx && alBoca) {
+      if (ctx && ctx.state === "suspended") void ctx.resume().catch(() => {});
+      // Solo se enruta por el analizador si el contexto ya está corriendo:
+      // con un contexto suspendido la voz quedaría muda.
+      if (ctx && alBoca && ctx.state === "running") {
         try {
-          const fuente = ctx.createMediaElementSource(audio);
+          fuente = ctx.createMediaElementSource(audio);
           analizador = ctx.createAnalyser();
           analizador.fftSize = 256;
           fuente.connect(analizador);
@@ -88,10 +93,14 @@ export function decir(s: Silaba[], opciones: OpcionesDecir = {}): Promise<void> 
           const datos = new Uint8Array(analizador.fftSize);
           const an = analizador;
           intervalo = setInterval(() => {
-            an.getByteTimeDomainData(datos);
-            let suma = 0;
-            for (const d of datos) suma += ((d - 128) / 128) ** 2;
-            alBoca(Math.min(1, Math.sqrt(suma / datos.length) * 4));
+            try {
+              an.getByteTimeDomainData(datos);
+              let suma = 0;
+              for (const d of datos) suma += ((d - 128) / 128) ** 2;
+              alBoca(Math.min(1, Math.sqrt(suma / datos.length) * 4));
+            } catch {
+              try { alBoca(0); } catch { /* nada */ }
+            }
           }, 33);
         } else {
           let abierta = 0;

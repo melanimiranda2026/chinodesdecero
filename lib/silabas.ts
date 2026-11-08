@@ -20,8 +20,8 @@ export function S(hanzi: string, pinyin: string, tonos: string): Silaba[] {
 function sinMarcas(pinyin: string): string {
   return pinyin
     .normalize("NFD")
-    .replace(/ü/gi, (m) => (m[0] === "U" ? "V" : "v"))
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/u\u0308/gi, (m) => (m[0] === "U" ? "V" : "v"))
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 }
 

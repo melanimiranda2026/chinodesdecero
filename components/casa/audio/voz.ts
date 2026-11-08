@@ -1,46 +1,38 @@
 import { idAudio, type Silaba } from "@/lib/silabas";
+import { cargar, contexto, listo } from "./motor";
 import { musica } from "./sonido";
+
+export { desbloquearAudio } from "./motor";
 
 export interface OpcionesDecir {
   alBoca?: (abierta: number) => void;
-  lento?: boolean;
-}
-
-let ctx: AudioContext | null = null;
-
-/** Se llama en el primer toque (botón "Entrar"): crea/reanuda el AudioContext. */
-export function desbloquearAudio(): void {
-  try {
-    const Ctor =
-      typeof window !== "undefined"
-        ? window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-        : undefined;
-    if (!Ctor) return;
-    ctx ??= new Ctor();
-    if (ctx.state === "suspended") void ctx.resume().catch(() => {});
-  } catch {
-    ctx = null;
-  }
 }
 
 let cortarActual: (() => void) | null = null;
 
-/**
- * Toca la frase con la voz de la vaca. SIEMPRE resuelve: al terminar, ante un error,
- * si play() es rechazado, si se pide otra frase, o al pasar 500 + 380·sílabas + 1500 ms.
- */
-export function decir(s: Silaba[], opciones: OpcionesDecir = {}): Promise<void> {
+/** Corta la frase que esté sonando (su `decir` resuelve). */
+export function callar(): void {
   cortarActual?.();
-  const { alBoca, lento } = opciones;
-  const src = `/audio/cocina/${idAudio(s)}${lento ? "_lento" : ""}.mp3`;
+}
 
-  return new Promise<void>((resolver) => {
+/**
+ * Toca la frase con la voz de la vaca. SIEMPRE resuelve: al terminar, ante un error (fetch 404,
+ * decodificación, play() rechazado), si se pide otra frase, o al pasar 500 + 380·sílabas + 1500 ms
+ * sin que empiece (ya sonando: la duración real + 1500 ms).
+ * Resuelve `true` solo si el audio llegó a sonar.
+ */
+export function decir(s: Silaba[], opciones: OpcionesDecir = {}): Promise<boolean> {
+  cortarActual?.();
+  const { alBoca } = opciones;
+  const src = `/audio/cocina/${idAudio(s)}.mp3`;
+
+  return new Promise<boolean>((resolver) => {
     let terminado = false;
-    // eslint-disable-next-line prefer-const -- se lee en terminar() antes de asignarse
+    let sono = false;
     let timeout: ReturnType<typeof setTimeout> | undefined;
     let intervalo: ReturnType<typeof setInterval> | undefined;
     let audio: HTMLAudioElement | null = null;
-    let fuente: MediaElementAudioSourceNode | null = null;
+    let fuente: AudioBufferSourceNode | null = null;
     let analizador: AnalyserNode | null = null;
 
     const terminar = () => {
@@ -53,6 +45,12 @@ export function decir(s: Silaba[], opciones: OpcionesDecir = {}): Promise<void> 
         musica.bajar(false);
       }
       try {
+        if (fuente) {
+          fuente.onended = null;
+          fuente.stop();
+        }
+      } catch { /* ya terminó */ }
+      try {
         if (audio) {
           audio.onended = null;
           audio.onerror = null;
@@ -61,7 +59,75 @@ export function decir(s: Silaba[], opciones: OpcionesDecir = {}): Promise<void> 
       } catch { /* nada */ }
       try { fuente?.disconnect(); analizador?.disconnect(); } catch { /* nada */ }
       try { alBoca?.(0); } catch { /* nada */ }
-      resolver();
+      resolver(sono);
+    };
+
+    /** La boca se mueve recién cuando suena: por el analizador, o alternando si no hay Web Audio. */
+    const mover = (an: AnalyserNode | null) => {
+      if (!alBoca || terminado) return;
+      if (an) {
+        const datos = new Uint8Array(an.fftSize);
+        intervalo = setInterval(() => {
+          try {
+            an.getByteTimeDomainData(datos);
+            let suma = 0;
+            for (const d of datos) suma += ((d - 128) / 128) ** 2;
+            alBoca(Math.min(1, Math.sqrt(suma / datos.length) * 4));
+          } catch {
+            try { alBoca(0); } catch { /* nada */ }
+          }
+        }, 33);
+      } else {
+        let abierta = 0;
+        intervalo = setInterval(() => {
+          abierta = abierta ? 0 : 1;
+          alBoca(abierta);
+        }, 130);
+      }
+    };
+
+    /** Sin Web Audio (o sin poder desbloquearlo): HTMLAudio como antes. */
+    const conElemento = () => {
+      if (typeof Audio === "undefined") throw new Error("sin Audio");
+      audio = new Audio(src);
+      audio.onended = terminar;
+      audio.onerror = terminar;
+      void Promise.resolve(audio.play()).then(() => {
+        if (terminado) return;
+        sono = true;
+        mover(null);
+      }, terminar);
+    };
+
+    const conBuffer = async () => {
+      const c = await listo();
+      if (terminado) return;
+      if (!c) return conElemento();
+      const b = await cargar(src);
+      if (terminado) return;
+      if (!b) return terminar();
+      fuente = c.createBufferSource();
+      fuente.buffer = b;
+      if (alBoca) {
+        try {
+          analizador = c.createAnalyser();
+          analizador.fftSize = 256;
+        } catch {
+          analizador = null;
+        }
+      }
+      if (analizador) {
+        fuente.connect(analizador);
+        analizador.connect(c.destination);
+      } else {
+        fuente.connect(c.destination);
+      }
+      fuente.onended = terminar;
+      fuente.start();
+      sono = true;
+      if (timeout !== undefined) clearTimeout(timeout);
+      timeout = setTimeout(terminar, (b.duration || 0) * 1000 + 1500);
+      mover(analizador);
     };
 
     cortarActual = terminar;
@@ -69,50 +135,8 @@ export function decir(s: Silaba[], opciones: OpcionesDecir = {}): Promise<void> 
     timeout = setTimeout(terminar, 500 + 380 * s.length + 1500);
 
     try {
-      if (typeof Audio === "undefined") throw new Error("sin Audio");
-      audio = new Audio(src);
-      audio.onended = terminar;
-      audio.onerror = terminar;
-
-      if (ctx && ctx.state === "suspended") void ctx.resume().catch(() => {});
-      // Solo se enruta por el analizador si el contexto ya está corriendo:
-      // con un contexto suspendido la voz quedaría muda.
-      if (ctx && alBoca && ctx.state === "running") {
-        try {
-          fuente = ctx.createMediaElementSource(audio);
-          analizador = ctx.createAnalyser();
-          analizador.fftSize = 256;
-          fuente.connect(analizador);
-          analizador.connect(ctx.destination);
-        } catch {
-          analizador = null;
-        }
-      }
-
-      if (alBoca) {
-        if (analizador) {
-          const datos = new Uint8Array(analizador.fftSize);
-          const an = analizador;
-          intervalo = setInterval(() => {
-            try {
-              an.getByteTimeDomainData(datos);
-              let suma = 0;
-              for (const d of datos) suma += ((d - 128) / 128) ** 2;
-              alBoca(Math.min(1, Math.sqrt(suma / datos.length) * 4));
-            } catch {
-              try { alBoca(0); } catch { /* nada */ }
-            }
-          }, 33);
-        } else {
-          let abierta = 0;
-          intervalo = setInterval(() => {
-            abierta = abierta ? 0 : 1;
-            alBoca(abierta);
-          }, 130);
-        }
-      }
-
-      void Promise.resolve(audio.play()).catch(terminar);
+      if (contexto()) conBuffer().catch(terminar);
+      else conElemento();
     } catch {
       terminar();
     }

@@ -18,6 +18,7 @@
 - Voz de la vaca: ElevenLabs Yating Lin, ID `5eoK8NqMBsMdqUmImHNs`. Sin voz del navegador en producción.
 - Los minijuegos no se pierden: el reloj solo decide la medalla (oro < 5 s, plata < 9 s, bronce de ahí en adelante).
 - Música casi en cero (volumen 0.03) mientras suena mandarín; los efectos nunca se superponen al mandarín.
+- **Todo el arte actual es placeholder:** la dueña lo va a reemplazar por dibujos a mano. Ningún código depende de la forma interna de un dibujo; solo de las capas con nombre del registro (`components/casa/arte/registro.ts`, Task 7).
 - Todo el arte se dibuja en código (SVG con los filtros `crayon` / `crayon-relleno`) o viene de las capas de la vaca. Nada descargado de redes.
 - Sin pixel art en el cuarto: la fuente Silkscreen solo en los botones de la interfaz y en el minimapa.
 - Fuentes: ZCOOL KuaiLe (hanzi), Nunito 700/900 (texto y pinyin), Silkscreen (interfaz pixel).
@@ -63,9 +64,9 @@ components/casa/
   audio/sonido.ts            sfx(), musica
   avance.ts                  cargarAvance(), guardarAvance(), sincronizar()
   eventos.ts                 registrar(nombre, datos)
-  dibujos/Filtros.tsx        <filter id="crayon">, <filter id="crayon-relleno">
-  dibujos/objetos.tsx        <DibujoObjeto id estado/>
-  dibujos/Cocina.tsx         fondo del cuarto en 3/4
+  arte/registro.ts           ARTE (capas con nombre por objeto), FONDO_CUARTO: lo único que cambia al dibujar a mano
+  arte/DibujoObjeto.tsx      apila las capas visibles
+  arte/placeholders/         SVG a crayón actuales (Filtros, objetos, Cocina)
   Vaca.tsx                   capas, ojos/hocico/orejas por props
   Globo.tsx  Opciones.tsx  Minimapa.tsx  Tarjetas.tsx
   Casa.tsx                   orquesta todo (cliente)
@@ -252,26 +253,42 @@ Es una tarea de assets, sin código de producto. Se apoya en el proyecto padre `
 - [ ] **Step 5:** `npm run audios`. Esperado: termina con código 0 y `docs/audios.md` sin faltantes.
 - [ ] **Step 6: Commit** `assets: audios de la cocina, música y efectos`.
 
-### Task 7: Arte: filtros, vaca, objetos y cocina en 3/4
+### Task 7: Arte reemplazable: registro de capas, vaca, objetos y cocina (placeholders)
+
+**Todo el arte actual es placeholder.** Más adelante la dueña va a dibujar a mano. Cambiar un dibujo tiene que significar *reemplazar un archivo y una línea del registro*, sin tocar lógica ni animaciones. Por eso las animaciones solo mueven **capas con nombre** y nunca piezas internas de un SVG.
 
 **Files:**
-- Create: `components/casa/dibujos/Filtros.tsx`, `components/casa/dibujos/objetos.tsx`, `components/casa/dibujos/Cocina.tsx`, `components/casa/Vaca.tsx`, `public/vaca/*.png`
-- Test: `tests/casa/dibujos.test.tsx`
+- Create: `components/casa/arte/registro.ts`, `components/casa/arte/Capa.tsx`, `components/casa/arte/DibujoObjeto.tsx`, `components/casa/arte/placeholders/{Filtros,objetos,Cocina}.tsx`, `components/casa/Vaca.tsx`, `public/vaca/*.png`, `docs/arte.md`
+- Modify: `app/layout.tsx` (monta `<Filtros/>`)
+- Test: `tests/casa/arte.test.tsx`
 
 **Interfaces:**
-- Consumes: `ObjetoId`, `OBJETOS` (Task 2).
+- Consumes: `ObjetoId`, `OBJETOS`, `ESTADO_INICIAL`, `EstadoCocina` (Task 2).
 - Produces:
-  - `<Filtros/>`: SVG oculto con `#crayon` y `#crayon-relleno` (valores de `../video/src/Texto.tsx`, `scale` 4). Se monta una vez, en `layout.tsx`.
-  - `<DibujoObjeto id={ObjetoId} estado={string} />`: SVG con viewBox `-60 -60 120 120`. Las partes que dependen del estado llevan `data-solo="a b"` y se muestran solo si `estado` está en la lista. El refri recibe `abierto` como clase de la puerta.
-  - `<Cocina/>`: SVG del cuarto, viewBox `0 0 1000 1000`, portado de `casa()` del prototipo, con la sombra del refri en 105,462.
-  - `<Vaca ojos hocico orejas salta />`: `ojos ∈ abiertos|cerrados|felices|izquierda|sorpresa`, `hocico ∈ punto|o|abierta|sonrisa|neutra`, `orejas ∈ normales|arriba`. Todas las capas montadas, cambia la opacidad. Borde blanco de sticker por `filter` (4 px). Respira por CSS. Parpadeo automático cada ~3,4 s cuando `ojos === "abiertos"`.
+  - `type Capa = { tipo: "svg"; Componente: React.FC } | { tipo: "img"; src: string }`. Todas las capas de un objeto comparten el mismo encuadre: un cuadrado centrado en el objeto (placeholder: viewBox `-60 -60 120 120`; imagen: PNG cuadrado con fondo transparente).
+  - `ARTE: Record<ObjetoId, { capas: Record<string, Capa>; visibles: (estado: string) => string[] }>`. Capas mínimas, porque las animaciones las usan por nombre:
+    - `bingxiang`: `cuerpo`, `interior`, `puerta`. La puerta se abre con un transform sobre su capa.
+    - `pingguo`: `entera`, `mugre`, `mitad_izq`, `mitad_der`. Cortar separa las mitades; frotar desvanece `mugre`.
+    - `beizi`: `vaso`, `agua`, `te`, `mugre`. `panzi`: `plato`, `jiaozi`, `mugre`. `wan`: `bol`, `arroz`, `mugre`. `guo`: `olla`, `arroz`, `mugre`. `chahu`: `tetera`. `kuaizi`: `palillos`.
+    - Regla: la capa `mugre` es la que se borra al frotar en todos los objetos.
+  - `ARTE_PRIMER_PLANO`: `vaso_grande` (vidrio con interior transparente; el líquido lo dibuja el código detrás, recortado por `vaso_mascara`), `olla_grande`, `trozos` (lo que gira).
+  - `FONDO_CUARTO: Record<"cocina", Capa>`: el cuarto completo como una sola capa de 1000×1000 unidades. Las posiciones de los objetos viven en `OBJETOS`, no en el dibujo.
+  - `<DibujoObjeto id estado claseCapa?={(nombre) => string} />`: apila las capas de `visibles(estado)` en orden. `claseCapa` permite que las animaciones apunten a una capa (por ejemplo, `puerta` → `abierta`).
+  - `<Vaca ojos hocico orejas salta />`: `ojos ∈ abiertos|cerrados|felices|izquierda|sorpresa`, `hocico ∈ punto|o|abierta|sonrisa|neutra`, `orejas ∈ normales|arriba`. Lee sus PNG desde `public/vaca/` con los mismos nombres que `../video/public/img/`. Todas las capas montadas, solo cambia la opacidad. Borde blanco de sticker por `filter` (4 px). Respira por CSS. Parpadeo automático cada ~3,4 s cuando `ojos === "abiertos"`.
+  - `docs/arte.md`: el contrato para dibujar a mano. Una tabla con cada capa (archivo esperado `public/arte/cocina/<objeto>_<capa>.png`, qué muestra y en qué estados se ve), el tamaño (objetos 1024×1024 transparentes, centrados, ocupando lo mismo que el placeholder; cuarto 2000×2000; vaca igual a las capas actuales) y cómo se reemplaza: en `registro.ts`, se cambia `{ tipo: "svg", … }` por `{ tipo: "img", src: "/arte/cocina/…" }`.
 
-- [ ] **Step 1:** Copiar las capas desde `../video/public/img/`: `vaca_cuerpo.png`, `vaca_cuerpo_orejas.png`, `vaca_ojos_*.png` (5), `vaca_hocico_*.png` (5).
-- [ ] **Step 2: Tests que fallan:** `DibujoObjeto` de `panzi` en `"lleno"` muestra los 饺子 (grupo `data-solo="lleno"` visible) y oculta las manchas; en `"sucio"`, al revés. `pingguo` en `"cortado"` oculta la manzana entera. `Vaca` con `ojos="felices"` deja una sola capa de ojos con opacidad 1.
+- [ ] **Step 1:** Copiar las capas de la vaca desde `../video/public/img/`: `vaca_cuerpo.png`, `vaca_cuerpo_orejas.png`, `vaca_ojos_*.png` (5), `vaca_hocico_*.png` (5).
+- [ ] **Step 2: Tests que fallan:**
+  - `visibles` de `panzi`: `"lleno"` → `["plato","jiaozi"]`; `"sucio"` → `["plato","mugre"]`; `"limpio"` → `["plato"]`.
+  - `pingguo`: `"cortado"` → `["mitad_izq","mitad_der"]`; `"nada"` → `[]`.
+  - Todos los estados alcanzables (BFS de la Task 2) devuelven nombres que existen en `capas`.
+  - Todo objeto con un estado `"sucio"` tiene la capa `mugre`.
+  - Una capa `{ tipo: "img" }` se renderiza como `<img>` con su `src`, y una `svg` como su componente. Esto asegura que el reemplazo funcione.
+  - `Vaca` con `ojos="felices"` deja una sola capa de ojos con opacidad 1.
 - [ ] **Step 3: Correr**. Esperado: FAIL.
-- [ ] **Step 4: Implementar**, portando los SVG del prototipo (`DIBUJO` y `casa()`) a JSX. Los helpers `F` (relleno con `crayon-relleno` + contorno con `crayon`) y `T` (trazo) pasan a ser componentes `<Forma d fill grosor/>` y `<Trazo d color grosor/>`.
+- [ ] **Step 4: Implementar.** Los placeholders se portan de los SVG del prototipo (`DIBUJO` y `casa()`), separando cada parte en su propia capa. Los helpers `F` y `T` pasan a ser `<Forma d fill grosor/>` y `<Trazo d color grosor/>`, con los filtros `crayon`/`crayon-relleno` (valores de `../video/src/Texto.tsx`, `scale` 4). Escribir `docs/arte.md`.
 - [ ] **Step 5: Correr**. Esperado: PASS.
-- [ ] **Step 6: Commit** `feat: arte de la cocina, objetos y vaca`.
+- [ ] **Step 6: Commit** `feat: arte reemplazable por capas (placeholders) y vaca`.
 
 ### Task 8: La casa jugable (tocar, arrastrar, acciones, cámara)
 
@@ -309,7 +326,7 @@ Es una tarea de assets, sin código de producto. Se apoya en el proyecto padre `
 - Test: `tests/casa/PrimerPlano.test.tsx`
 
 **Interfaces:**
-- Consumes: gestos (Task 4), `DibujoObjeto` (Task 7), `decir` y `musica` (Task 5).
+- Consumes: gestos (Task 4), `DibujoObjeto`, `ARTE_PRIMER_PLANO` (Task 7); se animan solo capas por nombre (`mugre`, `mitad_izq`/`mitad_der`, `puerta`), `decir` y `musica` (Task 5).
 - Produces: `<PrimerPlano accion={Accion} objeto={ObjetoId} estado={EstadoCocina} alTerminar={(m: "oro"|"plata"|"bronce") => void} />`.
 - Comportamiento: transición de iris (`clip-path: circle`) de 0.5 s. Fondo por gesto: cortar → tabla (cuadrillé rojo), frotar → agua (cuadrillé azul), llenar/beber → mesa (cuadrillé verde), girar → fuego (lunares amarillos), morder → comer (lunares rosados). Cartel con ícono + verbo + pinyin en colores de tono, barra de avance, reloj, mano guía hasta el primer toque y vaca chica abajo a la izquierda que copia la cara. Al empezar, la vaca dice `accion.frase`. Al completar: medalla con rayos y confeti, la vaca dice 太棒了 / 很好 / 好 según `medalla(segundos)`, iris de salida y `alTerminar`. La pista de música es `g-<gesto>`; la de la cocina vuelve al salir. Los listeners son pointer events con `setPointerCapture`, y `pointercancel` llama a `reiniciar()`. Visuales (vaso con nivel y chorro, mugre que se borra, espuma, mordiscos con `<mask>`, trozos que giran) portados del prototipo.
 

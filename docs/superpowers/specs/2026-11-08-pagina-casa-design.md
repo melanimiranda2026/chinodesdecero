@@ -123,6 +123,8 @@ Vercel Analytics para visitas (plan gratis). Los eventos propios se guardan en u
 
 ## Restricciones
 
+- **El arte actual es placeholder.** La dueña va a dibujar a mano más adelante: cada objeto y el cuarto se arman con capas con nombre en un registro, y reemplazar un dibujo es cambiar un archivo y una línea, sin tocar la lógica.
+
 - Deploy fácil en Vercel, repo `chinodesdecero`.
 - Celular vertical primero (la mayoría llega desde TikTok) y computador. Sin scroll horizontal; zonas táctiles cómodas para el dedo.
 - Todo el arte se dibuja en código (SVG a crayón, filtros `crayon` y `crayon-relleno` de `video/src/Texto.tsx`) o viene de `mascota/` (capas de la vaca, borde blanco de sticker por código). Los assets se copian al repo de la web; no se enlazan al proyecto padre.

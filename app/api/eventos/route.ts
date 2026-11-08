@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { NOMBRES_EVENTO } from "@/lib/eventos-nombres";
 import { bytes, cuerpoGrande } from "@/lib/limite";
 import { codigoError, crearClienteServicio, esConfiguracionFaltante } from "@/lib/supabase/servidor";
+import { claveIp, consumirLimite, ipDe, LIMITES } from "@/lib/limites";
 
 const MAX_LOTE = 50;
 const MAX_DATOS = 2048;
@@ -37,7 +38,11 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { error } = await crearClienteServicio().from("eventos").insert(filas);
+    const servicio = crearClienteServicio();
+    if (!(await consumirLimite(servicio, claveIp(ipDe(req)), LIMITES.eventosIp))) {
+      return NextResponse.json({ error: "limite" }, { status: 429 });
+    }
+    const { error } = await servicio.from("eventos").insert(filas);
     if (error) {
       console.error("eventos: insert", codigoError(error));
       return NextResponse.json({ error: "servidor" }, { status: 500 });

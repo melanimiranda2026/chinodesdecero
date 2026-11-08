@@ -2,8 +2,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const insert = vi.fn();
+const rpc = vi.fn();
 vi.mock("@/lib/supabase/servidor", () => ({
-  crearClienteServicio: () => ({ from: () => ({ insert }) }),
+  crearClienteServicio: () => ({ from: () => ({ insert }), rpc }),
   esConfiguracionFaltante: () => false,
   codigoError: () => "x",
 }));
@@ -16,12 +17,15 @@ function pedir(body: unknown) {
 }
 const ev = (nombre = "entrar", datos?: unknown) => ({ nombre, datos });
 
-beforeEach(() => insert.mockReset().mockResolvedValue({ error: null }));
+beforeEach(() => {
+  insert.mockReset().mockResolvedValue({ error: null });
+  rpc.mockReset().mockResolvedValue({ data: true, error: null });
+});
 
 describe("POST /api/eventos", () => {
-  it("la lista blanca trae los diez nombres", () => {
+  it("la lista blanca trae los once nombres", () => {
     expect([...NOMBRES_EVENTO]).toEqual([
-      "entrar", "tocar_objeto", "abrir_acciones", "gesto_completo", "quiz_completo",
+      "entrar", "tocar_objeto", "abrir_acciones", "gesto_completo", "quiz_inicio", "quiz_completo",
       "ver_metodo", "tocar_bloqueado", "dejar_correo", "clic_tiktok", "descargar_material",
     ]);
   });
@@ -70,5 +74,23 @@ describe("POST /api/eventos", () => {
     expect((await pedir({ sesion: "s", eventos: [] })).status).toBe(400);
     const r = await POST(new Request("http://localhost/api/eventos", { method: "POST", body: "{" }));
     expect(r.status).toBe(400);
+  });
+  it("120 lotes por minuto por IP: sobre el límite → 429 sin insertar", async () => {
+    rpc.mockResolvedValue({ data: false, error: null });
+    const r = await POST(
+      new Request("http://localhost/api/eventos", {
+        method: "POST",
+        headers: { "x-forwarded-for": "5.6.7.8" },
+        body: JSON.stringify({ sesion: "s", eventos: [ev()] }),
+      }),
+    );
+    expect(r.status).toBe(429);
+    expect(insert).not.toHaveBeenCalled();
+    const args = rpc.mock.calls[0][1];
+    expect(args).toMatchObject({ p_max: 120, p_segundos: 60 });
+    expect(args.p_clave).toMatch(/^ip:[0-9a-f]{64}$/);
+  });
+  it("evento quiz_inicio se acepta", async () => {
+    expect((await pedir({ sesion: "s", eventos: [ev("quiz_inicio")] })).status).toBe(204);
   });
 });

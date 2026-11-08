@@ -3,6 +3,7 @@ export const NOMBRES_EVENTO = [
   "tocar_objeto",
   "abrir_acciones",
   "gesto_completo",
+  "quiz_inicio",
   "quiz_completo",
   "ver_metodo",
   "tocar_bloqueado",

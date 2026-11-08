@@ -42,3 +42,15 @@ export const TIKTOK: { nombre: string; url: string; videos: VideoTikTok[] } = {
   url: "https://www.tiktok.com/@chinocomprensible",
   videos: [],
 };
+
+/** El hero de la landing (primera pantalla). El 浸 del subtítulo se dibuja aparte, con su línea de tono 4. */
+export const PORTADA = {
+  marca: "chino desde cero",
+  h1: "Tus primeras palabras en chino, jugando",
+  /** En celular se ve solo la primera frase (una línea): así la ventana del juego entra en la primera pantalla. */
+  subtitulo: "Toca, arrastra y escucha a la vaca en su cocina.",
+  subtitulo2: "Sin traducir nada: así funciona el Método Jìn",
+  jugar: "Jugar ahora",
+  comoFunciona: "Cómo funciona",
+  confianza: "Gratis · sin registrarte · funciona en tu celular",
+} as const;

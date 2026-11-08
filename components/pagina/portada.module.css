@@ -1,0 +1,179 @@
+/* Primera pantalla de la landing: texto de venta + la casa jugable en una ventana (estética de cuento a crayón). */
+
+.hero {
+  display: grid;
+  gap: 16px;
+  padding: 14px 16px 8px;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+/* ---- texto ---- */
+.texto {
+  background: rgba(255, 246, 230, 0.88);
+  border-radius: 24px;
+  padding: 14px 14px 12px;
+  text-align: center;
+  min-width: 0;
+}
+.marca {
+  display: inline-block;
+  margin: 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--tinta);
+  color: var(--papel);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  transform: rotate(-2deg);
+}
+.h1 {
+  margin: 8px 0 6px;
+  font-weight: 900;
+  font-size: clamp(26px, 7.4vw, 56px);
+  line-height: 1.06;
+  color: var(--tinta);
+  text-wrap: balance;
+}
+.subtitulo { margin: 0; font-size: 15px; line-height: 1.35; text-wrap: balance; }
+/* en celular, una sola línea: la segunda frase aparece desde tablet */
+.sub2 { display: none; }
+.jin {
+  position: relative;
+  display: inline-block;
+  font-family: var(--f-hanzi), serif;
+  font-weight: 400;
+  font-size: 1.45em;
+  line-height: 1;
+  color: var(--t4);
+  padding-bottom: 0.18em;
+}
+.jinLinea { position: absolute; left: 0; bottom: -0.08em; width: 100%; height: 0.3em; }
+
+.botones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 8px;
+  margin-top: 12px;
+}
+.jugar,
+.como {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35em;
+  min-height: 48px;
+  padding: 0.5em 0.85em;
+  border: 3px solid var(--tinta);
+  border-radius: 999px;
+  font: 900 15px/1.1 var(--f-texto), system-ui, sans-serif;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--tinta);
+}
+.jugar { background: #e2574e; color: #fff; }
+.como { background: var(--papel); color: var(--tinta); }
+.jugar:active, .como:active { translate: 0 3px; box-shadow: 0 1px 0 var(--tinta); }
+.jugar:focus-visible, .como:focus-visible, .pantalla:focus-visible { outline: 3px dashed var(--t4); outline-offset: 3px; }
+.confianza { margin: 8px 0 0; font-size: 12px; opacity: 0.75; }
+
+/* ---- ventana del juego ---- */
+.ventana {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: min(78svh, 700px);
+  background: var(--tinta);
+  border: 4px solid var(--tinta);
+  border-radius: 22px;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.3), 0 18px 30px rgba(74, 42, 28, 0.25);
+  overflow: hidden;
+  scroll-margin: 12px;
+}
+.barra {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 47px; /* 44 px de zona táctil + el borde */
+  padding: 0 0 0 12px;
+  background: var(--papel);
+  border-bottom: 3px solid var(--tinta);
+  color: var(--tinta);
+}
+.puntos { display: flex; gap: 6px; }
+.puntos i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--tinta); background: var(--t1); }
+.puntos i:nth-child(2) { background: var(--t2); }
+.puntos i:nth-child(3) { background: var(--t3); }
+.titulo {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-family: var(--f-hanzi), serif;
+  font-size: 20px;
+  line-height: 1;
+  white-space: nowrap;
+}
+.py { font-family: var(--f-texto), system-ui, sans-serif; font-weight: 900; font-size: 12px; opacity: 0.7; }
+.pantalla {
+  flex: none;
+  width: 52px;
+  height: 44px;
+  border: 0;
+  border-left: 3px solid var(--tinta);
+  background: #ffd24a;
+  color: var(--tinta);
+  font: 900 22px/1 var(--f-texto), system-ui, sans-serif;
+  cursor: pointer;
+}
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.marco { position: relative; flex: 1; min-height: 0; }
+
+/* 全屏: la ventana llena la pantalla, encima de toda la página */
+.ventana.grande {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  border-width: 0;
+  box-shadow: none;
+}
+.ventana.grande .barra { padding-top: env(safe-area-inset-top); height: calc(47px + env(safe-area-inset-top)); }
+
+@media (min-width: 600px) {
+  .sub2 { display: inline; }
+  .subtitulo { font-size: 18px; }
+  .jugar, .como { font-size: 18px; padding: 0.5em 1.3em; }
+}
+
+/* ---- escritorio: dos columnas, la ventana cuadrada a la derecha ---- */
+@media (min-width: 900px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 40px;
+    min-height: 100svh;
+    padding: 32px 32px;
+  }
+  .texto { text-align: left; padding: 32px 32px 28px; }
+  .h1 { margin: 16px 0 14px; }
+  .subtitulo { font-size: 20px; line-height: 1.45; }
+  .botones { justify-content: flex-start; margin-top: 22px; }
+  .confianza { margin-top: 16px; font-size: 14px; }
+  .ventana { width: min(560px, 45vw, calc(100svh - 120px)); height: auto; }
+  .marco { flex: none; aspect-ratio: 1; }
+  .ventana.grande .marco { flex: 1; aspect-ratio: auto; }
+}

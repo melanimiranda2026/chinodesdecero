@@ -84,3 +84,27 @@ describe("estadoValido: valores y combinaciones", () => {
     expect(estadoValido(e)).toEqual(ESTADO_INICIAL);
   });
 });
+
+import { fusionar, MAX_ESCUCHADAS } from "@/components/casa/avance";
+
+describe("fusionar", () => {
+  const limpio = { ...ESTADO_INICIAL, pingguo: "limpio" };
+  const local = { ...avanceInicial(), escuchadas: ["l"], medallas: { cortar: "plata" as const } };
+  const remoto = { ...avanceInicial(), estado: limpio, escuchadas: ["r"], medallas: { cortar: "oro" as const }, correo: "r@x.cl" };
+  it("si el estado no cambio localmente, toma el del servidor", () => {
+    const f = fusionar(local, remoto, false);
+    expect(f.estado).toEqual(limpio);
+    expect(f.escuchadas).toEqual(["r", "l"]);
+    expect(f.medallas.cortar).toBe("oro");
+  });
+  it("si el estado cambio localmente, conserva el local", () => {
+    const f = fusionar({ ...local, estado: { ...ESTADO_INICIAL, pingguo: "cortado" } }, remoto, true);
+    expect(f.estado.pingguo).toBe("cortado");
+  });
+  it("prefiere el correo en memoria y limita las escuchadas", () => {
+    const muchas = Array.from({ length: MAX_ESCUCHADAS }, (_, i) => `r${i}`);
+    const f = fusionar({ ...local, correo: "l@x.cl" }, { ...remoto, escuchadas: muchas }, false);
+    expect(f.correo).toBe("l@x.cl");
+    expect(f.escuchadas.length).toBe(MAX_ESCUCHADAS);
+  });
+});

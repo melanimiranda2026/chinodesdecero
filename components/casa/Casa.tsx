@@ -14,7 +14,7 @@ import { Tarjetas, type CapaTarjeta } from "./Tarjetas";
 import { desbloquearAudio } from "./audio/voz";
 import { useCasa, type AlEvento, type CasaApi, type Punto } from "./useCasa";
 import { NOMBRES_EVENTO, type NombreEvento } from "@/lib/eventos-nombres";
-import { EVENTO_AVANCE, avanceInicial, cargarAvance, guardarAvance, sincronizar, subirAvance, type Avance } from "./avance";
+import { EVENTO_AVANCE, avanceInicial, cargarAvance, guardarAvance, sincronizar, subirAvance, fusionar, type Avance } from "./avance";
 import { registrar } from "./eventos";
 import { Correo } from "@/components/pagina/Correo";
 import styles from "./Casa.module.css";
@@ -43,9 +43,6 @@ const ORDEN_MEDALLA = { bronce: 1, plata: 2, oro: 3 } as const;
 const AVISO_MS = 5000;
 const GUARDAR_MS = 500;
 
-const mejorMedalla = (a?: keyof typeof ORDEN_MEDALLA, b?: keyof typeof ORDEN_MEDALLA) =>
-  !a ? b : !b ? a : ORDEN_MEDALLA[a] >= ORDEN_MEDALLA[b] ? a : b;
-
 export function Casa({ onEvento }: { onEvento?: AlEvento }) {
   const avance = useRef<Avance>(avanceInicial());
   const listo = useRef(false);
@@ -55,6 +52,8 @@ export function Casa({ onEvento }: { onEvento?: AlEvento }) {
   const sucio = useRef(false);
   /** Cuenta los cambios reales: detecta los que ocurren mientras el GET está en vuelo. */
   const cambios = useRef(0);
+  /** Cuenta solo los cambios del estado de la cocina (acciones). */
+  const cambiosEstado = useRef(0);
   /** Ya se comparó con la cuenta en esta sesión: recién ahora se puede subir. */
   const sincronizado = useRef(false);
   const enSync = useRef(false);
@@ -79,6 +78,7 @@ export function Casa({ onEvento }: { onEvento?: AlEvento }) {
     if (enSync.current || sincronizado.current) return;
     enSync.current = true;
     const v0 = cambios.current;
+    const e0 = cambiosEstado.current;
     let r;
     try {
       r = await sincronizar(avance.current, sucio.current);
@@ -88,23 +88,30 @@ export function Casa({ onEvento }: { onEvento?: AlEvento }) {
     if (!montado.current || r.tipo === "sin-sesion" || r.tipo === "fallo") return;
     sincronizado.current = true;
     if (cambios.current !== v0) {
-      // Hubo cambios locales durante el GET: se conservan (sumando lo escuchado y las medallas del servidor).
+      // Hubo cambios locales durante el GET: se conservan y se les suma lo del servidor.
+      // El estado de la cocina solo es el local si el estado mismo cambió durante el GET.
       if (r.tipo === "remoto") {
-        const l = avance.current;
-        const medallas = { ...r.avance.medallas };
-        for (const [k, m] of Object.entries(l.medallas)) medallas[k] = mejorMedalla(m, medallas[k]);
-        avance.current = { ...l, escuchadas: [...new Set([...r.avance.escuchadas, ...l.escuchadas])], medallas };
+        const f = fusionar(avance.current, r.avance, cambiosEstado.current !== e0);
+        avance.current = f;
+        if (cambiosEstado.current === e0) {
+          restaurado.current = f.estado;
+          restaurarRef.current(f.estado);
+        }
+        setCorreo(f.correo);
       }
       sucio.current = true;
       guardarYSubir();
       return;
     }
     if (r.tipo === "remoto") {
-      avance.current = r.avance;
-      guardarAvance(r.avance);
+      // un correo dejado mientras volaba el GET gana sobre el del servidor
+      const correo = avance.current.correo ?? r.avance.correo;
+      avance.current = correo ? { ...r.avance, correo } : r.avance;
+      sucio.current = false; // no queda nada que subir
+      guardarAvance(avance.current);
       restaurado.current = r.avance.estado;
       restaurarRef.current(r.avance.estado);
-      setCorreo(r.avance.correo);
+      setCorreo(correo);
     } else {
       sucio.current = true;
       guardarYSubir();
@@ -162,6 +169,7 @@ export function Casa({ onEvento }: { onEvento?: AlEvento }) {
   useEffect(() => {
     if (!listo.current || casa.estado === restaurado.current) return;
     avance.current = { ...avance.current, estado: casa.estado };
+    cambiosEstado.current++;
     marcar();
   }, [casa.estado, marcar]);
 

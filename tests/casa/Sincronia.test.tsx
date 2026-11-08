@@ -121,6 +121,31 @@ describe("sincronizacion con la cuenta", () => {
     });
     await avanzar(3000);
     expect(cargarAvance().escuchadas).toContain("ni2_hao3");
+    expect(cargarAvance().escuchadas).toContain("r");
+    // solo cambio una escuchada: el estado avanzado del servidor no se pierde
+    expect(cargarAvance().estado.pingguo).toBe("limpio");
+  });
+  it("un correo dejado durante el GET no lo deshace el servidor", async () => {
+    let soltar!: () => void;
+    red(() => json(remotoCon(["r"])), () => new Promise<void>((r) => (soltar = r)));
+    render(<Casa />);
+    await avanzar(10);
+    fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
+    fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
+    fireEvent.change(screen.getByLabelText("Tu correo"), { target: { value: "a@b.cl" } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Avísame" }));
+      await vi.advanceTimersByTimeAsync(10);
+    });
+    await act(async () => {
+      soltar();
+      await vi.advanceTimersByTimeAsync(50);
+    });
+    await avanzar(1000);
+    expect(cargarAvance().correo).toBe("a@b.cl");
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar" }));
+    fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
+    expect(screen.getByText("Ya estás anotada/o. Te avisamos cuando abra.")).toBeTruthy();
   });
   it("el resultado que llega tras desmontar se ignora", async () => {
     let soltar!: () => void;

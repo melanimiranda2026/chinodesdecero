@@ -16,7 +16,7 @@ export const CLAVE_AVANCE = "cdc.avance.v1";
 export const EVENTO_AVANCE = "cdc:avance";
 
 const MEDALLAS = ["oro", "plata", "bronce"];
-const MAX_ESCUCHADAS = 500;
+export const MAX_ESCUCHADAS = 500;
 
 export const avanceInicial = (): Avance => ({
   estado: { ...ESTADO_INICIAL },
@@ -145,4 +145,26 @@ export async function sincronizar(a: Avance, sucio = false): Promise<ResultadoSy
   } catch {
     return { tipo: "fallo" };
   }
+}
+
+const ORDEN: Record<MedallaGuardada, number> = { bronce: 1, plata: 2, oro: 3 };
+
+/**
+ * Une lo local con lo del servidor cuando hubo cambios locales durante el GET.
+ * El estado de la cocina es del servidor salvo que el estado mismo haya cambiado aquí.
+ */
+export function fusionar(local: Avance, remoto: Avance, estadoCambio: boolean): Avance {
+  const medallas: Avance["medallas"] = { ...remoto.medallas };
+  for (const [k, m] of Object.entries(local.medallas)) {
+    const r = medallas[k];
+    if (m && (!r || ORDEN[m] > ORDEN[r])) medallas[k] = m;
+  }
+  const a: Avance = {
+    estado: estadoCambio ? local.estado : remoto.estado,
+    medallas,
+    escuchadas: [...new Set([...remoto.escuchadas, ...local.escuchadas])].slice(0, MAX_ESCUCHADAS),
+  };
+  const correo = local.correo ?? remoto.correo;
+  if (correo) a.correo = correo;
+  return a;
 }

@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState, type CSSProperties, type PointerEvent as EventoPuntero } from "react";
+import { useRef, useState, type CSSProperties, type PointerEvent as EventoPuntero, type ReactNode } from "react";
 import { textoHanzi } from "@/lib/silabas";
 import { OBJETOS, type ObjetoId } from "./cocina/datos";
 import { enPantalla, objetoBajo, transformCSS } from "./camara";
@@ -9,6 +9,9 @@ import { Vaca } from "./Vaca";
 import { Globo } from "./Globo";
 import { Opciones } from "./Opciones";
 import { PrimerPlano } from "./primer-plano/PrimerPlano";
+import { Minimapa } from "./Minimapa";
+import { Tarjetas, type CapaTarjeta } from "./Tarjetas";
+import { desbloquearAudio } from "./audio/voz";
 import { useCasa, type AlEvento, type CasaApi, type Punto } from "./useCasa";
 import styles from "./Casa.module.css";
 
@@ -29,19 +32,48 @@ type Inicio =
 
 const llegaALaVaca = (p: Punto, vaca: Punto) => Math.hypot(p.x - vaca.x, p.y - (vaca.y - 100)) < RADIO_VACA;
 
-export function Casa({ onEvento }: { onEvento?: AlEvento }) {
+export function Casa({
+  onEvento,
+  anotado = false,
+  formulario,
+}: {
+  onEvento?: AlEvento;
+  /** Ya dejó su correo (la Task 12 lo conecta). */
+  anotado?: boolean;
+  /** Formulario de correo para la tarjeta "pronto" (la Task 12 pasa <Correo origen="pronto" />). */
+  formulario?: ReactNode;
+}) {
   const casa = useCasa(onEvento);
-  return <CasaVista casa={casa} />;
+  return <CasaVista casa={casa} anotado={anotado} formulario={formulario} />;
 }
 
 /** La vista de la casa: recibe el estado del hook y traduce los punteros a sus funciones. */
-export function CasaVista({ casa }: { casa: CasaApi }) {
+export function CasaVista({
+  casa,
+  anotado = false,
+  formulario,
+}: {
+  casa: CasaApi;
+  anotado?: boolean;
+  formulario?: ReactNode;
+}) {
   const { estado, camara, vaca, cara, globo, opciones, ocupado, posiciones, clases, particulas } = casa;
   const mundoRef = useRef<HTMLDivElement>(null);
   const ini = useRef<Inicio | null>(null);
   const sinClick = useRef(false);
   const [arrObj, setArrObj] = useState<{ id: ObjetoId; x: number; y: number } | null>(null);
   const [arrVaca, setArrVaca] = useState<Punto | null>(null);
+  // La entrada se pinta ya en el servidor; solo el botón toca el audio (en el cliente).
+  const [entrada, setEntrada] = useState(true);
+  const [pronto, setPronto] = useState(false);
+  const quiz = casa.quiz;
+  const capa: CapaTarjeta | null = entrada
+    ? "entrada"
+    : quiz?.fase === "fin"
+      ? "metodo"
+      : pronto
+        ? "pronto"
+        : null;
 
   /** px de pantalla → unidades del cuarto (el ancho del mundo ya incluye el zoom). */
   const aUnidades = (px: number) => {
@@ -241,6 +273,25 @@ export function CasaVista({ casa }: { casa: CasaApi }) {
           </button>
         </div>
 
+        {/* botón 玩, marcador de estrellas y 🔊 */}
+        <button type="button" className={styles.jugar} aria-label="玩" disabled={ocupado || !!quiz} onClick={() => casa.empezarQuiz()}>
+          <span className={styles.jugarHz}>玩</span>
+          <span data-pinyin>wán</span>
+        </button>
+        {quiz && (
+          <>
+            <div className={styles.marcador} data-testid="marcador" aria-hidden="true">
+              {"★".repeat(quiz.aciertos) + "☆".repeat(quiz.rondas.length - quiz.aciertos)}
+            </div>
+            {quiz.fase === "juego" && (
+              <button type="button" className={styles.repetir} aria-label="🔊" disabled={ocupado} onClick={() => casa.repetirQuiz()}>
+                🔊
+              </button>
+            )}
+          </>
+        )}
+        <Minimapa cuartoActual="cocina" alTocarBloqueado={() => setPronto(true)} />
+
         {globo && <Globo silabas={globo} x={Math.max(12, Math.min(88, pGlobo.x))} y={Math.max(16, pGlobo.y)} />}
 
         {opciones && (
@@ -269,6 +320,23 @@ export function CasaVista({ casa }: { casa: CasaApi }) {
           />
         )}
       </div>
+
+      <Tarjetas
+        capa={capa}
+        anotado={anotado}
+        formulario={formulario}
+        alEntrar={() => {
+          desbloquearAudio();
+          setEntrada(false);
+          casa.saludar();
+        }}
+        alSeguir={() => {
+          // después del método, la invitación a dejar el correo
+          casa.cerrarQuiz();
+          setPronto(true);
+        }}
+        alCerrar={() => setPronto(false)}
+      />
     </div>
   );
 }

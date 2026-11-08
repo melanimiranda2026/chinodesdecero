@@ -282,3 +282,129 @@
 }
 .alejar:disabled { opacity: 0.5; cursor: default; }
 .alejar:active { translate: 0 3px; box-shadow: 0 1px 0 #1d130d; }
+
+/* ---------- quiz, minimapa y tarjetas ---------- */
+.jugar {
+  position: absolute;
+  z-index: 90;
+  left: 2%;
+  top: 2%;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  font-family: var(--f-pixel), monospace;
+  font-size: clamp(14px, 2.8vmin, 22px);
+  background: #e2574e;
+  color: #fff;
+  border: 3px solid #1d130d;
+  box-shadow: 0 4px 0 #1d130d;
+  padding: 0.3em 0.7em;
+  cursor: pointer;
+}
+.jugar:disabled { opacity: 0.5; cursor: default; }
+.jugar:active { translate: 0 3px; box-shadow: 0 1px 0 #1d130d; }
+.jugarHz { font-family: var(--f-hanzi), serif; font-size: 1.3em; line-height: 1; }
+
+.marcador {
+  position: absolute;
+  z-index: 90;
+  left: 50%;
+  top: 2%;
+  transform: translateX(-50%);
+  font-family: var(--f-pixel), monospace;
+  font-size: clamp(16px, 3vmin, 26px);
+  color: #fff;
+  text-shadow: 2px 2px 0 #1d130d;
+  letter-spacing: 0.1em;
+}
+.repetir {
+  position: absolute;
+  z-index: 90;
+  right: 3%;
+  top: 2%;
+  min-width: 44px;
+  min-height: 44px;
+  font-size: clamp(20px, 4vmin, 32px);
+  background: #fff6e6;
+  border: 3px solid #4a2a1c;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.repetir:focus-visible, .jugar:focus-visible, .cuarto:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 3px; }
+
+.mapa {
+  position: absolute;
+  z-index: 90;
+  right: 2%;
+  bottom: 2%;
+  width: 108px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  padding: 5px;
+  background: #3b2a20;
+  border: 3px solid #1d130d;
+  box-shadow: 0 0 0 3px #c98e5a;
+  font-family: var(--f-pixel), monospace;
+}
+.cuarto {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: #6d5a4c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  cursor: pointer;
+  position: relative;
+}
+.aqui { background: #f2c14e; animation: pulsoMapa 1.6s steps(2) infinite; cursor: default; }
+.bloq { filter: grayscale(0.8) brightness(0.8); }
+.bloq::after { content: "🔒"; position: absolute; right: 1px; bottom: 0; font-size: 0.55em; }
+@keyframes pulsoMapa { 50% { background: #e0a93a; } }
+
+.capa {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(30, 20, 40, 0.72);
+  padding: 16px;
+  font-family: var(--f-texto), system-ui, sans-serif;
+  font-weight: 700;
+  color: #4a2a1c;
+}
+.tarjeta {
+  background: #fff6e6;
+  border: 4px solid #4a2a1c;
+  border-radius: 26px;
+  padding: 28px 26px;
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.3);
+}
+.tarjeta h1 { margin: 0.1em 0 0.2em; font-weight: 900; font-size: clamp(26px, 6vw, 38px); }
+.tarjeta p { font-size: 17px; line-height: 1.45; margin: 0.6em 0; }
+.grande { font-family: var(--f-hanzi), serif; font-size: 84px; line-height: 1; color: #3a6fd6; }
+.chica { display: block; opacity: 0.6; margin: 0 0 6px; }
+.tonoLinea { display: block; margin: 0 auto; }
+.principal {
+  font: 900 18px var(--f-texto), system-ui, sans-serif;
+  min-height: 44px;
+  background: #e2574e;
+  color: #fff;
+  border: 3px solid #4a2a1c;
+  border-radius: 999px;
+  padding: 0.6em 1.6em;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #4a2a1c;
+  margin-top: 10px;
+}
+.principal:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 3px; }

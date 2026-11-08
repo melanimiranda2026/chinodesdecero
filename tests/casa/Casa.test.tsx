@@ -192,8 +192,65 @@ describe("Casa", () => {
     // Todo el texto visible, quitando los nodos de pinyin, tampoco tiene español.
     const copia = container.cloneNode(true) as HTMLElement;
     copia.querySelectorAll("[data-pinyin]").forEach((n) => n.remove());
+    // las tarjetas (entrada, método, pronto) son página, no casa: ahí sí hay español
+    copia.querySelectorAll("[data-capa]").forEach((n) => n.remove());
     expect(copia.textContent ?? "").not.toMatch(espanol);
     for (const el of copia.querySelectorAll("[aria-label]"))
       expect(el.getAttribute("aria-label") ?? "").not.toMatch(espanol);
+  });
+});
+
+describe("Casa: 玩 (quiz)", () => {
+  const idsDeLaMock = () => decirMock.mock.calls.map((c) => textoHanzi(c[0]));
+
+  it("la vaca dice 给我+nombre, el globo solo 给我 ？ y se responde arrastrando", async () => {
+    const { api } = montar();
+    act(() => api().empezarQuiz());
+    await avanzar(800);
+    const q = api().quiz!;
+    const id = q.rondas[0];
+    expect(idsDeLaMock().at(-1)).toBe("给我" + textoHanzi(OBJETOS[id].nombre));
+    const globo = screen.getByTestId("globo");
+    expect(globo.getAttribute("aria-label")).toBe("给我？");
+    expect(globo.textContent).not.toContain(textoHanzi(OBJETOS[id].nombre));
+
+    // incorrecto: 不对 y repite la misma ronda
+    const otro = q.rondas[1];
+    await act(async () => { void api().soltarObjetoEnVaca(otro); await vi.advanceTimersByTimeAsync(10); });
+    expect(idsDeLaMock()).toContain("不对");
+    await avanzar(600);
+    expect(api().quiz!.i).toBe(0);
+    expect(idsDeLaMock().at(-1)).toBe("给我" + textoHanzi(OBJETOS[id].nombre));
+
+    // correcto: 对 y pasa a la siguiente
+    await act(async () => { void api().soltarObjetoEnVaca(id); await vi.advanceTimersByTimeAsync(10); });
+    expect(idsDeLaMock()).toContain("对");
+    await avanzar(600);
+    expect(api().quiz!.i).toBe(1);
+    expect(api().quiz!.aciertos).toBe(1);
+  });
+
+  it("al terminar las 4 rondas sale la tarjeta del método y luego la de pronto", async () => {
+    const { api } = montar();
+    act(() => api().empezarQuiz());
+    await avanzar(800);
+    for (let r = 0; r < 4; r++) {
+      const id = api().quiz!.rondas[r];
+      await act(async () => { void api().soltarObjetoEnVaca(id); await vi.advanceTimersByTimeAsync(600); });
+    }
+    await avanzar(2500);
+    expect(api().quiz!.fase).toBe("fin");
+    fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
+    expect(screen.getByText("Lo acabas de hacer")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Seguir explorando" }));
+    expect(api().quiz).toBeNull();
+    expect(screen.getByText("Este cuarto abre pronto. Deja tu correo y te avisamos.")).toBeTruthy();
+  });
+
+  it("tocar un cuarto bloqueado del minimapa abre la tarjeta pronto", () => {
+    montar();
+    fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
+    fireEvent.click(screen.getByRole("button", { name: "卧室 🔒" }));
+    expect(screen.getByText("Este cuarto abre pronto. Deja tu correo y te avisamos.")).toBeTruthy();
   });
 });

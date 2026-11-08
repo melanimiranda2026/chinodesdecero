@@ -13,8 +13,8 @@ vi.mock("@/components/casa/audio/sonido", () => ({
 
 import { decir } from "@/components/casa/audio/voz";
 import { Casa, CasaVista } from "@/components/casa/Casa";
-import { useCasa, type CasaApi } from "@/components/casa/useCasa";
-import { OBJETOS } from "@/components/casa/cocina/datos";
+import { useCasa, type AlEvento, type CasaApi } from "@/components/casa/useCasa";
+import { ANCLAS, OBJETOS, junto } from "@/components/casa/cocina/datos";
 import { acciones } from "@/components/casa/cocina/acciones";
 import { ESTADO_INICIAL } from "@/components/casa/cocina/datos";
 import { textoHanzi } from "@/lib/silabas";
@@ -22,10 +22,10 @@ import { textoHanzi } from "@/lib/silabas";
 const decirMock = vi.mocked(decir);
 
 /** Monta la vista real y deja el hook a mano para llamar sus funciones. */
-function montar() {
+function montar(onEvento?: AlEvento) {
   const api = { current: null } as MutableRefObject<CasaApi | null>;
   function Prueba() {
-    const casa = useCasa();
+    const casa = useCasa(onEvento);
     api.current = casa;
     return <CasaVista casa={casa} />;
   }
@@ -118,6 +118,62 @@ describe("Casa", () => {
     act(() => api().verTodo());
     expect(api().camara).toEqual({ x: 500, y: 500, s: 1 });
     expect(screen.queryByTestId("opciones")).toBeNull();
+  });
+
+  it("si una secuencia de abrir acciones lanza, el finally libera ocupado", async () => {
+    const onEvento: AlEvento = (n) => { if (n === "abrir_acciones") throw new Error("analítica caída"); };
+    const { api } = montar(onEvento);
+    let p!: Promise<void>;
+    act(() => { p = api().soltarObjetoEnVaca("panzi"); });
+    await act(async () => { await expect(p).rejects.toThrow("analítica caída"); });
+    expect(api().ocupado).toBe(false);
+  });
+
+  it("si elegir lanza después del primer plano, el finally libera ocupado y cierra el primer plano", async () => {
+    const onEvento: AlEvento = (n) => { if (n === "gesto_completo") throw new Error("analítica caída"); };
+    const { api } = montar(onEvento);
+    const comer = acciones("panzi", ESTADO_INICIAL)[0];
+    let p!: Promise<void>;
+    act(() => { p = api().elegir("panzi", comer); });
+    const rechazo = expect(p).rejects.toThrow("analítica caída");
+    await avanzar(1000);
+    expect(api().primerPlano?.objeto).toBe("panzi");
+    act(() => api().terminarPrimerPlano("plata"));
+    await act(async () => { await rechazo; });
+    expect(api().ocupado).toBe(false);
+    expect(api().primerPlano).toBeNull();
+  });
+
+  it("<Casa/> atiende el rechazo de una secuencia (no queda sin atender)", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(<Casa onEvento={(n) => { if (n === "tocar_objeto") throw new Error("analítica caída"); }} />);
+    fireEvent.click(screen.getByRole("button", { name: "杯子" }));
+    await avanzar(10);
+    expect(error).toHaveBeenCalledWith("[casa]", expect.any(Error));
+    error.mockRestore();
+  });
+
+  it("verTodo y el botón ⤢ se ignoran mientras la casa está ocupada", async () => {
+    const { api } = montar();
+    act(() => { void api().soltarObjetoEnVaca("panzi"); });
+    const enfocada = api().camara;
+    expect(enfocada.s).toBe(1.9);
+    act(() => api().verTodo());
+    expect(api().camara).toEqual(enfocada);
+    const alejar = screen.getByRole("button", { name: "⤢" }) as HTMLButtonElement;
+    expect(alejar.disabled).toBe(true);
+    fireEvent.pointerDown(document.querySelector("div[class*=mundo]")!);
+    expect(api().camara).toEqual(enfocada);
+    await avanzar(3000);
+    expect(api().ocupado).toBe(false);
+    act(() => api().verTodo());
+    expect(api().camara).toEqual({ x: 500, y: 500, s: 1 });
+  });
+
+  it("las anclas de los efectos viven en los datos", () => {
+    expect(ANCLAS.llave).toEqual({ x: 490, y: 278 });
+    expect(junto(OBJETOS.bingxiang, ANCLAS.salidaRefri)).toEqual({ x: 100, y: 300 });
+    expect(junto(OBJETOS.chahu, ANCLAS.picoTetera)).toEqual({ x: 362, y: 286 });
   });
 
   it("no hay español dentro de la casa (fuera del pinyin)", async () => {

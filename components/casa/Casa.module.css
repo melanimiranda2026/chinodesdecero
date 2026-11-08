@@ -85,9 +85,10 @@
 .encoge { transform: scale(0.7); }
 .tiembla { animation: tiembla 0.12s linear 8; }
 
-/* capa "puerta" del refri: gira sobre su borde izquierdo (x = -50 de -60..60) */
+/* capa "puerta" del refri: gira sobre el borde izquierdo de su capa */
 .puerta {
-  transform-origin: 8.33% 50%;
+  transform-box: fill-box;
+  transform-origin: left center;
   transition: transform 0.5s ease;
 }
 .puertaAbierta { transform: scaleX(0.12) skewY(-8deg); }
@@ -279,4 +280,5 @@
   padding: 0.3em 0.6em;
   cursor: pointer;
 }
+.alejar:disabled { opacity: 0.5; cursor: default; }
 .alejar:active { translate: 0 3px; box-shadow: 0 1px 0 #1d130d; }

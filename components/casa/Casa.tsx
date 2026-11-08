@@ -19,6 +19,8 @@ const RADIO_VACA = 130;
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(" ");
 const pct = (u: number) => `${u / 10}%`;
+/** Una secuencia que falla (p. ej. un onEvento que lanza) se registra; nunca queda como rechazo sin atender. */
+const registrarFallo = (e: unknown) => console.error("[casa]", e);
 
 type Inicio =
   | { tipo: "obj"; id: ObjetoId; cx: number; cy: number; movio: boolean }
@@ -82,14 +84,14 @@ export function CasaVista({ casa }: { casa: CasaApi }) {
     if (!i.movio) return; // el click que sigue es el toque
     sinClick.current = true;
     const { dx, dy } = delta(e, i);
-    if (!cancelado && llegaALaVaca({ x: OBJETOS[id].x + dx, y: OBJETOS[id].y + dy }, vaca)) void casa.soltarObjetoEnVaca(id);
+    if (!cancelado && llegaALaVaca({ x: OBJETOS[id].x + dx, y: OBJETOS[id].y + dy }, vaca)) casa.soltarObjetoEnVaca(id).catch(registrarFallo);
   };
   const objetoClick = (id: ObjetoId) => {
     if (sinClick.current) {
       sinClick.current = false;
       return;
     }
-    void casa.tocar(id);
+    casa.tocar(id).catch(registrarFallo);
   };
 
   // ---- vaca ----
@@ -119,7 +121,7 @@ export function CasaVista({ casa }: { casa: CasaApi }) {
     if (!i.movio) return;
     sinClick.current = true;
     const { dx, dy } = delta(e, i);
-    void casa.soltarVaca(cancelado ? i.x0 : i.x0 + dx, cancelado ? i.y0 : i.y0 + dy);
+    casa.soltarVaca(cancelado ? i.x0 : i.x0 + dx, cancelado ? i.y0 : i.y0 + dy).catch(registrarFallo);
   };
   const vacaClick = () => {
     if (sinClick.current) {
@@ -245,14 +247,14 @@ export function CasaVista({ casa }: { casa: CasaApi }) {
             id={opciones.id}
             lista={opciones.lista}
             camara={camara}
-            alElegir={(a) => void casa.elegir(opciones.id, a)}
+            alElegir={(a) => casa.elegir(opciones.id, a).catch(registrarFallo)}
           />
         )}
 
         {/* El primer plano (casa.primerPlano) lo dibuja la Task 9 y llama a casa.terminarPrimerPlano. */}
 
         {camara.s > 1 && (
-          <button type="button" className={styles.alejar} aria-label="⤢" onClick={() => casa.verTodo()}>
+          <button type="button" className={styles.alejar} aria-label="⤢" disabled={ocupado} onClick={() => casa.verTodo()}>
             ⤢
           </button>
         )}

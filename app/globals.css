@@ -1,0 +1,33 @@
+:root {
+  --tinta: #4a2a1c;
+  --papel: #fff6e6;
+  --t1: #e0473c;
+  --t2: #e8930c;
+  --t3: #2e9b57;
+  --t4: #3a6fd6;
+  --t5: #8c8c8c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #2b2238;
+  color: var(--tinta);
+  font-family: var(--f-texto), system-ui, sans-serif;
+  font-weight: 700;
+}
+
+/* Papel de pared: lunares y hojitas (patrón del prototipo). */
+.papel-mural {
+  background-color: #f8e7cc;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70'%3E%3Crect width='70' height='70' fill='%23F8E7CC'/%3E%3Ccircle cx='17' cy='17' r='5' fill='%23F2C9A8'/%3E%3Ccircle cx='52' cy='52' r='5' fill='%23F2C9A8'/%3E%3Cpath d='M52 10 q4 6 0 12 q-4 -6 0 -12z' fill='%23A9D3C2'/%3E%3Cpath d='M17 45 q4 6 0 12 q-4 -6 0 -12z' fill='%23A9D3C2'/%3E%3C/svg%3E");
+  background-size: 70px 70px;
+}

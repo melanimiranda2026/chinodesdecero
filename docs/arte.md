@@ -52,6 +52,8 @@ Archivo esperado: `public/arte/cocina/<objeto>_<capa>.png`. Las capas se apilan 
 | chahu (tetera) | `tetera` | La tetera | siempre |
 | kuaizi (palillos) | `palillos` | Los dos palillos | siempre |
 
+La capa **`puerta`** del refri tiene que llegar hasta el borde izquierdo de su cuadrado: gira sobre el borde izquierdo de la capa (la bisagra).
+
 La capa **`mugre`** es siempre la que se borra al frotar. Dibújala sobre fondo transparente, solo las manchas, en el mismo lugar que irían sobre el objeto.
 
 ## Piezas de los minijuegos (primer plano)
@@ -64,6 +66,8 @@ Misma regla (cuadrado 1024 x 1024). Están en `ARTE_PRIMER_PLANO`.
 | `vaso_mascara` | La silueta del interior del vaso, de un solo color. No se ve: solo recorta el líquido |
 | `olla_grande` | La olla vista desde arriba |
 | `trozos` | Los trocitos que giran dentro de la olla |
+
+El líquido del vaso sube desde el **97 %** del alto del cuadrado (el fondo del vaso) hasta el **12 %** (el borde), y las dos líneas verdes de "lleno" se dibujan en esa escala: dibuja `vaso_grande` y `vaso_mascara` con el interior entre esas dos alturas. La capa `trozos` gira entera sobre el centro del cuadrado.
 
 ### Cómo cambiar cada pieza de primer plano
 

@@ -3,6 +3,8 @@ import { acotar, type Gesto } from "./tipos";
 const VEL = 0.32 / 1000;
 const MIN = 0.62;
 const MAX = 0.95;
+/** Banda en que soltar cuenta como lleno (el vaso dibuja estas dos líneas). */
+export const BANDA_LLENAR = { min: MIN, max: MAX } as const;
 const TRAS_REBALSE = 0.25;
 
 export interface Llenar extends Gesto {

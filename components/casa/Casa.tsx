@@ -8,6 +8,7 @@ import { FondoCuarto } from "./arte/Capa";
 import { Vaca } from "./Vaca";
 import { Globo } from "./Globo";
 import { Opciones } from "./Opciones";
+import { PrimerPlano } from "./primer-plano/PrimerPlano";
 import { useCasa, type AlEvento, type CasaApi, type Punto } from "./useCasa";
 import styles from "./Casa.module.css";
 
@@ -251,12 +252,21 @@ export function CasaVista({ casa }: { casa: CasaApi }) {
           />
         )}
 
-        {/* El primer plano (casa.primerPlano) lo dibuja la Task 9 y llama a casa.terminarPrimerPlano. */}
-
         {camara.s > 1 && (
           <button type="button" className={styles.alejar} aria-label="⤢" disabled={ocupado} onClick={() => casa.verTodo()}>
             ⤢
           </button>
+        )}
+
+        {/* El primer plano va encima de todo el escenario y avisa con la medalla al terminar. */}
+        {casa.primerPlano && (
+          <PrimerPlano
+            key={`${casa.primerPlano.objeto}:${casa.primerPlano.accion.anim}`}
+            accion={casa.primerPlano.accion}
+            objeto={casa.primerPlano.objeto}
+            estado={estado}
+            alTerminar={casa.terminarPrimerPlano}
+          />
         )}
       </div>
     </div>

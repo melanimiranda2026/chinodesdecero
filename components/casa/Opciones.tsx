@@ -7,9 +7,9 @@ import styles from "./Casa.module.css";
 
 /** Opciones flotantes (estilo Life is Strange): ícono + hanzi + pinyin, en coordenadas de pantalla. */
 export function Opciones({
-  id, lista, camara, alElegir,
-}: { id: ObjetoId; lista: Accion[]; camara: Camara; alElegir: (a: Accion) => void }) {
-  const lugares = ubicarOpciones(camara, id, lista.length, false);
+  id, lista, camara, alElegir, vertical = false, aspecto = 1,
+}: { id: ObjetoId; lista: Accion[]; camara: Camara; alElegir: (a: Accion) => void; vertical?: boolean; aspecto?: number }) {
+  const lugares = ubicarOpciones(camara, id, lista.length, vertical, aspecto);
   return (
     <div data-testid="opciones">
       {lista.map((a, i) => {

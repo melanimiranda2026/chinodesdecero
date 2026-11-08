@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as EventoPuntero, type ReactNode } from "react";
 import { textoHanzi } from "@/lib/silabas";
 import { OBJETOS, type EstadoCocina, type ObjetoId } from "./cocina/datos";
-import { enPantalla, objetoBajo, transformCSS } from "./camara";
+import { aspectoDe, encuadrar, encuadreInicial, enPantalla, objetoBajo, transformCSS, type Camara } from "./camara";
 import { DibujoObjeto } from "./arte/DibujoObjeto";
 import { FondoCuarto } from "./arte/Capa";
 import { Vaca } from "./Vaca";
@@ -270,6 +270,30 @@ export function CasaVista({
   // La entrada se pinta ya en el servidor; solo el botón toca el audio (en el cliente).
   const [entrada, setEntrada] = useState(true);
   const [pronto, setPronto] = useState(false);
+  // Tamaño real del escenario: en celular vertical deja de ser cuadrado y la cámara se encuadra con zoom y paneo.
+  const escenarioRef = useRef<HTMLDivElement>(null);
+  const [tam, setTam] = useState({ w: 0, h: 0 });
+  useEffect(() => {
+    const el = escenarioRef.current;
+    if (!el) return;
+    const medir = () => {
+      const r = el.getBoundingClientRect();
+      setTam((t) => (t.w === r.width && t.h === r.height ? t : { w: r.width, h: r.height }));
+    };
+    medir();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(medir);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const aspecto = aspectoDe(tam.w, tam.h);
+  const vertical = aspecto > 1;
+  // Paneo del dedo sobre el piso; vale solo para la cámara actual (si la casa mueve la cámara, se olvida).
+  const [paneo, setPaneo] = useState<{ de: Camara; x: number; y: number } | null>(null);
+  const pan = paneo && paneo.de === camara ? paneo : { x: 0, y: 0 };
+  const vista = encuadrar(camara, tam.w, tam.h, pan);
+  const piso = useRef<{ cx: number; cy: number; x0: number; y0: number; movio: boolean } | null>(null);
+  const [paneando, setPaneando] = useState(false);
   const quiz = casa.quiz;
   const capa: CapaTarjeta | null = entrada
     ? "entrada"
@@ -379,24 +403,61 @@ export function CasaVista({
   const objetoObjetivo = arrVaca ? objetoBajo(arrVaca, estado) : null;
   const ojos = vacaEsObjetivo || objetoObjetivo ? "sorpresa" : cara.ojos;
 
-  const pGlobo = enPantalla(camara, vaca.x, vaca.y - 215 / Math.max(1, camara.s * 0.8));
+  // ---- piso: tocar vuelve a ver todo; en vertical, arrastrar panea la cámara ----
+  const pisoAbajo = (e: EventoPuntero<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget) return;
+    if (!vertical) {
+      casa.verTodo(); // en cuadrado, como siempre: al tocar
+      return;
+    }
+    if (ocupado) return;
+    capturar(e);
+    piso.current = { cx: e.clientX, cy: e.clientY, x0: vista.x - camara.x, y0: vista.y - camara.y, movio: false };
+  };
+  const pisoMueve = (e: EventoPuntero<HTMLDivElement>) => {
+    const p = piso.current;
+    if (!p) return;
+    const dx = aUnidades(e.clientX - p.cx);
+    const dy = aUnidades(e.clientY - p.cy);
+    if (!p.movio && Math.hypot(dx, dy) < UMBRAL_TOQUE) return;
+    if (!p.movio) {
+      p.movio = true;
+      setPaneando(true);
+    }
+    setPaneo({ de: camara, x: p.x0 - dx, y: p.y0 - dy });
+  };
+  const pisoSuelta = (cancelado: boolean) => {
+    const p = piso.current;
+    if (!p) return;
+    piso.current = null;
+    setPaneando(false);
+    if (p.movio || cancelado) return;
+    setPaneo(null);
+    casa.verTodo();
+  };
+
+  // el zoom que cuenta para el globo es el relativo al encuadre de "ver todo" (en vertical ya parte con zoom)
+  const zoomRel = vista.s / encuadreInicial(tam.w, tam.h).s;
+  const pGlobo = enPantalla(vista, vaca.x, vaca.y - 215 / Math.max(1, zoomRel * 0.8), aspecto);
 
   return (
     <div
       className={styles.casa}
+      data-casa
+      data-vertical={vertical || undefined}
       data-ocupado={ocupado || undefined}
       data-primer-plano={casa.primerPlano ? `${casa.primerPlano.objeto}:${casa.primerPlano.accion.anim}` : undefined}
     >
       <div className={styles.interior} inert={capa !== null}>
-      <div className={styles.escenario}>
+      <div ref={escenarioRef} className={styles.escenario}>
         <div
           ref={mundoRef}
-          className={styles.mundo}
-          style={{ transform: transformCSS(camara) }}
-          onPointerDown={(e) => {
-            // tocar el piso: cierra las opciones y vuelve a la vista completa
-            if (e.target === e.currentTarget) casa.verTodo();
-          }}
+          className={cx(styles.mundo, paneando && styles.paneando)}
+          style={{ transform: transformCSS(vista, aspecto) }}
+          onPointerDown={pisoAbajo}
+          onPointerMove={pisoMueve}
+          onPointerUp={() => pisoSuelta(false)}
+          onPointerCancel={() => pisoSuelta(true)}
         >
           <FondoCuarto cuarto="cocina" />
 
@@ -511,7 +572,9 @@ export function CasaVista({
           <Opciones
             id={opciones.id}
             lista={opciones.lista}
-            camara={camara}
+            camara={vista}
+            vertical={vertical}
+            aspecto={aspecto}
             alElegir={(a) => casa.elegir(opciones.id, a).catch(registrarFallo)}
           />
         )}

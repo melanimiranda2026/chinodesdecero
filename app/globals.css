@@ -18,6 +18,10 @@ body {
   padding: 0;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
 body {
   background: #2b2238;
   color: var(--tinta);

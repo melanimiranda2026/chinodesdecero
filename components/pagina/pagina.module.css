@@ -1,0 +1,163 @@
+/* La página bajo la casa: misma estética (papel mural, contorno café, tarjetas del prototipo). */
+
+.casaSeccion { position: relative; }
+
+/* Pista para bajar: fuera de la interfaz de la casa, en el borde inferior. */
+.baja {
+  position: absolute;
+  left: 50%;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 150;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(255, 246, 230, 0.92);
+  border: 3px solid var(--tinta);
+  box-shadow: 0 3px 0 rgba(74, 42, 28, 0.35);
+  color: var(--tinta);
+  font: 900 14px var(--f-texto), system-ui, sans-serif;
+  text-decoration: none;
+  animation: rebota 2.2s ease-in-out infinite;
+}
+.baja:focus-visible { outline: 3px dashed var(--t4); outline-offset: 3px; }
+@keyframes rebota { 0%, 100% { translate: 0 0; } 50% { translate: 0 4px; } }
+
+.pagina {
+  padding: 48px 16px 32px;
+  display: grid;
+  gap: 40px;
+  justify-items: center;
+  overflow-x: hidden;
+}
+
+.seccion { width: 100%; max-width: 720px; scroll-margin-top: 16px; }
+
+.tarjeta {
+  position: relative;
+  background: var(--papel);
+  border: 4px solid var(--tinta);
+  border-radius: 26px;
+  padding: 28px 22px;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.3);
+  min-width: 0;
+}
+
+.titulo {
+  margin: 0.2em 0 0.4em;
+  font-family: var(--f-texto), system-ui, sans-serif;
+  font-weight: 900;
+  font-size: clamp(26px, 6vw, 36px);
+  line-height: 1.15;
+  text-align: center;
+}
+.subtitulo { margin: 0.2em 0 0.3em; font-weight: 900; font-size: 21px; line-height: 1.2; }
+.texto { margin: 0.5em 0; font-size: 17px; line-height: 1.5; }
+.bajada { margin: 0.2em 0 0; font-size: 17px; line-height: 1.45; text-align: center; }
+.fuente { display: block; margin-top: 14px; font-size: 12px; opacity: 0.7; }
+
+.adorno { position: relative; flex: none; }
+.centrado { margin: -8px auto 0; }
+
+/* ---- método ---- */
+.sello { display: flex; flex-direction: column; align-items: center; color: var(--t4); }
+.hz { font-family: var(--f-hanzi), serif; font-size: 64px; line-height: 1; }
+.hzChico { font-family: var(--f-hanzi), serif; font-size: 1.2em; }
+.ideas { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 18px; }
+.idea { display: flex; gap: 14px; align-items: center; }
+.ideaTitulo {
+  margin: 0;
+  font-weight: 900;
+  font-size: 20px;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.numero {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--t2);
+  color: #fff;
+  border: 2.5px solid var(--tinta);
+  font-size: 15px;
+}
+.idea:nth-child(2) .numero { background: var(--t3); }
+.idea:nth-child(3) .numero { background: var(--t4); }
+.idea .texto { margin: 0.25em 0 0; font-size: 16px; }
+.idea { align-items: flex-start; }
+@media (min-width: 720px) { .adornoIdea { width: 84px !important; height: 84px !important; } }
+
+/* ---- material ---- */
+.encabezado { display: flex; flex-direction: column; align-items: center; margin-bottom: 18px; }
+.encabezado .titulo { margin-bottom: 0.1em; color: var(--tinta); }
+.encabezado { background: rgba(255, 246, 230, 0.75); border-radius: 22px; padding: 12px 16px 16px; }
+.rejilla { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+.etiquetaPronto {
+  display: inline-block;
+  font-family: var(--f-pixel), monospace;
+  font-size: 13px;
+  text-transform: uppercase;
+  background: var(--t2);
+  color: #fff;
+  border: 3px solid #1d130d;
+  box-shadow: 0 3px 0 #1d130d;
+  padding: 0.25em 0.6em;
+  transform: rotate(-3deg);
+}
+
+/* ---- botones con la fuente pixel (como los de la casa) ---- */
+.boton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  min-height: 48px;
+  margin: 18px auto 4px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.5em 1em;
+  font-family: var(--f-pixel), monospace;
+  font-size: 15px;
+  text-align: center;
+  text-decoration: none;
+  background: #e2574e;
+  color: #fff;
+  border: 3px solid #1d130d;
+  box-shadow: 0 4px 0 #1d130d;
+  cursor: pointer;
+}
+.boton:active { translate: 0 3px; box-shadow: 0 1px 0 #1d130d; }
+.boton:focus-visible { outline: 3px dashed var(--t4); outline-offset: 3px; }
+
+.videos { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+.video { display: grid; gap: 6px; color: var(--tinta); text-decoration: none; font-size: 14px; }
+.video img { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; border: 3px solid var(--tinta); border-radius: 14px; }
+
+/* ---- pie ---- */
+.pie { width: 100%; max-width: 560px; }
+.pie .tarjeta { text-align: center; }
+.adornos { display: flex; justify-content: center; gap: 10px; margin-bottom: 4px; }
+.firma {
+  margin: 22px 0 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--tinta);
+  background: rgba(255, 246, 230, 0.75);
+  border-radius: 999px;
+  padding: 6px 14px;
+  width: fit-content;
+  margin-inline: auto;
+}
+
+@media (min-width: 720px) {
+  .tarjeta { padding: 32px 36px; }
+  .pagina { gap: 56px; padding-top: 72px; }
+}

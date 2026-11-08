@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ZCOOL_KuaiLe, Nunito, Silkscreen } from "next/font/google";
 import "./globals.css";
 import { Filtros } from "@/components/casa/arte/placeholders/Filtros";
+import { Analytics } from "@vercel/analytics/react";
 
 const hanzi = ZCOOL_KuaiLe({ weight: "400", subsets: ["latin"], variable: "--f-hanzi", display: "swap" });
 const texto = Nunito({ weight: ["700", "900"], subsets: ["latin"], variable: "--f-texto", display: "swap" });
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <Filtros />
         {children}
+        <Analytics />
       </body>
     </html>
   );

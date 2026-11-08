@@ -1,0 +1,1112 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Casa — prototipo cocina v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Nunito:wght@700;900&family=Silkscreen&display=swap" rel="stylesheet">
+<style>
+  :root { --tinta:#4A2A1C; --papel:#FFF6E6; --t1:#E0473C; --t2:#E8930C; --t3:#2E9B57; --t4:#3A6FD6; --t5:#8C8C8C; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; height:100%; background:#2b2238; overflow:hidden; font-family:Nunito, system-ui, sans-serif; color:var(--tinta); touch-action:none; user-select:none; -webkit-user-select:none; }
+  #escenario { position:absolute; left:50%; top:50%; width:min(100vw, 100vh); aspect-ratio:1; transform:translate(-50%,-50%); overflow:hidden; }
+  /* cámara: el mundo entero se mueve y escala */
+  #mundo { position:absolute; inset:0; transform-origin:0 0; transition:transform .75s cubic-bezier(.45,.05,.25,1); }
+  #cuarto { position:absolute; inset:0; width:100%; height:100%; }
+  .obj { position:absolute; transform:translate(-50%,-50%); cursor:grab; touch-action:none; transition:filter .2s; }
+  .obj svg { width:100%; height:100%; overflow:visible; display:block; transition:transform .5s ease, opacity .5s ease; }
+  .obj.idle { animation:respira 3.2s ease-in-out infinite; }
+  .obj.arrastrando { cursor:grabbing; z-index:50; filter:drop-shadow(0 10px 6px rgba(0,0,0,.35)); }
+  .obj.volando { transition:left .5s ease, top .5s ease; z-index:45; }
+  .obj.objetivo { filter:drop-shadow(0 0 6px #fff) drop-shadow(0 0 10px #ffe36b); }
+  .obj.nada { opacity:0; pointer-events:none; }
+  .obj .puerta { transform-origin:-50px 0; transition:transform .5s ease; }
+  .obj.abierto .puerta { transform:scaleX(.12) skewY(-8deg); }
+  .obj.inclina svg { transform:rotate(-35deg); }
+  .obj.tiembla svg { animation:tiembla .12s linear 8; }
+  .obj.encoge svg { transform:scale(.7); }
+  @keyframes tiembla { 50% { transform:translateX(3px) rotate(2deg); } }
+  @keyframes respira { 0%,100%{ translate:0 0 } 50%{ translate:0 -1.5% } }
+  .brillo { position:absolute; pointer-events:none; animation:chispa 1.6s ease-out forwards; color:#ffe36b; font-size:clamp(10px,2vmin,18px); }
+  @keyframes chispa { 0%{opacity:0; scale:.2} 30%{opacity:1; scale:1} 100%{opacity:0; scale:.6; translate:0 -120%} }
+
+  /* vaca */
+  #vaca { position:absolute; width:22%; aspect-ratio:1; transform:translate(-50%,-92%); cursor:grab; z-index:30; touch-action:none; transition:left .6s ease, top .6s ease; }
+  #vaca.arrastrando { transition:none; cursor:grabbing; z-index:60; }
+  #vaca.objetivo .cuerpo { filter: drop-shadow(0 0 8px #ffe36b) drop-shadow(0 0 4px #fff); }
+  #vaca .cuerpo { position:absolute; inset:0; transform-origin:50% 96%; animation:respiraVaca 3s ease-in-out infinite;
+    filter: drop-shadow(4px 0 0 #fff) drop-shadow(-4px 0 0 #fff) drop-shadow(0 4px 0 #fff) drop-shadow(0 -4px 0 #fff) drop-shadow(0 10px 8px rgba(40,25,10,.3)); }
+  #vaca.salta .cuerpo { animation:saltito .5s ease-out 2; }
+  #vaca img { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; opacity:0; }
+  #vaca img.on { opacity:1; }
+  #vaca .sombra { position:absolute; left:26%; width:48%; bottom:1%; height:6%; border-radius:50%; background:rgba(40,25,10,.25); }
+  @keyframes respiraVaca { 0%,100%{ transform:scale(1,1) } 50%{ transform:scale(.993,1.012) } }
+  @keyframes saltito { 0%{transform:translateY(0) scale(1)} 40%{transform:translateY(-9%) scale(.97,1.05)} 100%{transform:translateY(0)} }
+
+  /* globo: vive fuera del mundo para que el zoom no lo agrande de más */
+  #globo { position:absolute; z-index:70; transform:translate(-50%,-100%); background:var(--papel); border:3px solid var(--tinta); border-radius:22px; padding:.5em .9em .45em; box-shadow:0 5px 0 rgba(74,42,28,.25); pointer-events:none; opacity:0; transition:opacity .2s, scale .2s; scale:.8; white-space:nowrap; }
+  #globo.on { opacity:1; scale:1; }
+  #globo::after { content:""; position:absolute; left:50%; bottom:-14px; width:20px; height:20px; background:var(--papel); border-right:3px solid var(--tinta); border-bottom:3px solid var(--tinta); transform:translateX(-50%) rotate(45deg); }
+  .linea { display:flex; gap:.15em; align-items:flex-end; justify-content:center; }
+  .sil { display:flex; flex-direction:column; align-items:center; }
+  .sil .py { font-weight:900; font-size:clamp(11px, 2.4vmin, 22px); line-height:1.1; }
+  .sil .hz { font-family:"ZCOOL KuaiLe", serif; font-size:clamp(22px, 5.4vmin, 50px); line-height:1.05; }
+
+  /* opciones flotantes (estilo Life is Strange): también fuera del mundo */
+  .opcion { position:absolute; z-index:80; transform:translate(-50%,-50%); display:flex; align-items:center; gap:.35em; padding:.35em .8em .35em .5em; background:rgba(255,246,230,.95); border:2.5px solid var(--tinta); border-radius:999px; cursor:pointer; font-weight:900; box-shadow:0 4px 0 rgba(74,42,28,.3); animation:aparece .35s ease-out backwards, flota 2.4s ease-in-out infinite; white-space:nowrap; }
+  .opcion .ico { font-size:clamp(18px, 3.8vmin, 32px); }
+  .opcion .hz { font-family:"ZCOOL KuaiLe", serif; font-size:clamp(18px, 4vmin, 34px); }
+  .opcion .py { font-size:clamp(10px, 2vmin, 17px); display:block; margin-top:-.2em; }
+  .opcion:hover { background:#fff; scale:1.06; }
+  @keyframes aparece { from{ opacity:0; scale:.4 } }
+  @keyframes flota { 0%,100%{ translate:0 0 } 50%{ translate:0 -6px } }
+
+  .burbuja { position:absolute; border-radius:50%; border:2px solid #7fb6d8; background:radial-gradient(circle at 35% 35%, #fff, rgba(200,230,250,.5)); pointer-events:none; animation:sube 1.4s ease-out forwards; z-index:40; }
+  @keyframes sube { from{opacity:0; scale:.3} 20%{opacity:1} to{opacity:0; translate:0 -260%; scale:1.1} }
+  .vapor { position:absolute; width:1.2%; height:7%; border-radius:50%; border-left:3px solid rgba(255,255,255,.95); pointer-events:none; animation:vapor 1.6s ease-out forwards; z-index:40; }
+  @keyframes vapor { from{opacity:0; translate:0 0} 30%{opacity:1} to{opacity:0; translate:6px -140%} }
+  .gota { position:absolute; width:.9%; height:1.4%; border-radius:50% 50% 50% 50%/60% 60% 40% 40%; pointer-events:none; animation:cae .6s ease-in forwards; z-index:41; }
+  @keyframes cae { to{ translate:0 350%; opacity:0 } }
+  .miga { position:absolute; width:.8%; height:.8%; background:#f4e6c0; border:1px solid #c9a86a; border-radius:30%; pointer-events:none; animation:migas .8s ease-out forwards; z-index:41; }
+  @keyframes migas { to{ translate:var(--dx) var(--dy); opacity:0; rotate:120deg } }
+
+  /* interfaz fija */
+  #mapa { position:absolute; right:2%; bottom:2%; width:16%; aspect-ratio:1; z-index:90; display:grid; grid-template-columns:1fr 1fr; gap:3px; padding:5px; background:#3b2a20; border:3px solid #1d130d; box-shadow:0 0 0 3px #c98e5a; image-rendering:pixelated; }
+  #mapa div { background:#6d5a4c; display:flex; align-items:center; justify-content:center; font-size:clamp(12px, 2.6vmin, 24px); cursor:pointer; position:relative; }
+  #mapa div.aqui { background:#f2c14e; animation:pulso 1.6s steps(2) infinite; }
+  #mapa div.bloq::after { content:"🔒"; position:absolute; right:1px; bottom:0; font-size:.55em; }
+  #mapa div.bloq { filter:grayscale(.8) brightness(.8); }
+  @keyframes pulso { 50%{ background:#ffd76e } }
+  .boton { position:absolute; z-index:90; font-family:Silkscreen, monospace; font-size:clamp(11px,2.2vmin,18px); background:#e2574e; color:#fff; border:3px solid #1d130d; box-shadow:0 4px 0 #1d130d; padding:.5em .8em; cursor:pointer; display:flex; gap:.4em; align-items:center; }
+  .boton .hz { font-family:"ZCOOL KuaiLe"; font-size:1.5em; }
+  .boton:active { translate:0 3px; box-shadow:0 1px 0 #1d130d; }
+  #jugar { left:2%; top:2%; }
+  #alejar { left:2%; bottom:3%; background:#3A6FD6; display:none; font-size:clamp(16px,3vmin,24px); }
+  #marcador { position:absolute; left:50%; top:2%; transform:translateX(-50%); z-index:90; font-family:Silkscreen, monospace; font-size:clamp(12px,2.6vmin,22px); color:#fff; text-shadow:2px 2px 0 #1d130d; display:none; }
+  #repetir { position:absolute; z-index:85; right:3%; top:3%; font-size:clamp(18px,4vmin,32px); background:var(--papel); border:3px solid var(--tinta); border-radius:50%; width:2.2em; height:2.2em; cursor:pointer; display:none; }
+
+  /* ====== primer plano: minijuego de gesto ====== */
+  #pp { position:absolute; inset:0; z-index:150; display:none; overflow:hidden; touch-action:none; }
+  #pp.on { display:block; animation:iris .5s ease-out; }
+  #pp.sale { animation:irisSale .45s ease-in forwards; }
+  @keyframes iris { from { clip-path:circle(0% at 50% 55%) } to { clip-path:circle(80% at 50% 55%) } }
+  @keyframes irisSale { from { clip-path:circle(80% at 50% 55%) } to { clip-path:circle(0% at 50% 55%) } }
+  .f-tabla { background-color:#fff1ec; background-image:linear-gradient(90deg, rgba(226,87,78,.28) 50%, transparent 50%), linear-gradient(rgba(226,87,78,.28) 50%, transparent 50%); background-size:64px 64px; }
+  .f-agua  { background-color:#eef7ff; background-image:linear-gradient(90deg, rgba(58,111,214,.22) 50%, transparent 50%), linear-gradient(rgba(58,111,214,.22) 50%, transparent 50%); background-size:64px 64px; }
+  .f-fuego { background-color:#fff4c9; background-image:radial-gradient(#f2a93b 18%, transparent 20%), radial-gradient(#f2a93b 18%, transparent 20%); background-size:56px 56px; background-position:0 0, 28px 28px; }
+  .f-mesa  { background-color:#effae6; background-image:linear-gradient(90deg, rgba(127,178,79,.3) 50%, transparent 50%), linear-gradient(rgba(127,178,79,.3) 50%, transparent 50%); background-size:64px 64px; }
+  .f-comer { background-color:#ffeef5; background-image:radial-gradient(#f59ac0 16%, transparent 18%), radial-gradient(#f59ac0 16%, transparent 18%); background-size:52px 52px; background-position:0 0, 26px 26px; }
+  #pp .mesa { position:absolute; left:50%; top:57%; width:78%; aspect-ratio:1; transform:translate(-50%,-50%); border-radius:50%; background:rgba(255,255,255,.75); border:6px solid var(--tinta); box-shadow:0 10px 0 rgba(74,42,28,.25); }
+  #pp.tabla .mesa { border-radius:28px; background:#E2B07A; box-shadow:inset 0 -14px 0 #c8915c, 0 10px 0 rgba(74,42,28,.25); }
+  #pp.agua .mesa { background:#bcd9e6; box-shadow:inset 0 14px 0 #8fb4c4, 0 10px 0 rgba(74,42,28,.25); }
+  #pp.fuego .mesa { background:#3b3b3b; box-shadow:inset 0 0 0 18px #555, 0 10px 0 rgba(74,42,28,.25); }
+  #ppZona { position:absolute; left:50%; top:57%; width:62%; aspect-ratio:1; transform:translate(-50%,-50%); }
+  #ppZona svg { width:100%; height:100%; overflow:visible; display:block; }
+  #ppZona.golpe { animation:golpe .18s; }
+  @keyframes golpe { 50% { transform:translate(-50%,-48%) scale(1.03); } }
+  #ppTrazo { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:5; }
+  #ppCartel { position:absolute; left:50%; top:3%; transform:translateX(-50%) rotate(-2deg); z-index:6; background:#fff; border:5px solid var(--tinta); border-radius:20px; padding:.25em 1em .3em; display:flex; align-items:center; gap:.5em; box-shadow:0 6px 0 var(--tinta); animation:cartel .5s cubic-bezier(.3,1.6,.5,1) backwards .25s; }
+  @keyframes cartel { from { transform:translateX(-50%) translateY(-150%) rotate(-8deg); } }
+  #ppCartel .hz { font-family:"ZCOOL KuaiLe"; font-size:clamp(30px,8vmin,70px); line-height:1; }
+  #ppCartel .py { font-weight:900; font-size:clamp(13px,2.8vmin,24px); text-align:center; }
+  #ppCartel .gesto { font-size:clamp(26px,6vmin,52px); }
+  #ppBarra { position:absolute; left:50%; top:19%; width:56%; height:3.2%; transform:translateX(-50%); z-index:6; background:#fff; border:4px solid var(--tinta); border-radius:999px; overflow:hidden; }
+  #ppBarra i { display:block; height:100%; width:0; background:repeating-linear-gradient(-45deg, #f2c14e 0 12px, #f7d77a 12px 24px); transition:width .15s; }
+  #ppReloj { position:absolute; right:3%; top:3%; width:12%; aspect-ratio:1; z-index:6; border-radius:50%; border:4px solid var(--tinta); background:conic-gradient(#E2574E var(--r, 0%), #fff 0); display:flex; align-items:center; justify-content:center; font-size:clamp(14px,3.4vmin,28px); }
+  #ppMano { position:absolute; z-index:7; font-size:clamp(34px,8vmin,70px); pointer-events:none; left:50%; top:57%; filter:drop-shadow(0 4px 0 rgba(0,0,0,.25)); }
+  #ppMano.g-cortar { animation:mCortar 1.2s ease-in-out infinite; }
+  #ppMano.g-frotar { animation:mFrotar 1s linear infinite; }
+  #ppMano.g-mantener { animation:mMantener 1s ease-in-out infinite; }
+  #ppMano.g-girar { animation:mGirar 1.4s linear infinite; }
+  #ppMano.g-tocar { animation:mTocar .7s ease-in-out infinite; }
+  @keyframes mCortar { 0% { translate:-160% -40% } 60%,100% { translate:120% 60%; opacity:0 } }
+  @keyframes mFrotar { 0% { translate:-50% -100% } 25% { translate:20% -50% } 50% { translate:-50% 0% } 75% { translate:-120% -50% } 100% { translate:-50% -100% } }
+  @keyframes mMantener { 50% { scale:.8; translate:-50% -30% } 0%,100% { translate:-50% -50% } }
+  @keyframes mGirar { from { transform:rotate(0) translateX(140%) rotate(0) } to { transform:rotate(360deg) translateX(140%) rotate(-360deg) } }
+  @keyframes mTocar { 50% { scale:.8 } 0%,100% { translate:-50% -50% } }
+  #ppVaca { position:absolute; left:1%; bottom:0; width:26%; aspect-ratio:1; z-index:8; pointer-events:none; filter: drop-shadow(4px 0 0 #fff) drop-shadow(-4px 0 0 #fff) drop-shadow(0 4px 0 #fff) drop-shadow(0 -4px 0 #fff); }
+  #ppVaca img { position:absolute; inset:0; width:100%; height:100%; }
+  #ppVaca.salta { animation:saltito .5s ease-out 2; }
+  #ppMedalla { position:absolute; inset:0; z-index:9; display:none; flex-direction:column; align-items:center; justify-content:center; background:radial-gradient(circle, rgba(255,255,255,.85) 0 30%, rgba(255,240,200,.3) 60%, transparent 80%); }
+  #ppMedalla.on { display:flex; }
+  #ppMedalla .m { font-size:clamp(90px,24vmin,220px); animation:medalla .7s cubic-bezier(.3,1.7,.5,1); }
+  #ppMedalla .rayos { position:absolute; width:90%; aspect-ratio:1; background:repeating-conic-gradient(rgba(242,193,78,.35) 0 10deg, transparent 10deg 20deg); border-radius:50%; animation:gira 6s linear infinite; z-index:-1; }
+  @keyframes medalla { from { scale:0; rotate:-30deg } }
+  @keyframes gira { to { rotate:360deg } }
+  .confeti { position:absolute; width:1.6%; height:2.6%; z-index:10; pointer-events:none; animation:confeti 1.6s ease-in forwards; }
+  @keyframes confeti { from { translate:0 0; rotate:0 } to { translate:var(--dx) 110vmin; rotate:720deg } }
+  .espuma { position:absolute; border-radius:50%; background:radial-gradient(circle at 35% 35%, #fff, rgba(220,240,255,.85)); border:2px solid #9cc7e0; pointer-events:none; z-index:4; transition:opacity .6s; }
+
+  /* capas (fuera de la casa: aquí sí hay español) */
+  .capa { position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center; background:rgba(30,20,40,.72); padding:16px; }
+  .tarjeta { background:var(--papel); border:4px solid var(--tinta); border-radius:26px; padding:28px 26px; max-width:440px; width:100%; text-align:center; box-shadow:0 8px 0 rgba(0,0,0,.3); }
+  .tarjeta h1 { margin:.1em 0 .2em; font-size:clamp(26px,6vw,38px); }
+  .tarjeta .grande { font-family:"ZCOOL KuaiLe"; font-size:84px; line-height:1; color:var(--t4); }
+  .tarjeta p { font-size:17px; line-height:1.45; margin:.6em 0; }
+  .tarjeta button { font:900 18px Nunito; background:#e2574e; color:#fff; border:3px solid var(--tinta); border-radius:999px; padding:.6em 1.6em; cursor:pointer; box-shadow:0 4px 0 var(--tinta); margin-top:10px; }
+  .tarjeta input { font:700 16px Nunito; width:100%; padding:.7em 1em; border:3px solid var(--tinta); border-radius:14px; margin-top:8px; }
+  .tarjeta small { display:block; opacity:.6; margin-top:12px; }
+  .contorno-tono { display:block; margin:0 auto; }
+  .oculto { display:none !important; }
+  #aviso { position:fixed; left:8px; bottom:6px; z-index:300; font:700 11px Nunito; color:#cbb; opacity:.7; }
+</style>
+</head>
+<body>
+
+<!-- filtros de crayón (los mismos de video/src/Texto.tsx) -->
+<svg width="0" height="0" style="position:absolute">
+  <filter id="crayon"><feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="4"/></filter>
+  <filter id="crayon-relleno" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" seed="2" result="ruido"/>
+    <feColorMatrix in="ruido" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -3 0 0 0 2.6" result="huecos"/>
+    <feComposite in="SourceGraphic" in2="huecos" operator="in" result="pintado"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="7" result="onda"/>
+    <feDisplacementMap in="pintado" in2="onda" scale="4"/>
+  </filter>
+</svg>
+
+<div id="escenario">
+  <div id="mundo">
+    <svg id="cuarto" viewBox="0 0 1000 1000"></svg>
+    <div id="vaca">
+      <div class="sombra"></div>
+      <div class="cuerpo">
+        <img data-capa="cuerpo" class="on" src="assets/vaca_cuerpo.png">
+        <img data-capa="orejas" src="assets/vaca_cuerpo_orejas.png">
+        <img data-ojos="abiertos" class="on" src="assets/vaca_ojos_abiertos.png">
+        <img data-ojos="cerrados" src="assets/vaca_ojos_cerrados.png">
+        <img data-ojos="felices" src="assets/vaca_ojos_felices.png">
+        <img data-ojos="izquierda" src="assets/vaca_ojos_izquierda.png">
+        <img data-ojos="sorpresa" src="assets/vaca_ojos_sorpresa.png">
+        <img data-hocico="sonrisa" class="on" src="assets/vaca_hocico_sonrisa.png">
+        <img data-hocico="punto" src="assets/vaca_hocico_punto.png">
+        <img data-hocico="o" src="assets/vaca_hocico_o.png">
+        <img data-hocico="abierta" src="assets/vaca_hocico_abierta.png">
+        <img data-hocico="neutra" src="assets/vaca_hocico_neutra.png">
+      </div>
+    </div>
+  </div>
+  <div id="globo"></div>
+  <button id="jugar" class="boton" title="minijuego"><span class="hz">玩</span> wán</button>
+  <button id="alejar" class="boton" title="ver toda la cocina">⤢</button>
+  <div id="marcador"></div>
+  <button id="repetir" title="otra vez">🔊</button>
+  <div id="pp">
+    <div class="mesa"></div>
+    <div id="ppZona"></div>
+    <svg id="ppTrazo" viewBox="0 0 1000 1000" preserveAspectRatio="none"></svg>
+    <div id="ppCartel"></div>
+    <div id="ppBarra"><i></i></div>
+    <div id="ppReloj">⏱</div>
+    <div id="ppMano">👆</div>
+    <div id="ppVaca"><img data-pp="cuerpo" src="assets/vaca_cuerpo.png"><img data-pp="ojos" src="assets/vaca_ojos_abiertos.png"><img data-pp="hocico" src="assets/vaca_hocico_sonrisa.png"></div>
+    <div id="ppMedalla"><div class="rayos"></div><div class="m"></div></div>
+  </div>
+  <div id="mapa">
+    <div class="aqui" data-cuarto="cocina">🍳</div>
+    <div class="bloq" data-cuarto="dormitorio">🛏️</div>
+    <div class="bloq" data-cuarto="living">🛋️</div>
+    <div class="bloq" data-cuarto="bano">🛁</div>
+  </div>
+</div>
+
+<div class="capa" id="entrada">
+  <div class="tarjeta">
+    <small style="margin:0 0 6px">chino desde cero</small>
+    <div class="grande">浸</div>
+    <svg class="contorno-tono" width="120" height="34" viewBox="0 0 120 34"><path d="M8 6 L112 28" stroke="#3A6FD6" stroke-width="6" stroke-linecap="round" fill="none" filter="url(#crayon)"/></svg>
+    <h1>Método Jìn</h1>
+    <p>Sumérgete. Toca, arrastra, escucha.</p>
+    <button id="entrar">Entrar a la casa</button>
+  </div>
+</div>
+<div class="capa oculto" id="metodo">
+  <div class="tarjeta">
+    <div class="grande" style="font-size:56px">浸 jìn</div>
+    <h1>Lo acabas de hacer</h1>
+    <p>Nadie te tradujo nada: <b>escuchaste, viste y tocaste</b>, y entendiste. Así aprende el cerebro un idioma: sonido primero, significado por la imagen, y repetir jugando.</p>
+    <p>Eso es el Método Jìn: sumergirte en chino de a poquito.</p>
+    <button id="seguir">Seguir explorando</button>
+  </div>
+</div>
+<div class="capa oculto" id="bloqueo">
+  <div class="tarjeta">
+    <div style="font-size:54px">🔒</div>
+    <h1>Esta pieza está cerrada</h1>
+    <p>Deja tu correo y te abrimos el dormitorio, el living y el baño. Tu avance queda guardado.</p>
+    <input type="email" placeholder="tu@correo.com">
+    <button id="cerrarBloqueo">Abrir la casa</button>
+    <small>(prototipo: no guarda nada)</small>
+  </div>
+</div>
+<div id="aviso">prototipo v2 · voz de prueba del navegador, no la de la vaca</div>
+
+<script>
+// =============== datos ===============
+const S = (hz, py, tonos) => { const p = py.split(" "); return [...hz].map((c, i) => [c, p[i], +tonos[i]]); };
+const TINTA = "#4A2A1C";
+const COLOR = { 1:"var(--t1)", 2:"var(--t2)", 3:"var(--t3)", 4:"var(--t4)", 5:"var(--t5)" };
+const FREGADERO = { x: 450, y: 318 };     // el lavaplatos, en el mesón
+const OBJETOS = {
+  beizi:    { nombre: S("杯子","bēi zi","15"),     x: 600, y: 668, w: 62 },
+  wan:      { nombre: S("碗","wǎn","3"),            x: 700, y: 640, w: 80 },
+  panzi:    { nombre: S("盘子","pán zi","25"),     x: 700, y: 730, w: 100 },
+  kuaizi:   { nombre: S("筷子","kuài zi","45"),    x: 810, y: 700, w: 80 },
+  pingguo:  { nombre: S("苹果","píng guǒ","23"),   x: 594, y: 300, w: 58 },
+  bingxiang:{ nombre: S("冰箱","bīng xiāng","11"), x: 100, y: 345, w: 210, fijo: true },
+  guo:      { nombre: S("锅","guō","1"),            x: 741, y: 292, w: 96 },
+  chahu:    { nombre: S("茶壶","chá hú","22"),     x: 310, y: 292, w: 84 },
+};
+// estado de la cocina: las acciones posibles salen de aquí
+const E = { beizi:"vacio", wan:"vacio", panzi:"lleno", kuaizi:"limpio", pingguo:"sucio", bingxiang:"cerrado", guo:"vacio", chahu:"lleno" };
+
+// una acción: verbo (botón), frase (lo que dice la vaca), animación, dónde ocurre y qué cambia
+const A = (v, ico, frase, anim, extra = {}) => ({ v, ico, frase, anim, ...extra });
+const XI = S("洗","xǐ","3"), NA = S("拿","ná","2"), CHI = S("吃","chī","1"), HE = S("喝","hē","1");
+function acciones(id) {
+  const e = E[id];
+  switch (id) {
+    case "beizi":
+      if (e === "vacio") return [
+        A(S("倒水","dào shuǐ","43"), "🚰", S("我倒水","wǒ dào shuǐ","343"), "llenar", { lugar:"fregadero", sfx:"tragos", cambia:{ beizi:"agua" } }),
+        A(S("倒茶","dào chá","42"), "🫖", S("我倒茶","wǒ dào chá","342"), "servirTe", { sfx:"tragos", cambia:{ beizi:"te" } }) ];
+      if (e === "agua") return [ A(HE, "🥤", S("我喝水","wǒ hē shuǐ","313"), "beber", { sfx:"tragos", cambia:{ beizi:"sucio" } }) ];
+      if (e === "te")   return [ A(S("喝茶","hē chá","12"), "🍵", S("我喝茶","wǒ hē chá","312"), "beber", { sfx:"tragos", cambia:{ beizi:"sucio" } }) ];
+      return [ A(XI, "🫧", S("我洗杯子","wǒ xǐ bēi zi","3315"), "lavar", { lugar:"fregadero", sfx:"pop-burbuja", cambia:{ beizi:"vacio" } }) ];
+    case "chahu":
+      return E.beizi === "vacio" ? [ A(S("倒茶","dào chá","42"), "🫖", S("我倒茶","wǒ dào chá","342"), "servirTe", { sfx:"tragos", cambia:{ beizi:"te" } }) ] : [];
+    case "wan":
+      if (e === "vacio") return E.guo === "cocido"
+        ? [ A(S("盛饭","shèng fàn","44"), "🍚", S("我盛饭","wǒ shèng fàn","344"), "servirArroz", { sfx:"whoosh", cambia:{ wan:"lleno", guo:"sucio" } }) ]
+        : [ A(NA, "✋", S("我拿碗","wǒ ná wǎn","323"), "tomar", { sfx:"whoosh" }) ];
+      if (e === "lleno") return [ A(S("吃饭","chī fàn","14"), "😋", S("我吃饭","wǒ chī fàn","314"), "comer", { sfx:"nam", cambia:{ wan:"sucio" } }) ];
+      return [ A(XI, "🫧", S("我洗碗","wǒ xǐ wǎn","333"), "lavar", { lugar:"fregadero", sfx:"pop-burbuja", cambia:{ wan:"vacio" } }) ];
+    case "guo":
+      if (e === "vacio") return [ A(S("做饭","zuò fàn","44"), "🔥", S("我做饭","wǒ zuò fàn","344"), "cocinar", { sfx:"brillo", cambia:{ guo:"cocido" } }) ];
+      if (e === "cocido") return E.wan === "vacio" ? [ A(S("盛饭","shèng fàn","44"), "🍚", S("我盛饭","wǒ shèng fàn","344"), "servirArroz", { objeto:"wan", sfx:"whoosh", cambia:{ wan:"lleno", guo:"sucio" } }) ] : [];
+      return [ A(XI, "🫧", S("我洗锅","wǒ xǐ guō","331"), "lavar", { lugar:"fregadero", sfx:"pop-burbuja", cambia:{ guo:"vacio" } }) ];
+    case "panzi":
+      if (e === "lleno") return [ A(S("吃饺子","chī jiǎo zi","135"), "🥟", S("我吃饺子","wǒ chī jiǎo zi","3135"), "comer", { sfx:"nam", cambia:{ panzi:"sucio" } }) ];
+      if (e === "sucio") return [ A(XI, "🫧", S("我洗盘子","wǒ xǐ pán zi","3325"), "lavar", { lugar:"fregadero", sfx:"pop-burbuja", cambia:{ panzi:"limpio" } }) ];
+      return [ A(NA, "✋", S("我拿盘子","wǒ ná pán zi","3225"), "tomar", { sfx:"whoosh" }) ];
+    case "kuaizi":
+      return [ A(NA, "✋", S("我拿筷子","wǒ ná kuài zi","3245"), "tomar", { sfx:"whoosh" }) ];
+    case "pingguo":
+      if (e === "sucio")  return [ A(XI, "🫧", S("我洗苹果","wǒ xǐ píng guǒ","3323"), "lavar", { lugar:"fregadero", sfx:"pop-burbuja", cambia:{ pingguo:"limpio" } }) ];
+      if (e === "limpio") return [
+        A(CHI, "😋", S("我吃苹果","wǒ chī píng guǒ","3123"), "comer", { sfx:"nam", cambia:{ pingguo:"nada" } }),
+        A(S("切","qiē","1"), "🔪", S("我切苹果","wǒ qiē píng guǒ","3123"), "cortar", { sfx:"golpe", cambia:{ pingguo:"cortado" } }) ];
+      if (e === "cortado") return [ A(CHI, "😋", S("我吃苹果","wǒ chī píng guǒ","3123"), "comer", { sfx:"nam", cambia:{ pingguo:"nada" } }) ];
+      return [];
+    case "bingxiang": {
+      if (e === "cerrado") return [ A(S("打开","dǎ kāi","31"), "🚪", S("我打开冰箱","wǒ dǎ kāi bīng xiāng","33111"), "abrir", { sfx:"whoosh", cambia:{ bingxiang:"abierto" } }) ];
+      const l = [];
+      if (E.pingguo === "nada") l.push(A(S("拿苹果","ná píng guǒ","223"), "🍎", S("我拿苹果","wǒ ná píng guǒ","3223"), "sacar", { objeto:"pingguo", sfx:"whoosh", cambia:{ pingguo:"sucio" } }));
+      if (E.panzi === "limpio") l.push(A(S("拿饺子","ná jiǎo zi","235"), "🥟", S("我拿饺子","wǒ ná jiǎo zi","3235"), "sacar", { objeto:"panzi", sfx:"whoosh", cambia:{ panzi:"lleno" } }));
+      l.push(A(S("关上","guān shang","15"), "👋", S("我关上冰箱","wǒ guān shang bīng xiāng","31511"), "cerrar", { sfx:"golpe", cambia:{ bingxiang:"cerrado" } }));
+      return l;
+    }
+  }
+  return [];
+}
+const ZHE_SHI = S("这是","zhè shì","44"), GEI_WO = S("给我","gěi wǒ","33"), DUI = S("对","duì","4"), BU_DUI = S("不对","bú duì","24");
+
+// =============== dibujos a crayón (viewBox -60 -60 120 120); data-solo = estados en que se ve ===============
+const F = (d, fill, g = 4) => `<path d="${d}" fill="${fill}" filter="url(#crayon-relleno)"/>${g ? `<path d="${d}" fill="none" stroke="${TINTA}" stroke-width="${g}" stroke-linejoin="round" stroke-linecap="round" filter="url(#crayon)"/>` : ""}`;
+const T = (d, color = TINTA, g = 4) => `<path d="${d}" fill="none" stroke="${color}" stroke-width="${g}" stroke-linecap="round" filter="url(#crayon)"/>`;
+const elip = (cx, cy, rx, ry) => `M${cx-rx} ${cy} a${rx} ${ry} 0 1 0 ${2*rx} 0 a${rx} ${ry} 0 1 0 ${-2*rx} 0Z`;
+const solo = (estados, svg) => `<g data-solo="${estados}">${svg}</g>`;
+const MANCHAS = (c) => `${F(elip(-10,10,7,4), c, 0)}${F(elip(12,22,5,3), c, 0)}${F(elip(4,-2,4,3), c, 0)}`;
+const DIBUJO = {
+  beizi: `${F("M-26 -38 L26 -38 L20 44 Q0 52 -20 44 Z", "#E3F1F5")}`
+    + solo("agua", F("M-23 -6 L23 -6 L20 42 Q0 49 -20 42 Z", "#7FC3E8", 0))
+    + solo("te", F("M-23 -6 L23 -6 L20 42 Q0 49 -20 42 Z", "#C98E3A", 0))
+    + solo("sucio", F("M-21 30 L21 30 L20 42 Q0 49 -20 42 Z", "#c9b48a", 0) + MANCHAS("#b39a6a"))
+    + `${T("M-26 -38 L26 -38 L20 44 Q0 52 -20 44 Z")}${T("M-14 -28 L-12 30", "#fff", 4)}`,
+  wan: `${F("M-52 -6 Q-50 46 0 48 Q50 46 52 -6 Z", "#F6F1E7")}${T("M-44 14 Q0 30 44 14", "#3A6FD6", 4)}${T("M-30 30 Q0 40 30 30", "#3A6FD6", 3)}${F(elip(0,-6,52,12), "#fff")}`
+    + solo("lleno", F("M-42 -8 Q-30 -36 0 -38 Q30 -36 42 -8 Z", "#FFFDF7", 3) + T("M-14 -22 L-10 -22 M8 -28 L12 -28 M0 -16 L4 -16", "#e6dcc4", 3))
+    + solo("sucio", F(elip(-14,-6,6,3), "#fff", 2) + F(elip(10,-4,5,3), "#fff", 2) + F(elip(26,-8,4,2), "#d8c79a", 0) + F(elip(-28,-7,4,2), "#d8c79a", 0)),
+  panzi: `${F(elip(0,4,56,26), "#F6F1E7")}${F(elip(0,2,38,16), "#fff", 3)}${T("M-46 14 Q0 34 46 14", "#E07F68", 3)}`
+    + solo("lleno", [[-18,-4],[6,-10],[16,6],[-6,8]].map(([x,y]) => F(`M${x-15} ${y+4} Q${x-12} ${y-12} ${x} ${y-12} Q${x+12} ${y-12} ${x+15} ${y+4} Q${x} ${y+9} ${x-15} ${y+4} Z`, "#FBF1D6", 3) + T(`M${x-6} ${y-8} L${x-4} ${y-2} M${x+2} ${y-10} L${x+3} ${y-3}`, "#d9c59a", 2)).join(""))
+    + solo("sucio", F(elip(-12,2,10,5), "#b5532f", 0) + F(elip(14,-4,6,3), "#b5532f", 0) + F(elip(4,10,3,2), "#f4e6c0", 0) + F(elip(-24,-2,3,2), "#f4e6c0", 0)),
+  kuaizi: `${F("M-52 -14 L48 -30 L50 -24 L-50 -6 Z", "#C8915C", 3)}${F("M-50 6 L50 -8 L51 -1 L-49 14 Z", "#C8915C", 3)}${T("M30 -27 L33 -21", "#E2574E", 5)}${T("M32 -6 L33 1", "#E2574E", 5)}`,
+  pingguo: solo("sucio limpio",
+      F("M0 -26 C-34 -40 -50 -6 -42 18 C-34 42 -14 50 0 40 C14 50 34 42 42 18 C50 -6 34 -40 0 -26 Z", "#E2574E")
+      + T("M18 -10 C24 -4 26 6 24 14", "#F28B7D", 4) + T("M0 -26 Q2 -40 8 -48", TINTA, 5) + F("M6 -40 Q22 -54 34 -42 Q20 -32 6 -40 Z", "#7FB24F", 3))
+    + solo("sucio", F(elip(-16,4,4,3), "#8a6a3a", 0) + F(elip(-6,22,3,2), "#8a6a3a", 0) + F(elip(14,-6,3,2), "#8a6a3a", 0) + F(elip(20,18,4,2), "#8a6a3a", 0))
+    + solo("limpio", T("M-26 -14 L-22 -18 M-30 -8 L-27 -10", "#fff", 3))
+    + solo("cortado",
+      `<g transform="translate(-14 4) rotate(-14)">${F("M-4 -26 C-38 -40 -52 -6 -44 18 C-36 42 -16 50 -4 40 Z", "#E2574E")}${F("M-4 -22 C-30 -30 -42 -4 -36 16 C-30 34 -16 40 -4 34 Z", "#FFF1C9", 2)}${F(elip(-14,8,3,5), "#5a3a1e", 0)}</g>`
+      + `<g transform="translate(14 4) rotate(14)">${F("M4 -26 C38 -40 52 -6 44 18 C36 42 16 50 4 40 Z", "#E2574E")}${F("M4 -22 C30 -30 42 -4 36 16 C30 34 16 40 4 34 Z", "#FFF1C9", 2)}${F(elip(14,8,3,5), "#5a3a1e", 0)}</g>`),
+  bingxiang: `<path d="M-44 -68 L44 -68 L50 -58 L-50 -58 Z" fill="#F7FAFB"/>${F("M-44 -68 L44 -68 L50 -58 L-50 -58 Z", "#F7FAFB")}<path d="M-50 -58 L50 -58 L50 60 L-50 60 Z" fill="#E8EEF0"/>${F("M-50 -58 L50 -58 L50 60 L-50 60 Z", "#E8EEF0")}<path d="M-44 -52 L44 -52 L44 54 L-44 54 Z" fill="#FFF8C9"/><g>${F("M-44 -52 L44 -52 L44 54 L-44 54 Z", "#FFF8C9", 0)}${T("M-44 -18 L44 -18", "#cfd6b0", 3)}${T("M-44 18 L44 18", "#cfd6b0", 3)}${F(elip(-22,-30,9,9), "#E2574E", 2)}${F(elip(-4,-30,9,9), "#E2574E", 2)}${F("M10 -46 L26 -46 L26 -22 L10 -22 Z", "#fff", 2)}${F(elip(14,6,14,8), "#7FB24F", 2)}${F("M-34 28 Q-30 20 -22 20 Q-14 20 -10 28 Q-22 32 -34 28 Z", "#FBF1D6", 2)}${F("M-8 30 Q-4 22 4 22 Q12 22 16 30 Q4 34 -8 30 Z", "#FBF1D6", 2)}</g><g class="puerta"><path d="M-50 -58 L50 -58 L50 60 L-50 60 Z" fill="#DDE6EA"/>${F("M-50 -58 L50 -58 L50 60 L-50 60 Z", "#DDE6EA")}${F("M-28 14 L-6 14 L-6 40 L-28 40 Z", "#FFF6E6", 2)}${T("M-24 22 H-10 M-24 28 H-12 M-24 34 H-14", "#E2574E", 1.5)}${F("M-17 10 a4 4 0 1 0 0.1 0Z", "#3A6FD6", 1.5)}${F("M-30 -40 q4 -6 8 0 q4 -6 8 0 l-8 10z", "#E2574E", 2)}${F("M-4 -34 a6 6 0 1 0 0.1 0Z", "#F2C14E", 2)}${T("M-50 -14 L50 -14", TINTA, 4)}${T("M36 -44 L36 -26", "#8a979e", 6)}${T("M36 0 L36 30", "#8a979e", 6)}${T("M-38 -48 L-38 48", "#fff", 3)}</g>`,
+  guo: `${T("M-58 -4 L-44 -4", TINTA, 7)}${T("M44 -4 L58 -4", TINTA, 7)}${F("M-46 -10 L46 -10 L40 36 Q0 46 -40 36 Z", "#A9B4BA")}${F(elip(0,-10,46,12), "#5d6a71")}`
+    + solo("cocido", F(elip(0,-10,38,9), "#FFFDF7", 2) + T("M-16 -12 L-12 -12 M6 -8 L10 -8 M-2 -14 L2 -14", "#e6dcc4", 3))
+    + solo("sucio", F(elip(-12,-10,8,3), "#e9dfc6", 0) + F(elip(14,-8,6,2), "#e9dfc6", 0))
+    + `${T("M-30 6 Q-26 26 -14 32", "#fff", 3)}`,
+  chahu: `${T("M30 -6 Q56 -10 50 -36", TINTA, 6)}${F("M-36 -22 Q-42 30 0 36 Q42 30 36 -22 Z", "#7FB24F")}${F("M-40 6 Q-62 -2 -58 -26 L-52 -26 Q-52 -6 -36 -2 Z", "#7FB24F", 3)}${F(elip(0,-22,32,8), "#9ccf6c")}${F("M-8 -40 L8 -40 L6 -30 L-6 -30 Z", "#E2574E", 3)}${T("M-20 0 Q-16 18 -4 24", "#fff", 3)}`,
+};
+
+// =============== cuarto en pixel art ===============
+const cuarto = document.getElementById("cuarto");
+(function casa() {
+  // Cocina en vista 3/4: cada mueble muestra su cara de arriba (clara) y la de adelante (más oscura).
+  const rr = (x, y, w, h, r = 10) => `M${x+r} ${y} H${x+w-r} Q${x+w} ${y} ${x+w} ${y+r} V${y+h-r} Q${x+w} ${y+h} ${x+w-r} ${y+h} H${x+r} Q${x} ${y+h} ${x} ${y+h-r} V${y+r} Q${x} ${y} ${x+r} ${y} Z`;
+  const sombra = (cx, cy, rx, ry, o = .2) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="rgba(70,40,15,${o})"/>`;
+  const caja = (x, y, w, alto, prof, arriba, frente, r = 10) => F(rr(x, y + prof, w, alto, r), frente) + F(rr(x, y, w, prof + r, r), arriba);
+  let s = `<defs>
+    <pattern id="papel" width="70" height="70" patternUnits="userSpaceOnUse">
+      <rect width="70" height="70" fill="#F8E7CC"/>
+      <circle cx="17" cy="17" r="5" fill="#F2C9A8"/><circle cx="52" cy="52" r="5" fill="#F2C9A8"/>
+      <path d="M52 10 q4 6 0 12 q-4 -6 0 -12z" fill="#A9D3C2"/><path d="M17 45 q4 6 0 12 q-4 -6 0 -12z" fill="#A9D3C2"/>
+    </pattern>
+    <pattern id="alfombra" width="44" height="44" patternUnits="userSpaceOnUse">
+      <rect width="44" height="44" fill="#E9785F"/><path d="M0 22 L22 0 L44 22 L22 44Z" fill="#F2A07E"/><circle cx="22" cy="22" r="5" fill="#FBE3B5"/>
+    </pattern>
+    <pattern id="tapete" width="30" height="30" patternUnits="userSpaceOnUse">
+      <rect width="30" height="30" fill="#8FC3D6"/><rect width="15" height="30" fill="#B8DCE7"/>
+    </pattern>
+    <radialGradient id="luz" cx="55%" cy="30%" r="80%">
+      <stop offset="0" stop-color="#FFF1BF" stop-opacity=".45"/><stop offset=".55" stop-color="#FFF1BF" stop-opacity="0"/><stop offset="1" stop-color="#4a2410" stop-opacity=".32"/>
+    </radialGradient>
+    <linearGradient id="vidrio" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#D8F1FF"/><stop offset="1" stop-color="#9FD3F0"/></linearGradient>
+  </defs>`;
+
+  // ---------- pared ----------
+  s += `<rect width="1000" height="390" fill="url(#papel)"/>`;
+  s += F(rr(-10, -10, 1020, 34, 0), "#E7C29A", 0) + T("M0 24 H1000", "#B98557", 4);
+  // zócalo de madera
+  s += F(rr(-10, 300, 1020, 92, 0), "#C9915D", 0);
+  for (let x = 20; x < 1000; x += 60) s += T(`M${x} 306 V388`, "#B07A48", 3);
+  s += T("M0 302 H1000", "#9a6a40", 5);
+
+  // ventana con cortinas y maceta
+  s += F(rr(440, 46, 180, 190, 14), "#8A5A3A") + F(rr(452, 58, 156, 166, 8), "url(#vidrio)", 0);
+  s += T("M530 58 V224 M452 140 H608", "#8A5A3A", 7) + T("M466 72 L500 106 M476 72 L520 116", "#fff", 4);
+  s += F("M430 38 Q470 60 456 250 L430 250 Z", "#F2A07E") + F("M630 38 Q590 60 604 250 L630 250 Z", "#F2A07E");
+  s += F(rr(420, 26, 220, 18, 9), "#C9915D");
+  s += F(rr(430, 236, 200, 16, 6), "#E7C29A");
+  s += F("M560 236 L566 206 L594 206 L600 236 Z", "#D9785F") + F("M570 208 Q560 180 572 170 Q584 186 578 208 Z M584 208 Q596 176 610 178 Q600 196 590 208 Z", "#7FB24F");
+
+  // alacenas de arriba (izquierda)
+  s += sombra(290, 198, 120, 10, .15);
+  s += caja(185, 46, 220, 140, 0, "#9CC9BA", "#9CC9BA", 12);
+  s += F(rr(195, 58, 96, 116, 10), "#B3D8CB") + F(rr(299, 58, 96, 116, 10), "#B3D8CB");
+  s += F(rr(280, 108, 8, 22, 4), "#F2C14E", 2) + F(rr(306, 108, 8, 22, 4), "#F2C14E", 2);
+  // riel con utensilios colgando
+  s += T("M200 214 H392", "#8a979e", 6);
+  [[220, "cuchara"], [262, "espatula"], [304, "batidor"], [346, "cucharon"]].forEach(([x, t]) => {
+    s += T(`M${x} 214 V232`, "#8a979e", 3);
+    if (t === "cuchara") s += T(`M${x} 232 V268`, "#C8915C", 6) + F(`M${x-9} 268 Q${x} 292 ${x+9} 268 Z`, "#C8915C", 3);
+    if (t === "espatula") s += T(`M${x} 232 V262`, TINTA, 5) + F(rr(x-11, 262, 22, 22, 5), "#E2574E", 3);
+    if (t === "batidor") s += T(`M${x} 232 V254`, TINTA, 5) + F(`M${x} 254 Q${x-16} 284 ${x} 290 Q${x+16} 284 ${x} 254 Z`, "none", 3) + T(`M${x} 256 V288`, TINTA, 2);
+    if (t === "cucharon") s += T(`M${x} 232 V266`, "#8a979e", 5) + F(`M${x-13} 266 Q${x} 294 ${x+13} 266 Z`, "#A9B4BA", 3);
+  });
+
+  // campana sobre el fogón
+  s += F("M690 110 L800 110 L822 196 L668 196 Z", "#E8EEF0") + F(rr(712, 30, 66, 82, 6), "#D5DEE2") + T("M676 186 H814", "#A9B4BA", 4);
+  // repisa abierta con frascos y platos
+  s += sombra(915, 168, 72, 7, .15) + F(rr(838, 140, 150, 20, 6), "#C8915C");
+  [[850, 92, "#F2C14E", 48], [884, 104, "#E2574E", 36], [916, 86, "#A9D3C2", 54], [954, 98, "#F2A07E", 42]].forEach(([x, y, c, h]) =>
+    s += F(rr(x, y, 28, h, 8), "#EAF4F6") + F(rr(x + 3, y + h * .35, 22, h * .62, 6), c, 0) + F(rr(x - 2, y - 8, 32, 12, 4), "#C8915C", 2));
+  s += F(rr(838, 230, 150, 20, 6), "#C8915C");
+  [[858, 196], [898, 192], [938, 196]].forEach(([x, y]) => s += F(`M${x-18} ${y+34} A20 34 0 0 1 ${x+18} ${y+34} Z`, "#F6F1E7") + T(`M${x-12} ${y+30} A14 26 0 0 1 ${x+12} ${y+30}`, "#3A6FD6", 3));
+  // reloj sobre el refri
+  s += F("M66 150 a36 36 0 1 0 72 0 a36 36 0 1 0 -72 0Z", "#FFF6E6") + T("M102 150 V126 M102 150 L120 158", TINTA, 5) + F("M96 110 h12 v-10 h-12z", "#E2574E", 2);
+
+  // ---------- piso de tablas ----------
+  s += `<rect y="390" width="1000" height="610" fill="#E2AE76"/>`;
+  let y = 390, h = 38, fila = 0;
+  while (y < 1000) {
+    s += `<rect y="${y}" width="1000" height="${h}" fill="${fila % 2 ? "#DCA56B" : "#E6B47E"}"/>`;
+    s += T(`M0 ${y} H1000`, "#B9814B", 2.5);
+    for (let x = (fila % 3) * 110 + 60; x < 1000; x += 330) s += T(`M${x} ${y + 3} V${y + h - 3}`, "#B9814B", 2.5);
+    y += h; h *= 1.09; fila++;
+  }
+
+  // ---------- refrigerador (sombra; el refri es un objeto) ----------
+  s += sombra(105, 462, 112, 20, .25);
+
+  // ---------- mesón con muebles ----------
+  s += sombra(545, 478, 400, 22, .22);
+  s += F(rr(175, 345, 740, 118, 10), "#7FB5A5");                    // cara de adelante
+  for (let x = 185; x < 905; x += 122) {
+    if (x > 660 && x < 800) continue;                                    // ahí va el horno
+    s += F(rr(x, 356, 110, 96, 10), "#9CC9BA", 3) + F(rr(x + 48, 372, 14, 8, 4), "#F2C14E", 2);
+  }
+  // horno bajo el fogón
+  s += F(rr(674, 354, 132, 100, 10), "#4a4a4a") + F(rr(688, 382, 104, 58, 8), "#2b2b2b", 3) + T("M694 368 H786", "#A9B4BA", 5);
+  // cubierta (cara de arriba)
+  s += F(rr(165, 296, 760, 56, 12), "#F4EEE3") + T("M172 344 H918", "#D8CDBA", 4);
+  // fogón
+  s += F(rr(676, 300, 130, 40, 8), "#3b3b3b", 3);
+  s += `<ellipse cx="711" cy="320" rx="22" ry="8" fill="#555"/><ellipse cx="771" cy="320" rx="22" ry="8" fill="#555"/>`;
+  // lavaplatos con llave
+  s += F(rr(392, 302, 116, 40, 10), "#8a979e", 3) + F(rr(400, 308, 100, 28, 8), "#BFD8E2", 0);
+  s += T("M452 302 V262 Q452 250 466 250 L480 250 Q490 250 490 262 V274", "#A9B4BA", 9) + F(rr(442, 294, 20, 10, 4), "#A9B4BA", 2);
+  // tabla de picar bajo la manzana
+  s += F(rr(548, 314, 92, 28, 8), "#E2B07A", 3) + `<circle cx="630" cy="328" r="4" fill="${TINTA}"/>`;
+  // frasco con utensilios de palo junto a la tetera
+  s += F(rr(222, 286, 34, 44, 8), "#F2A07E") + T("M232 286 L226 252 M240 286 L242 248 M248 286 L256 256", "#C8915C", 5);
+
+  // tapete frente al lavaplatos
+  s += F(rr(345, 500, 220, 60, 26), "url(#tapete)");
+
+  // ---------- comedor ----------
+  s += `<ellipse cx="690" cy="780" rx="275" ry="150" fill="url(#alfombra)" filter="url(#crayon-relleno)"/>` + T("M415 780 A275 150 0 1 0 965 780 A275 150 0 1 0 415 780", "#B5533F", 5);
+  // sillas de atrás (respaldos)
+  [[560, 560], [820, 560]].forEach(([x, y]) => s += F(rr(x - 46, y, 92, 100, 22), "#E2574E") + F(rr(x - 34, y + 14, 68, 40, 14), "#F28B7D", 0));
+  // mesa redonda: patas, canto y cubierta
+  s += sombra(690, 845, 170, 36, .25);
+  s += F(rr(674, 720, 32, 120, 8), "#9a6a40") + F("M610 846 Q690 818 770 846 L770 856 Q690 832 610 856 Z", "#9a6a40", 3);
+  s += F("M495 700 A195 100 0 0 0 885 700 L885 724 A195 100 0 0 1 495 724 Z", "#B07A48");
+  s += `<ellipse cx="690" cy="700" rx="195" ry="100" fill="#D49A62" filter="url(#crayon-relleno)"/>` + T("M495 700 A195 100 0 1 0 885 700 A195 100 0 1 0 495 700", TINTA, 5);
+  s += `<ellipse cx="690" cy="700" rx="150" ry="72" fill="#FFF6E6" opacity=".65" filter="url(#crayon-relleno)"/>` + T("M560 676 A150 72 0 0 1 820 676", "#E07F68", 3);
+  // sillas de adelante (asientos)
+  [[540, 850], [840, 850]].forEach(([x, y]) => s += sombra(x, y + 62, 54, 12, .2) + T(`M${x-34} ${y+20} V${y+66} M${x+34} ${y+20} V${y+66}`, "#8A5A3A", 8) + caja(x - 50, y - 6, 100, 24, 26, "#F28B7D", "#E2574E", 14));
+
+  // ---------- rincones ----------
+  // planta grande abajo a la izquierda
+  s += sombra(70, 985, 70, 14, .25);
+  s += F("M30 900 L110 900 L100 985 L40 985 Z", "#D9785F") + F(rr(24, 890, 92, 20, 8), "#E99A7F");
+  [["M70 892 Q20 820 0 830 Q30 860 62 896 Z"], ["M70 892 Q60 780 90 760 Q96 820 78 894 Z"], ["M74 894 Q130 830 160 846 Q120 870 82 898 Z"], ["M66 894 Q40 760 20 760 Q36 830 60 898 Z"]]
+    .forEach(([d]) => s += F(d, "#6FA544"));
+  // canasto con verduras
+  s += sombra(370, 975, 80, 14, .22);
+  s += F("M300 912 Q300 880 330 880 L420 880 Q450 880 446 912 L436 966 Q434 976 424 976 L320 976 Q310 976 308 966 Z", "#D9A55B");
+  s += T("M306 920 H442 M310 944 H438", "#B07A48", 4);
+  s += F("M330 884 Q322 840 340 830 Q350 860 344 884 Z", "#7FB24F") + F("M352 884 L344 850 L372 850 L364 884 Z", "#F28C28") + F(`M390 884 a18 16 0 1 1 36 0 Z`, "#E2574E");
+  // basurero junto al refri
+  s += sombra(232, 548, 34, 9, .22) + F(rr(206, 474, 52, 72, 12), "#A9B4BA") + F(rr(200, 466, 64, 16, 8), "#8a979e") + T("M216 490 V530 M232 490 V530 M248 490 V530", "#8a979e", 3);
+
+  // luz cálida encima de todo
+  s += `<rect width="1000" height="1000" fill="url(#luz)" pointer-events="none"/>`;
+  cuarto.innerHTML = s;
+})();
+
+// =============== cámara (zoom) ===============
+const escenario = document.getElementById("escenario"), mundo = document.getElementById("mundo"), alejar = document.getElementById("alejar");
+const cam = { x: 500, y: 500, s: 1 };
+function enfocar(x, y, s) {
+  cam.s = s;
+  // que no se vea fuera del cuarto
+  const mitad = 500 / s;
+  cam.x = Math.max(mitad, Math.min(1000 - mitad, x)); cam.y = Math.max(mitad, Math.min(1000 - mitad, y));
+  const tx = 50 - cam.x * s / 10, ty = 50 - cam.y * s / 10;
+  mundo.style.transform = `translate(${tx}%, ${ty}%) scale(${s})`;
+  alejar.style.display = s > 1 ? "flex" : "none";
+}
+const verTodo = () => enfocar(500, 500, 1);
+// de unidades del cuarto (0-1000) a % de la pantalla, contando el zoom: para el globo y las opciones
+const enPantalla = (x, y) => ({ x: (50 + (x - cam.x) * cam.s / 10), y: (50 + (y - cam.y) * cam.s / 10) });
+alejar.addEventListener("click", () => { cerrarOpciones(); verTodo(); });
+
+// =============== objetos ===============
+const els = {};
+for (const [id, o] of Object.entries(OBJETOS)) {
+  const d = document.createElement("div");
+  d.className = "obj idle"; d.dataset.id = id;
+  d.style.left = o.x/10 + "%"; d.style.top = o.y/10 + "%"; d.style.width = o.w/10 + "%"; d.style.aspectRatio = "1";
+  d.style.animationDelay = (-Math.random()*3) + "s";
+  d.innerHTML = `<svg viewBox="-60 -60 120 120">${DIBUJO[id]}</svg>`;
+  mundo.appendChild(d); els[id] = d;
+  hacerArrastrable(d, id);
+}
+let vaporTimer = null;
+function pintar() {
+  for (const [id, el] of Object.entries(els)) {
+    el.querySelectorAll("[data-solo]").forEach(g => g.style.display = g.dataset.solo.split(" ").includes(E[id]) ? "" : "none");
+    el.classList.toggle("nada", E[id] === "nada");
+  }
+  els.bingxiang.classList.toggle("abierto", E.bingxiang === "abierto");
+  clearInterval(vaporTimer);
+  if (E.guo === "cocido") vaporTimer = setInterval(() => particula("vapor", OBJETOS.guo), 450);
+}
+pintar();
+
+// =============== vaca ===============
+const vacaEl = document.getElementById("vaca");
+const vaca = { x: 250, y: 780 };
+function ponerVaca(x, y) {
+  vaca.x = Math.max(80, Math.min(920, x)); vaca.y = Math.max(520, Math.min(990, y));
+  vacaEl.style.left = vaca.x/10 + "%"; vacaEl.style.top = vaca.y/10 + "%";
+}
+ponerVaca(vaca.x, vaca.y);
+const capa = (attr, val) => {
+  vacaEl.querySelectorAll(`[data-${attr}]`).forEach(i => i.classList.toggle("on", i.dataset[attr] === val));
+  const m = document.querySelector(`#ppVaca [data-pp="${attr}"]`); // la vaca chica del primer plano copia la cara
+  if (m) m.src = `assets/vaca_${attr}_${val}.png`;
+};
+let ojosBase = "abiertos";
+const ojos = v => { ojosBase = v; capa("ojos", v); };
+const hocico = v => capa("hocico", v);
+const orejas = arriba => { vacaEl.querySelector('[data-capa="cuerpo"]').classList.toggle("on", !arriba); vacaEl.querySelector('[data-capa="orejas"]').classList.toggle("on", arriba); };
+setInterval(() => { if (ojosBase !== "abiertos") return; capa("ojos", "cerrados"); setTimeout(() => capa("ojos", ojosBase), 130); }, 3400);
+function festejo(ms = 1400) {
+  ojos("felices"); orejas(true); vacaEl.classList.remove("salta"); void vacaEl.offsetWidth; vacaEl.classList.add("salta");
+  setTimeout(() => { ojos("abiertos"); orejas(false); vacaEl.classList.remove("salta"); }, ms);
+}
+
+// =============== audio ===============
+const sfx = n => { try { const a = new Audio(`assets/${n}.mp3`); a.volume = .55; a.play().catch(()=>{}); } catch {} };
+const musica = new Audio("assets/fondo.mp3"); musica.loop = true; musica.volume = .16;
+let vozZh = null;
+const elegirVoz = () => { const v = speechSynthesis.getVoices(); vozZh = v.find(x => /zh[-_]CN/i.test(x.lang) && /female|xiaoxiao|huihui|ting|yaoyao/i.test(x.name)) || v.find(x => /zh[-_]CN/i.test(x.lang)) || v.find(x => /^zh/i.test(x.lang)) || null; };
+elegirVoz(); speechSynthesis.onvoiceschanged = elegirVoz;
+
+const globo = document.getElementById("globo");
+let globoSils = null;
+function mostrarGlobo(sils) {
+  globoSils = sils;
+  globo.innerHTML = `<div class="linea">${sils.map(([hz, py, t]) => `<div class="sil"><span class="py" style="color:${COLOR[t]}">${py}</span><span class="hz">${hz}</span></div>`).join("")}</div>`;
+  ubicarGlobo(); globo.classList.add("on");
+}
+function ubicarGlobo() {
+  if (enPP) { globo.style.zIndex = 160; globo.style.left = "24%"; globo.style.top = "76%"; return; }
+  globo.style.zIndex = "";
+  const p = enPantalla(vaca.x, vaca.y - 215 / Math.max(1, cam.s * .8)); globo.style.left = Math.max(12, Math.min(88, p.x)) + "%"; globo.style.top = Math.max(16, p.y) + "%"; }
+const utterances = []; // referencia viva: si no, Chrome a veces bota el audio y nunca avisa que terminó
+let bocaTimer = null, ocultaGlobo = null, turnoVoz = 0;
+function hablar(sils, { rate = 0.8, globo: g = true } = {}) {
+  return new Promise(res => {
+    const turno = ++turnoVoz;
+    clearTimeout(ocultaGlobo);
+    if (g) mostrarGlobo(sils);
+    let listo = false;
+    const fin = () => {
+      if (listo) return; listo = true;
+      if (turno === turnoVoz) { clearInterval(bocaTimer); hocico("sonrisa"); musica.volume = .16; ocultaGlobo = setTimeout(() => globo.classList.remove("on"), 1500); }
+      res();
+    };
+    // la boca y el tiempo no dependen de que el navegador avise: así nunca se queda pegado
+    const dur = 500 + sils.length * 380 / rate;
+    musica.volume = .03; clearInterval(bocaTimer);
+    const bocas = ["abierta", "o", "abierta", "punto"]; let i = 0;
+    bocaTimer = setInterval(() => hocico(bocas[i++ % bocas.length]), 130);
+    setTimeout(() => { if (turno === turnoVoz) clearInterval(bocaTimer), hocico("sonrisa"); }, dur - 300);
+    setTimeout(fin, dur + 1500);
+    try {
+      if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(sils.map(s => s[0]).join(""));
+      u.lang = "zh-CN"; u.rate = rate; if (vozZh) u.voice = vozZh;
+      u.onend = () => setTimeout(fin, 200); u.onerror = () => setTimeout(fin, dur);
+      utterances.push(u); if (utterances.length > 20) utterances.shift();
+      setTimeout(() => speechSynthesis.speak(u), 50);
+    } catch { /* sin voz: igual sigue */ }
+  });
+}
+
+// =============== arrastre y toque ===============
+const aUnidades = px => px / mundo.getBoundingClientRect().width * 1000;
+let ocupado = false;
+function hacerArrastrable(el, id) {
+  let ini = null;
+  el.addEventListener("pointerdown", e => {
+    if (ocupado || E[id] === "nada") return;
+    e.preventDefault(); e.stopPropagation(); el.setPointerCapture(e.pointerId);
+    ini = { cx: e.clientX, cy: e.clientY, movio: false };
+  });
+  el.addEventListener("pointermove", e => {
+    if (!ini) return;
+    const dx = aUnidades(e.clientX - ini.cx), dy = aUnidades(e.clientY - ini.cy);
+    if (!ini.movio && Math.hypot(dx, dy) < 12) return;
+    if (OBJETOS[id].fijo) return;   // el refrigerador no se arrastra: se le lleva la vaca
+    if (!ini.movio) { ini.movio = true; cerrarOpciones(); el.classList.add("arrastrando"); el.classList.remove("idle"); }
+    el.style.left = (OBJETOS[id].x + dx)/10 + "%"; el.style.top = (OBJETOS[id].y + dy)/10 + "%";
+    const cerca = Math.hypot(OBJETOS[id].x + dx - vaca.x, OBJETOS[id].y + dy - (vaca.y - 100)) < 130;
+    vacaEl.classList.toggle("objetivo", cerca); ojos(cerca ? "sorpresa" : "abiertos");
+  });
+  const soltar = e => {
+    if (!ini) return;
+    const dx = aUnidades(e.clientX - ini.cx), dy = aUnidades(e.clientY - ini.cy), movio = ini.movio;
+    ini = null; el.classList.remove("arrastrando"); vacaEl.classList.remove("objetivo"); ojos("abiertos");
+    const llego = movio && Math.hypot(OBJETOS[id].x + dx - vaca.x, OBJETOS[id].y + dy - (vaca.y - 100)) < 130;
+    if (movio) volverASuLugar(id);
+    if (!movio) return tocar(id);
+    if (llego) quiz.activo ? quiz.responder(id) : abrirAcciones(id);
+  };
+  el.addEventListener("pointerup", soltar); el.addEventListener("pointercancel", soltar);
+}
+function volverASuLugar(id) {
+  const el = els[id];
+  el.classList.add("volando"); el.style.left = OBJETOS[id].x/10 + "%"; el.style.top = OBJETOS[id].y/10 + "%";
+  setTimeout(() => { el.classList.remove("volando"); el.classList.add("idle"); }, 520);
+}
+const llevarA = (id, x, y) => { const el = els[id]; el.classList.remove("idle"); el.classList.add("volando"); el.style.left = x/10 + "%"; el.style.top = y/10 + "%"; };
+(() => {
+  let ini = null;
+  vacaEl.addEventListener("pointerdown", e => {
+    if (ocupado) return;
+    e.preventDefault(); e.stopPropagation(); vacaEl.setPointerCapture(e.pointerId);
+    ini = { cx: e.clientX, cy: e.clientY, x: vaca.x, y: vaca.y, movio: false };
+  });
+  vacaEl.addEventListener("pointermove", e => {
+    if (!ini) return;
+    const dx = aUnidades(e.clientX - ini.cx), dy = aUnidades(e.clientY - ini.cy);
+    if (!ini.movio && Math.hypot(dx, dy) < 12) return;
+    if (!ini.movio) { ini.movio = true; cerrarOpciones(); globo.classList.remove("on"); }
+    vacaEl.classList.add("arrastrando");
+    vaca.x = ini.x + dx; vaca.y = ini.y + dy;
+    vacaEl.style.left = vaca.x/10 + "%"; vacaEl.style.top = vaca.y/10 + "%";
+    const o = objetoBajoVaca();
+    Object.entries(els).forEach(([k, el]) => el.classList.toggle("objetivo", k === o));
+    ojos(o ? "sorpresa" : "abiertos");
+  });
+  const soltar = () => {
+    if (!ini) return;
+    const movio = ini.movio; ini = null;
+    vacaEl.classList.remove("arrastrando"); Object.values(els).forEach(el => el.classList.remove("objetivo")); ojos("abiertos");
+    if (!movio) { festejo(700); return sfx("boing"); }
+    const o = objetoBajoVaca();
+    if (o && !quiz.activo) abrirAcciones(o);
+    else ponerVaca(vaca.x, vaca.y);
+  };
+  vacaEl.addEventListener("pointerup", soltar); vacaEl.addEventListener("pointercancel", soltar);
+})();
+function objetoBajoVaca() {
+  let mejor = null, dist = Infinity;
+  for (const [id, o] of Object.entries(OBJETOS)) {
+    if (E[id] === "nada") continue;
+    const d = Math.hypot(o.x - vaca.x, o.y - (vaca.y - 90));
+    if (d < o.w/2 + 70 && d < dist) { mejor = id; dist = d; }
+  }
+  return mejor;
+}
+// dónde se para la vaca para usar algo
+const puntoJunto = id => {
+  if (id === "fregadero") return { x: FREGADERO.x, y: 560 };
+  const o = OBJETOS[id];
+  if (id === "bingxiang") return { x: 270, y: 580 };
+  if (o.y < 400) return { x: o.x, y: 560 };     // cosas del mesón
+  return { x: 430, y: o.y + 130 };              // cosas de la mesa
+};
+
+// =============== interacciones ===============
+async function tocar(id) {
+  sfx("pop"); brillos(OBJETOS[id]);
+  const el = els[id]; el.classList.add("tiembla"); setTimeout(() => el.classList.remove("tiembla"), 1000);
+  ojos("izquierda"); setTimeout(() => ojos("abiertos"), 900);
+  await hablar(OBJETOS[id].nombre);
+}
+function brillos(o) {
+  for (let i = 0; i < 4; i++) {
+    const b = document.createElement("div"); b.className = "brillo"; b.textContent = "✦";
+    b.style.left = (o.x + (Math.random()-.5)*o.w)/10 + "%"; b.style.top = (o.y + (Math.random()-.5)*o.w)/10 + "%"; b.style.animationDelay = i*.08 + "s";
+    mundo.appendChild(b); setTimeout(() => b.remove(), 1800);
+  }
+}
+let opcionesEls = [], opcionesDe = null;
+function cerrarOpciones() { opcionesEls.forEach(e => e.remove()); opcionesEls = []; opcionesDe = null; }
+async function abrirAcciones(id, { presentar = true } = {}) {
+  cerrarOpciones(); ocupado = true;
+  try {
+    const o = OBJETOS[id], dest = puntoJunto(id);
+    ponerVaca(dest.x, dest.y);
+    enfocar((o.x + dest.x) / 2, (o.y + dest.y - 90) / 2, 1.9);   // primer plano
+    await espera(400);
+    if (presentar) { ojos("sorpresa"); setTimeout(() => ojos("abiertos"), 700); await hablar([...ZHE_SHI, ...o.nombre]); }
+    const lista = acciones(id);
+    if (!lista.length) { ojos("izquierda"); setTimeout(() => ojos("abiertos"), 900); return; }
+    mostrarOpciones(id, lista);
+  } finally { ocupado = false; }
+}
+function mostrarOpciones(id, lista) {
+  cerrarOpciones(); opcionesDe = id;
+  const o = OBJETOS[id], c = enPantalla(o.x, o.y), n = lista.length;
+  // abanico hacia el centro de la pantalla
+  const base = Math.atan2(55 - c.y, 50 - c.x);
+  lista.forEach((a, i) => {
+    const ang = base + (i - (n-1)/2) * 0.85, R = 20;
+    const px = Math.max(16, Math.min(84, c.x + Math.cos(ang)*R)), py = Math.max(12, Math.min(90, c.y + Math.sin(ang)*R));
+    const b = document.createElement("div"); b.className = "opcion";
+    b.style.left = px + "%"; b.style.top = py + "%"; b.style.animationDelay = `${i*.1}s, ${i*.4}s`;
+    b.innerHTML = `<span class="ico">${a.ico}</span><span><span class="hz">${a.v.map(s=>s[0]).join("")}</span><span class="py">${a.v.map(([_,p,t]) => `<span style="color:${COLOR[t]}">${p}</span>`).join(" ")}</span></span>`;
+    b.addEventListener("pointerdown", e => e.stopPropagation());
+    b.addEventListener("click", e => { e.stopPropagation(); hacer(id, a); });
+    escenario.appendChild(b); opcionesEls.push(b);
+  });
+}
+// tocar el piso: cierra las opciones y vuelve a la vista completa
+escenario.addEventListener("pointerdown", e => { if (e.target === cuarto || e.target === mundo) { cerrarOpciones(); if (!quiz.activo) verTodo(); } });
+
+async function hacer(id, a) {
+  if (ocupado) return;
+  cerrarOpciones(); ocupado = true;
+  try {
+    const objId = a.objeto || id;               // a veces la acción mueve otro objeto (盛饭 llena el 碗)
+    const o = OBJETOS[objId], el = els[objId];
+    const donde = a.lugar === "fregadero" ? "fregadero" : (a.anim === "servirTe" ? "chahu" : id);
+    const p = puntoJunto(donde);
+    ponerVaca(p.x, p.y);
+    const foco = a.lugar === "fregadero" ? FREGADERO : OBJETOS[donde];
+    enfocar((foco.x + p.x) / 2, (foco.y + p.y - 100) / 2, 2.2);
+    if (a.lugar === "fregadero") llevarA(objId, FREGADERO.x, FREGADERO.y - 6);
+    await espera(750);
+    if (JUEGO[a.anim]) {
+      // primer plano: el verbo se hace con el dedo
+      await minijuego(a, objId);
+      aplicar(a);
+      volverASuLugar(objId); if (a.anim === "servirTe") volverASuLugar("beizi");
+      festejo(900);
+    } else {
+    sfx(a.sfx);
+    const voz = hablar(a.frase);
+    switch (a.anim) {
+      case "llenar": for (let i = 0; i < 10; i++) setTimeout(() => particula("gota", { x: 490, y: 278, w: 0 }, "#7FC3E8"), i*110); await espera(700); aplicar(a); await espera(700); break;
+      case "lavar": el.classList.add("tiembla"); for (let i = 0; i < 12; i++) setTimeout(() => particula("burbuja", { x: FREGADERO.x, y: FREGADERO.y, w: 90 }), i*120); await espera(1000); aplicar(a); await espera(600); el.classList.remove("tiembla"); break;
+      case "beber": case "tomar":
+        llevarA(objId, vaca.x + 40, vaca.y - 120);
+        if (a.anim === "beber") { setTimeout(() => el.classList.add("inclina"), 500); ojos("cerrados"); }
+        await espera(1300); aplicar(a); await espera(400); el.classList.remove("inclina"); ojos("abiertos"); break;
+      case "comer":
+        llevarA(objId, vaca.x + 30, vaca.y - 110); await espera(500);
+        for (let i = 0; i < 8; i++) setTimeout(() => miga(vaca.x + 20, vaca.y - 110), i*90);
+        ojos("felices"); el.classList.add("encoge"); await espera(900); aplicar(a); el.classList.remove("encoge"); await espera(300); ojos("abiertos"); break;
+      case "abrir": case "cerrar": aplicar(a); if (a.anim === "abrir") { ojos("sorpresa"); } await espera(1000); ojos("abiertos"); break;
+      case "cortar": el.classList.add("tiembla"); await espera(700); aplicar(a); el.classList.remove("tiembla"); await espera(600); break;
+      case "cocinar": els.guo.classList.add("tiembla"); for (let i = 0; i < 8; i++) setTimeout(() => particula("vapor", OBJETOS.guo), i*150); await espera(1200); aplicar(a); els.guo.classList.remove("tiembla"); break;
+      case "servirTe":
+        llevarA("beizi", OBJETOS.chahu.x + 80, OBJETOS.chahu.y + 30); await espera(550);
+        els.chahu.classList.add("inclina");
+        for (let i = 0; i < 8; i++) setTimeout(() => particula("gota", { x: OBJETOS.chahu.x + 52, y: OBJETOS.chahu.y - 6, w: 0 }, "#C98E3A"), i*110);
+        await espera(900); aplicar(a); els.chahu.classList.remove("inclina"); await espera(400); volverASuLugar("beizi"); break;
+      case "servirArroz":
+        llevarA("wan", OBJETOS.guo.x, OBJETOS.guo.y + 80); await espera(600);
+        for (let i = 0; i < 6; i++) setTimeout(() => miga(OBJETOS.guo.x, OBJETOS.guo.y + 40), i*100);
+        await espera(600); aplicar(a); await espera(400); break;
+      case "sacar":
+        if (objId === "pingguo") { els.pingguo.classList.remove("nada"); els.pingguo.style.left = "10%"; els.pingguo.style.top = "30%"; await espera(60); aplicar(a); volverASuLugar("pingguo"); await espera(800); }
+        else { aplicar(a); brillos(OBJETOS.panzi); await espera(800); }
+        break;
+      default: aplicar(a); await espera(800);
+    }
+    if (!["sacar"].includes(a.anim)) volverASuLugar(objId);
+    await voz; festejo(900);
+    }
+    // después de la acción, el objeto ofrece lo que tiene sentido ahora (comer → lavar → …)
+    await espera(500);
+    const sig = a.anim === "servirTe" ? "beizi" : (a.anim === "servirArroz" ? "wan" : id);
+    const siguiente = acciones(sig);
+    if (siguiente.length) { const p2 = puntoJunto(sig); ponerVaca(p2.x, p2.y); enfocar(OBJETOS[sig].x, OBJETOS[sig].y + 60, 1.9); await espera(650); mostrarOpciones(sig, siguiente); }
+  } finally { ocupado = false; }
+}
+function aplicar(a) { if (a.cambia) Object.assign(E, a.cambia); pintar(); }
+function particula(tipo, o, color) {
+  const p = document.createElement("div"); p.className = tipo;
+  const s = 1.5 + Math.random()*2.5;
+  p.style.left = (o.x + (Math.random()-.5)*o.w*.8)/10 + "%"; p.style.top = (o.y - o.w*.2 + (Math.random()-.5)*o.w*.4)/10 + "%";
+  if (tipo === "burbuja") { p.style.width = s + "%"; p.style.height = s + "%"; }
+  if (color) p.style.background = color;
+  mundo.appendChild(p); setTimeout(() => p.remove(), 1700);
+}
+function miga(x, y) {
+  const p = document.createElement("div"); p.className = "miga";
+  p.style.left = x/10 + "%"; p.style.top = y/10 + "%";
+  p.style.setProperty("--dx", (Math.random()-.5)*60 + "px"); p.style.setProperty("--dy", (10 + Math.random()*40) + "px");
+  mundo.appendChild(p); setTimeout(() => p.remove(), 900);
+}
+const espera = ms => new Promise(r => setTimeout(r, ms));
+
+// =============== primer plano: un gesto por verbo ===============
+// anim de la acción → [gesto, fondo, mano]
+const JUEGO = {
+  cortar:  ["cortar",   "tabla", "🔪", "g-cortar"],
+  lavar:   ["frotar",   "agua",  "🧽", "g-frotar"],
+  llenar:  ["llenar",   "agua",  "👆", "g-mantener"],
+  servirTe:["llenar",   "mesa",  "👆", "g-mantener"],
+  beber:   ["beber",    "mesa",  "👆", "g-mantener"],
+  cocinar: ["girar",    "fuego", "🥄", "g-girar"],
+  comer:   ["morder",   "comer", "👆", "g-tocar"],
+};
+const TAI_BANG_LE = S("太棒了","tài bàng le","445"), HEN_HAO = S("很好","hén hǎo","23"), HAO = S("好","hǎo","3");
+let enPP = false;
+const $ = id => document.getElementById(id);
+function dibujoGrande(id, estado) {
+  const box = document.createElement("div");
+  box.innerHTML = `<svg viewBox="-60 -60 120 120">${DIBUJO[id]}</svg>`;
+  box.querySelectorAll("[data-solo]").forEach(g => g.style.display = g.dataset.solo.split(" ").includes(estado) ? "" : "none");
+  return box.firstChild;
+}
+// posición del dedo dentro de la zona: 0..1
+const enZona = e => { const r = $("ppZona").getBoundingClientRect(); return { u: (e.clientX - r.left) / r.width, v: (e.clientY - r.top) / r.height }; };
+const enPP1000 = e => { const r = $("pp").getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * 1000, y: (e.clientY - r.top) / r.height * 1000 }; };
+const progreso = p => $("ppBarra").firstElementChild.style.width = Math.min(100, p * 100) + "%";
+
+async function minijuego(a, objId) {
+  const [gesto, fondo, mano, claseMano] = JUEGO[a.anim];
+  const pp = $("pp"), zona = $("ppZona");
+  pp.className = `on ${fondo} f-${fondo}`; enPP = true; cerrarOpciones();
+  zona.innerHTML = ""; $("ppTrazo").innerHTML = ""; progreso(0);
+  $("ppMedalla").classList.remove("on");
+  $("ppCartel").innerHTML = `<span class="gesto">${a.ico}</span><span><span class="hz">${a.v.map(s=>s[0]).join("")}</span><span class="py" style="display:block">${a.v.map(([_,p,t]) => `<span style="color:${COLOR[t]}">${p}</span>`).join(" ")}</span></span>`;
+  const m = $("ppMano"); m.textContent = mano; m.className = claseMano; m.style.display = "";
+  musica.volume = .08;
+  await espera(500);
+  await hablar(a.frase);
+  // reloj: solo para la medalla, nunca para perder
+  const t0 = performance.now();
+  const reloj = setInterval(() => $("ppReloj").style.setProperty("--r", Math.min(100, (performance.now() - t0) / 120) + "%"), 100);
+  const quitarMano = () => m.style.display = "none";
+  const juegos = { cortar: jCortar, frotar: jFrotar, llenar: jLlenar, beber: jBeber, girar: jGirar, morder: jMorder };
+  await juegos[gesto](zona, objId, a, quitarMano);
+  clearInterval(reloj);
+  const seg = (performance.now() - t0) / 1000;
+  const [medalla, palabra] = seg < 5 ? ["🥇", TAI_BANG_LE] : seg < 9 ? ["🥈", HEN_HAO] : ["🥉", HAO];
+  progreso(1); quitarMano();
+  $("ppMedalla").querySelector(".m").textContent = medalla; $("ppMedalla").classList.add("on");
+  sfx("ding"); confeti(); $("ppVaca").classList.remove("salta"); void $("ppVaca").offsetWidth; $("ppVaca").classList.add("salta");
+  ojos("felices");
+  await hablar(palabra);
+  await espera(400);
+  pp.classList.add("sale"); await espera(450);
+  pp.className = ""; enPP = false; ojos("abiertos"); musica.volume = .16;
+}
+function confeti() {
+  const colores = ["#E0473C","#E8930C","#2E9B57","#3A6FD6","#F2C14E","#F59AC0"];
+  for (let i = 0; i < 40; i++) {
+    const c = document.createElement("div"); c.className = "confeti";
+    c.style.left = Math.random()*100 + "%"; c.style.top = -5 - Math.random()*20 + "%";
+    c.style.background = colores[i % colores.length]; c.style.setProperty("--dx", (Math.random()-.5)*30 + "vmin");
+    c.style.animationDelay = Math.random()*.4 + "s";
+    $("pp").appendChild(c); setTimeout(() => c.remove(), 2200);
+  }
+}
+const golpe = () => { const z = $("ppZona"); z.classList.remove("golpe"); void z.offsetWidth; z.classList.add("golpe"); };
+
+// 切: deslizar el dedo a través del objeto, 3 cortes
+function jCortar(zona, id, a, quitarMano) {
+  return new Promise(res => {
+    zona.appendChild(dibujoGrande(id, "limpio"));
+    const trazo = $("ppTrazo"); let cortes = 0, ini = null, linea = null;
+    const pp = $("pp");
+    const down = e => { ini = enPP1000(e); quitarMano();
+      linea = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      linea.setAttribute("stroke", "#fff"); linea.setAttribute("stroke-width", "10"); linea.setAttribute("stroke-linecap", "round");
+      linea.setAttribute("x1", ini.x); linea.setAttribute("y1", ini.y); linea.setAttribute("x2", ini.x); linea.setAttribute("y2", ini.y); trazo.appendChild(linea); };
+    const move = e => { if (!ini) return; const p = enPP1000(e); linea.setAttribute("x2", p.x); linea.setAttribute("y2", p.y); };
+    const up = e => {
+      if (!ini) return; const p = enPP1000(e); const largo = Math.hypot(p.x - ini.x, p.y - ini.y);
+      const cruza = Math.min(ini.y, p.y) < 650 && Math.max(ini.y, p.y) > 450 || Math.min(ini.x, p.x) < 450 && Math.max(ini.x, p.x) > 550;
+      if (largo > 220 && cruza) {
+        cortes++; sfx("golpe"); golpe(); progreso(cortes / 3);
+        linea.setAttribute("stroke", "#4A2A1C"); linea.setAttribute("stroke-dasharray", "14 12"); linea.setAttribute("stroke-width", "6");
+        if (cortes === 3) { fin(); zona.innerHTML = ""; zona.appendChild(dibujoGrande(id, "cortado")); setTimeout(res, 500); }
+      } else linea.remove();
+      ini = null;
+    };
+    const fin = () => { pp.removeEventListener("pointerdown", down); pp.removeEventListener("pointermove", move); pp.removeEventListener("pointerup", up); };
+    pp.addEventListener("pointerdown", down); pp.addEventListener("pointermove", move); pp.addEventListener("pointerup", up);
+  });
+}
+// 洗: frotar en círculos hasta que se va la mugre
+function jFrotar(zona, id, a, quitarMano) {
+  return new Promise(res => {
+    const svg = dibujoGrande(id, E[id]); zona.appendChild(svg);
+    // mugre extra encima, para que se note
+    let mugre = "";
+    for (let i = 0; i < 9; i++) { const x = (Math.random()-.5)*60, y = (Math.random()-.5)*50; mugre += `<path d="${elip(x, y, 4 + Math.random()*6, 3 + Math.random()*4)}" fill="#8a6a3a" opacity=".55" filter="url(#crayon-relleno)"/>`; }
+    const capaMugre = document.createElementNS("http://www.w3.org/2000/svg", "g"); capaMugre.innerHTML = mugre; svg.appendChild(capaMugre);
+    const sucias = [...svg.querySelectorAll('[data-solo="sucio"]'), capaMugre];
+    const pp = $("pp"); let ini = null, recorrido = 0, ultimoSfx = 0;
+    const META = 5;  // anchos de zona que hay que frotar
+    const down = e => { ini = enZona(e); quitarMano(); };
+    const move = e => {
+      if (!ini) return; const p = enZona(e);
+      const d = Math.hypot(p.u - ini.u, p.v - ini.v); ini = p;
+      if (p.u < -.1 || p.u > 1.1 || p.v < -.1 || p.v > 1.1) return;
+      recorrido += d; const pr = Math.min(1, recorrido / META); progreso(pr);
+      sucias.forEach(g => g.style.opacity = 1 - pr);
+      if (Math.random() < .35) espuma(p);
+      if (performance.now() - ultimoSfx > 350) { sfx("pop-burbuja"); ultimoSfx = performance.now(); }
+      if (pr >= 1) { fin(); zona.querySelectorAll(".espuma").forEach(x => x.style.opacity = 0); sfx("brillo"); setTimeout(res, 600); }
+    };
+    const up = () => ini = null;
+    const fin = () => { pp.removeEventListener("pointerdown", down); pp.removeEventListener("pointermove", move); pp.removeEventListener("pointerup", up); };
+    pp.addEventListener("pointerdown", down); pp.addEventListener("pointermove", move); pp.addEventListener("pointerup", up);
+  });
+}
+function espuma(p) {
+  const b = document.createElement("div"); b.className = "espuma";
+  const s = 5 + Math.random()*9; b.style.width = b.style.height = s + "%";
+  b.style.left = (p.u*100 - s/2) + "%"; b.style.top = (p.v*100 - s/2) + "%";
+  $("ppZona").appendChild(b);
+}
+// vaso grande con nivel de líquido
+function vasoGrande(color) {
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg"); svg.setAttribute("viewBox", "-60 -60 120 120");
+  svg.innerHTML = `<defs><clipPath id="clipVaso"><path d="M-34 -46 L34 -46 L26 52 Q0 60 -26 52 Z"/></clipPath></defs>
+    ${F("M-34 -46 L34 -46 L26 52 Q0 60 -26 52 Z", "#E3F1F5", 0)}
+    <rect id="liquido" clip-path="url(#clipVaso)" x="-40" y="56" width="80" height="0" fill="${color}"/>
+    <path d="M-36 -18 L36 -18" stroke="#2E9B57" stroke-width="2.5" stroke-dasharray="5 4" id="metaA"/>
+    <path d="M-36 -34 L36 -34" stroke="#2E9B57" stroke-width="2.5" stroke-dasharray="5 4" id="metaB"/>
+    ${T("M-34 -46 L34 -46 L26 52 Q0 60 -26 52 Z")}${T("M-22 -36 L-18 40", "#fff", 4)}
+    <rect id="chorro" x="-4" y="-110" width="8" height="0" fill="${color}" rx="4"/>`;
+  return svg;
+}
+// nivel 0..1 → y del líquido (fondo 56, borde -46)
+const nivelY = n => 56 - n * 102;
+// 倒: mantener apretado hasta la línea verde y soltar
+function jLlenar(zona, id, a, quitarMano) {
+  return new Promise(res => {
+    const color = a.anim === "servirTe" ? "#C98E3A" : "#7FC3E8";
+    const svg = vasoGrande(color); zona.appendChild(svg);
+    const liq = svg.querySelector("#liquido"), chorro = svg.querySelector("#chorro");
+    let nivel = 0, apretado = false, ultimo = performance.now(), listo = false, sonido = 0;
+    const pp = $("pp");
+    const pinta = () => { liq.setAttribute("y", nivelY(nivel)); liq.setAttribute("height", 120); chorro.setAttribute("height", apretado ? 110 + (nivelY(nivel) + 0) : 0); progreso(Math.min(1, nivel / .8)); };
+    const loop = t => {
+      const dt = (t - ultimo) / 1000; ultimo = t;
+      if (apretado) { nivel += dt * .32; if (t - sonido > 600) { sfx("tragos"); sonido = t; } }
+      if (nivel > 1) { nivel = .25; apretado = false; sfx("boing"); ojos("sorpresa"); setTimeout(() => ojos("abiertos"), 600); }  // se rebalsa: vuelve a intentar
+      pinta();
+      if (!listo) requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+    const down = () => { apretado = true; quitarMano(); };
+    const up = () => {
+      if (!apretado) return; apretado = false;
+      if (nivel >= .62 && nivel <= .95) { listo = true; fin(); pinta(); setTimeout(res, 400); }
+    };
+    const fin = () => { pp.removeEventListener("pointerdown", down); pp.removeEventListener("pointerup", up); };
+    pp.addEventListener("pointerdown", down); pp.addEventListener("pointerup", up);
+  });
+}
+// 喝: mantener apretado y la vaca se lo toma
+function jBeber(zona, id, a, quitarMano) {
+  return new Promise(res => {
+    const svg = vasoGrande(E.beizi === "te" ? "#C98E3A" : "#7FC3E8"); zona.appendChild(svg);
+    svg.querySelector("#metaA").remove(); svg.querySelector("#metaB").remove();
+    const liq = svg.querySelector("#liquido");
+    let nivel = .8, apretado = false, ultimo = performance.now(), sonido = 0, listo = false;
+    const pp = $("pp");
+    const loop = t => {
+      const dt = (t - ultimo) / 1000; ultimo = t;
+      if (apretado) { nivel -= dt * .3; ojos("cerrados"); if (t - sonido > 700) { sfx("tragos"); sonido = t; } }
+      liq.setAttribute("y", nivelY(Math.max(0, nivel))); liq.setAttribute("height", 120); progreso(1 - nivel / .8);
+      if (nivel <= 0 && !listo) { listo = true; fin(); ojos("abiertos"); setTimeout(res, 300); }
+      if (!listo) requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+    const down = () => { apretado = true; quitarMano(); };
+    const up = () => { apretado = false; ojos("abiertos"); };
+    const fin = () => { pp.removeEventListener("pointerdown", down); pp.removeEventListener("pointerup", up); };
+    pp.addEventListener("pointerdown", down); pp.addEventListener("pointerup", up);
+  });
+}
+// 做饭: revolver la olla en círculos, 3 vueltas
+function jGirar(zona, id, a, quitarMano) {
+  return new Promise(res => {
+    const NS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(NS, "svg"); svg.setAttribute("viewBox", "-60 -60 120 120");
+    const trozos = Array.from({ length: 14 }, (_, i) => {
+      const r = 10 + (i % 4) * 9, ang = i * 2.4, c = ["#FFFDF7", "#7FB24F", "#E07F68", "#F2C14E"][i % 4];
+      return `<path d="${elip(Math.cos(ang)*r, Math.sin(ang)*r, 5, 3.5)}" fill="${c}" stroke="${TINTA}" stroke-width="1.5"/>`;
+    }).join("");
+    svg.innerHTML = `${F(elip(0,0,56,56), "#7d8a91")}${F(elip(0,0,48,48), "#F2E3B0", 3)}<g id="trozos">${trozos}</g>`;
+    zona.appendChild(svg);
+    const g = svg.querySelector("#trozos"), cuchara = document.createElement("div");
+    cuchara.textContent = "🥄"; cuchara.style.cssText = "position:absolute;font-size:clamp(30px,8vmin,64px);pointer-events:none;transform:translate(-50%,-50%);display:none;z-index:6";
+    zona.appendChild(cuchara);
+    let previo = null, total = 0, ultimoVapor = 0;
+    const pp = $("pp");
+    const ang = p => Math.atan2(p.v - .5, p.u - .5);
+    const down = e => { previo = ang(enZona(e)); quitarMano(); cuchara.style.display = ""; };
+    const move = e => {
+      if (previo === null) return; const p = enZona(e), a2 = ang(p);
+      let d = a2 - previo; if (d > Math.PI) d -= 2*Math.PI; if (d < -Math.PI) d += 2*Math.PI; previo = a2;
+      total += Math.abs(d); g.setAttribute("transform", `rotate(${total * 57.3})`);
+      cuchara.style.left = p.u*100 + "%"; cuchara.style.top = p.v*100 + "%";
+      const pr = Math.min(1, total / (3 * 2 * Math.PI)); progreso(pr);
+      if (performance.now() - ultimoVapor > 250) { ultimoVapor = performance.now(); const v = document.createElement("div"); v.className = "vapor"; v.style.cssText += `left:${30 + Math.random()*40}%;top:${20 + Math.random()*30}%;width:3%;height:18%`; zona.appendChild(v); setTimeout(() => v.remove(), 1600); }
+      if (pr >= 1) { fin(); sfx("brillo"); setTimeout(res, 500); }
+    };
+    const up = () => previo = null;
+    const fin = () => { pp.removeEventListener("pointerdown", down); pp.removeEventListener("pointermove", move); pp.removeEventListener("pointerup", up); };
+    pp.addEventListener("pointerdown", down); pp.addEventListener("pointermove", move); pp.addEventListener("pointerup", up);
+  });
+}
+// 吃: tocar para dar mordiscos
+function jMorder(zona, id, a, quitarMano) {
+  return new Promise(res => {
+    const svg = dibujoGrande(id, E[id]); zona.appendChild(svg);
+    const NS = "http://www.w3.org/2000/svg";
+    const defs = document.createElementNS(NS, "defs");
+    defs.innerHTML = `<mask id="mordidas" maskUnits="userSpaceOnUse" x="-80" y="-80" width="160" height="160"><rect x="-80" y="-80" width="160" height="160" fill="#fff"/></mask>`;
+    const g = document.createElementNS(NS, "g"); g.setAttribute("mask", "url(#mordidas)");
+    while (svg.firstChild) g.appendChild(svg.firstChild);
+    svg.append(defs, g);
+    const mascara = defs.querySelector("mask");
+    // lo que se come: en el plato y el bol, solo la comida (el plato queda)
+    let mordidas = 0; const META = 6;
+    const pp = $("pp");
+    const down = e => {
+      quitarMano();
+      const p = enZona(e), x = -60 + 120 * p.u, y = -60 + 120 * p.v;
+      if (Math.abs(x) > 60 || Math.abs(y) > 60) return;
+      mordidas++;
+      const c = document.createElementNS(NS, "circle"); c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", 17 + mordidas * 2); c.setAttribute("fill", "#000");
+      mascara.appendChild(c);
+      sfx("nam"); golpe(); progreso(mordidas / META);
+      hocico("abierta"); setTimeout(() => hocico("sonrisa"), 200);
+      for (let i = 0; i < 5; i++) { const m = document.createElement("div"); m.className = "miga"; m.style.cssText += `left:${p.u*100}%;top:${p.v*100}%;width:2.4%;height:2.4%`; m.style.setProperty("--dx", (Math.random()-.5)*80 + "px"); m.style.setProperty("--dy", 20 + Math.random()*60 + "px"); zona.appendChild(m); setTimeout(() => m.remove(), 900); }
+      if (mordidas >= META) { fin(); svg.style.transition = "opacity .4s"; svg.style.opacity = 0; setTimeout(res, 500); }
+    };
+    const fin = () => pp.removeEventListener("pointerdown", down);
+    pp.addEventListener("pointerdown", down);
+  });
+}
+
+// =============== minijuego: "给我 ___" ===============
+const marcador = document.getElementById("marcador"), repetir = document.getElementById("repetir");
+const quiz = {
+  activo: false, rondas: [], i: 0, aciertos: 0,
+  empezar() {
+    if (ocupado) return;
+    cerrarOpciones(); verTodo(); this.activo = true; this.i = 0; this.aciertos = 0;
+    const pool = ["beizi","wan","panzi","kuaizi","chahu","guo"].concat(E.pingguo === "nada" ? [] : ["pingguo"]);
+    this.rondas = pool.sort(() => Math.random() - .5).slice(0, 4);
+    ponerVaca(420, 600); marcador.style.display = "block"; repetir.style.display = "block";
+    setTimeout(() => this.pedir(), 700);
+  },
+  pedir() {
+    const id = this.rondas[this.i];
+    marcador.textContent = "★".repeat(this.aciertos) + "☆".repeat(this.rondas.length - this.aciertos);
+    // el globo muestra solo 给我 + ?: la palabra se reconoce de oído
+    hablar([...GEI_WO, ...OBJETOS[id].nombre], { globo:false });
+    mostrarGlobo([...GEI_WO, ["？", "?", 5]]);
+    clearTimeout(ocultaGlobo);
+  },
+  async responder(id) {
+    if (id === this.rondas[this.i]) {
+      sfx("ding"); this.aciertos++; festejo(); await hablar(DUI);
+      this.i++;
+      if (this.i < this.rondas.length) { await espera(300); this.pedir(); } else this.terminar();
+    } else {
+      sfx("boing"); ojos("sorpresa"); await hablar(BU_DUI); ojos("abiertos"); await espera(200); this.pedir();
+    }
+  },
+  terminar() {
+    this.activo = false; repetir.style.display = "none";
+    marcador.textContent = "★".repeat(this.aciertos);
+    festejo(2000); sfx("brillo");
+    setTimeout(() => { marcador.style.display = "none"; document.getElementById("metodo").classList.remove("oculto"); }, 1800);
+  },
+};
+document.getElementById("jugar").addEventListener("click", () => quiz.empezar());
+repetir.addEventListener("click", () => quiz.activo && quiz.pedir());
+
+// =============== capas ===============
+document.getElementById("entrar").addEventListener("click", () => {
+  document.getElementById("entrada").classList.add("oculto");
+  musica.play().catch(()=>{});
+  setTimeout(() => { festejo(); hablar(S("你好","ní hǎo","23")); }, 400);
+});
+document.getElementById("seguir").addEventListener("click", () => document.getElementById("metodo").classList.add("oculto"));
+document.querySelectorAll("#mapa .bloq").forEach(d => d.addEventListener("click", () => { sfx("boing"); document.getElementById("bloqueo").classList.remove("oculto"); }));
+document.getElementById("cerrarBloqueo").addEventListener("click", () => document.getElementById("bloqueo").classList.add("oculto"));
+// el globo sigue a la vaca cuando la cámara se mueve
+setInterval(() => { if (globo.classList.contains("on")) ubicarGlobo(); }, 100);
+</script>
+</body>
+</html>

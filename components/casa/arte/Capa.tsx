@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { Capa as TipoCapa } from "./registro";
+import { FONDO_CUARTO, type Capa as TipoCapa } from "./registro";
 
 export const VISTA_OBJETO = "-60 -60 120 120";
 export const VISTA_CUARTO = "0 0 1000 1000";
@@ -20,4 +20,9 @@ export function Capa({
       <Componente />
     </svg>
   );
+}
+
+/** El cuarto completo: siempre con el encuadre de 1000 x 1000 unidades, para que no se pueda dibujar mal. */
+export function FondoCuarto({ cuarto, className, style }: { cuarto: keyof typeof FONDO_CUARTO; className?: string; style?: CSSProperties }) {
+  return <Capa capa={FONDO_CUARTO[cuarto]} vista={VISTA_CUARTO} nombre={`cuarto_${cuarto}`} className={className} style={style} />;
 }

@@ -65,7 +65,29 @@ Misma regla (cuadrado 1024 x 1024). Están en `ARTE_PRIMER_PLANO`.
 | `olla_grande` | La olla vista desde arriba |
 | `trozos` | Los trocitos que giran dentro de la olla |
 
-El cuarto es `FONDO_CUARTO.cocina` (2000 x 2000 px).
+### Cómo cambiar cada pieza de primer plano
+
+Guarda el PNG en `public/arte/cocina/` y, en `components/casa/arte/registro.ts`, dentro de `ARTE_PRIMER_PLANO`, cambia la línea de la pieza:
+
+| Archivo | Línea antes | Línea después |
+|---|---|---|
+| `public/arte/cocina/vaso_grande.png` | `vaso_grande: svg(P.VasoGrande),` | `vaso_grande: { tipo: "img", src: "/arte/cocina/vaso_grande.png" },` |
+| `public/arte/cocina/vaso_mascara.png` | `vaso_mascara: svg(P.VasoMascara),` | `vaso_mascara: { tipo: "img", src: "/arte/cocina/vaso_mascara.png" },` |
+| `public/arte/cocina/olla_grande.png` | `olla_grande: svg(P.OllaGrande),` | `olla_grande: { tipo: "img", src: "/arte/cocina/olla_grande.png" },` |
+| `public/arte/cocina/trozos.png` | `trozos: svg(P.Trozos),` | `trozos: { tipo: "img", src: "/arte/cocina/trozos.png" },` |
+
+## El cuarto
+
+Archivo: `public/arte/cocina/cuarto_cocina.png`, de **2000 x 2000 px**, cuadrado y completo (el programa lo muestra encajado en el cuadro de 1000 unidades del cuarto). No dibujes los objetos de la cocina: van aparte y se colocan solos.
+
+En `registro.ts`, dentro de `FONDO_CUARTO`, cambia:
+
+```ts
+// antes
+export const FONDO_CUARTO: Record<"cocina", Capa> = { cocina: svg(CocinaCuarto) };
+// después
+export const FONDO_CUARTO: Record<"cocina", Capa> = { cocina: { tipo: "img", src: "/arte/cocina/cuarto_cocina.png" } };
+```
 
 ## Importante
 

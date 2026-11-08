@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import { ARTE, ARTE_PRIMER_PLANO, FONDO_CUARTO } from "@/components/casa/arte/registro";
-import { Capa } from "@/components/casa/arte/Capa";
+import { Capa, FondoCuarto } from "@/components/casa/arte/Capa";
 import { Vaca } from "@/components/casa/Vaca";
 import { estadosAlcanzables } from "@/components/casa/cocina/acciones";
 import { OBJETOS, type ObjetoId } from "@/components/casa/cocina/datos";
@@ -68,5 +68,12 @@ describe("Vaca", () => {
     const visibles = ojos.filter((i) => i.style.opacity === "1");
     expect(visibles).toHaveLength(1);
     expect(visibles[0].dataset.ojos).toBe("felices");
+  });
+});
+
+describe("FondoCuarto", () => {
+  it("siempre usa el encuadre 0 0 1000 1000", () => {
+    const { container } = render(<FondoCuarto cuarto="cocina" />);
+    expect(container.querySelector("svg")!.getAttribute("viewBox")).toBe("0 0 1000 1000");
   });
 });

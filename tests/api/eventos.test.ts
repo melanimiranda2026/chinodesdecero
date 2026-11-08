@@ -4,7 +4,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const insert = vi.fn();
 vi.mock("@/lib/supabase/servidor", () => ({
   crearClienteServicio: () => ({ from: () => ({ insert }) }),
-  crearClienteSesion: async () => ({}),
+  esConfiguracionFaltante: () => false,
+  codigoError: () => "x",
 }));
 
 import { POST } from "@/app/api/eventos/route";
@@ -51,6 +52,19 @@ describe("POST /api/eventos", () => {
     expect((await pedir({ sesion: "s", eventos: [ev("entrar", [1])] })).status).toBe(400);
     expect((await pedir({ sesion: "s", eventos: [ev("entrar", "texto")] })).status).toBe(400);
     expect((await pedir({ sesion: "s", eventos: [ev("entrar", { a: "x".repeat(2100) })] })).status).toBe(400);
+  });
+  it("datos se miden en bytes (acentos cuentan doble)", async () => {
+    expect((await pedir({ sesion: "s", eventos: [ev("entrar", { a: "ñ".repeat(1100) })] })).status).toBe(400);
+  });
+  it("Content-Length > 64 KB → 413 sin leer el cuerpo", async () => {
+    const r = await POST(
+      new Request("http://localhost/api/eventos", {
+        method: "POST",
+        headers: { "content-length": String(64 * 1024 + 1) },
+        body: "{}",
+      }),
+    );
+    expect(r.status).toBe(413);
   });
   it("lote vacío o JSON roto → 400", async () => {
     expect((await pedir({ sesion: "s", eventos: [] })).status).toBe(400);

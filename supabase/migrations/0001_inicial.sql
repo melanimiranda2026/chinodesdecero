@@ -29,8 +29,8 @@ alter table public.eventos enable row level security;
 alter table public.avance enable row level security;
 
 create policy "avance_select_propio" on public.avance
-  for select using (user_id = auth.uid());
+  for select to authenticated using (user_id = auth.uid());
 create policy "avance_insert_propio" on public.avance
-  for insert with check (user_id = auth.uid());
+  for insert to authenticated with check (user_id = auth.uid());
 create policy "avance_update_propio" on public.avance
-  for update using (user_id = auth.uid()) with check (user_id = auth.uid());
+  for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());

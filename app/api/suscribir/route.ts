@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
-import { crearClienteServicio, crearClienteSesion, esConfiguracionFaltante } from "@/lib/supabase/servidor";
+import {
+  codigoError,
+  crearClienteOtp,
+  crearClienteServicio,
+  esConfiguracionFaltante,
+} from "@/lib/supabase/servidor";
+import { cuerpoGrande } from "@/lib/limite";
 
 const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function describir(e: unknown): string {
-  return e instanceof Error ? e.message : String(e);
-}
+const sinConfiguracion = () => NextResponse.json({ error: "configuracion" }, { status: 503 });
 
 export async function POST(req: Request) {
+  if (cuerpoGrande(req)) return NextResponse.json({ error: "correo" }, { status: 413 });
   let cuerpo: { email?: unknown; consentimiento?: unknown; origen?: unknown };
   try {
     cuerpo = await req.json();
@@ -21,30 +26,36 @@ export async function POST(req: Request) {
   const consentimiento = cuerpo.consentimiento === true;
   const origen = typeof cuerpo.origen === "string" ? cuerpo.origen.slice(0, 64) : null;
 
+  const sitio = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!sitio) return sinConfiguracion();
+
   try {
     const servicio = crearClienteServicio();
-    // El consentimiento solo sube: si ya era true, un false no lo baja.
-    const previo = await servicio.from("suscriptores").select("consentimiento").eq("email", email).maybeSingle();
-    const final = consentimiento || previo?.data?.consentimiento === true;
-    const { error } = await servicio
+    // Fila nueva, o nada si ya existe: no pisa origen ni baja el consentimiento.
+    const alta = await servicio
       .from("suscriptores")
-      .upsert({ email, consentimiento: final, origen }, { onConflict: "email" });
-    if (error) console.error("suscribir: upsert", error.code ?? error.message);
+      .upsert({ email, consentimiento, origen }, { onConflict: "email", ignoreDuplicates: true });
+    if (alta?.error) console.error("suscribir: alta", codigoError(alta.error));
+    if (consentimiento) {
+      // Solo sube: el upsert lleva únicamente el consentimiento, así que origen y plan no se tocan.
+      const sube = await servicio
+        .from("suscriptores")
+        .upsert({ email, consentimiento: true }, { onConflict: "email" });
+      if (sube?.error) console.error("suscribir: consentimiento", codigoError(sube.error));
+    }
 
     try {
-      const sesion = await crearClienteSesion();
-      const sitio = process.env.NEXT_PUBLIC_SITE_URL ?? "";
-      const r = await sesion.auth.signInWithOtp({
+      const r = await crearClienteOtp().auth.signInWithOtp({
         email,
         options: { emailRedirectTo: `${sitio}/auth/callback` },
       });
-      if (r?.error) console.error("suscribir: enlace", r.error.code ?? r.error.message);
+      if (r?.error) console.error("suscribir: enlace", codigoError(r.error));
     } catch (e) {
-      console.error("suscribir: enlace", describir(e));
+      console.error("suscribir: enlace", codigoError(e));
     }
   } catch (e) {
-    if (esConfiguracionFaltante(e)) return NextResponse.json({ error: "configuracion" }, { status: 503 });
-    console.error("suscribir:", describir(e));
+    if (esConfiguracionFaltante(e)) return sinConfiguracion();
+    console.error("suscribir:", codigoError(e));
   }
   return NextResponse.json({ ok: true });
 }

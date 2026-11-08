@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { NOMBRES_EVENTO } from "@/lib/eventos-nombres";
-import { crearClienteServicio, esConfiguracionFaltante } from "@/lib/supabase/servidor";
+import { bytes, cuerpoGrande } from "@/lib/limite";
+import { codigoError, crearClienteServicio, esConfiguracionFaltante } from "@/lib/supabase/servidor";
 
 const MAX_LOTE = 50;
 const MAX_DATOS = 2048;
@@ -11,6 +12,7 @@ const esObjeto = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 
 export async function POST(req: Request) {
+  if (cuerpoGrande(req)) return NextResponse.json({ error: "grande" }, { status: 413 });
   let cuerpo: unknown;
   try {
     cuerpo = await req.json();
@@ -28,7 +30,7 @@ export async function POST(req: Request) {
     let datos: Record<string, unknown> | null = null;
     if (e.datos !== undefined && e.datos !== null) {
       if (!esObjeto(e.datos)) return mala();
-      if (JSON.stringify(e.datos).length > MAX_DATOS) return mala();
+      if (bytes(e.datos) > MAX_DATOS) return mala();
       datos = e.datos;
     }
     filas.push({ sesion, nombre: e.nombre, datos });
@@ -37,12 +39,12 @@ export async function POST(req: Request) {
   try {
     const { error } = await crearClienteServicio().from("eventos").insert(filas);
     if (error) {
-      console.error("eventos: insert", error.code ?? error.message);
+      console.error("eventos: insert", codigoError(error));
       return NextResponse.json({ error: "servidor" }, { status: 500 });
     }
   } catch (e) {
     if (esConfiguracionFaltante(e)) return NextResponse.json({ error: "configuracion" }, { status: 503 });
-    console.error("eventos:", e instanceof Error ? e.message : String(e));
+    console.error("eventos:", codigoError(e));
     return NextResponse.json({ error: "servidor" }, { status: 500 });
   }
   return new NextResponse(null, { status: 204 });

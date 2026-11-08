@@ -7,6 +7,7 @@ import type { EstadoCocina, ObjetoId } from "../cocina/datos";
 import { HAO, HEN_HAO, TAI_BANG_LE } from "../cocina/frases";
 import { decir } from "../audio/voz";
 import { musica, sfx, type Pista } from "../audio/sonido";
+import { efectoYLuegoVoz } from "../audio/turnos";
 import { GESTO_DE, medalla as medallaDe, type Medalla, type TipoGesto } from "../gestos/medalla";
 import type { Gesto, P } from "../gestos/tipos";
 import { crearCortar } from "../gestos/cortar";
@@ -80,8 +81,15 @@ interface Cuadro { progreso: number; nivel: number; reloj: number }
  * Llama a `alTerminar` una sola vez, con la medalla según el tiempo desde que terminó la frase de entrada.
  */
 export function PrimerPlano({
-  accion, objeto, estado, alTerminar,
-}: { accion: Accion; objeto: ObjetoId; estado: EstadoCocina; alTerminar: (m: Medalla) => void }) {
+  accion, objeto, estado, alTerminar, alCancelar,
+}: {
+  accion: Accion;
+  objeto: ObjetoId;
+  estado: EstadoCocina;
+  alTerminar: (m: Medalla) => void;
+  /** ✕: salir sin hacer la acción. */
+  alCancelar?: () => void;
+}) {
   const tipo: TipoGesto = GESTO_DE[accion.anim] ?? "morder";
 
   const [fase, setFase] = useState<Fase>("entra");
@@ -179,10 +187,10 @@ export function PrimerPlano({
       setOjos("felices");
       setOrejas("arriba");
       setSalta(true);
-      sfx("ding");
-      await esperar(450); // el efecto nunca encima del mandarín
-      if (!sesion.vivo) return;
-      await hablar(ELOGIO[m], (a) => sesion.vivo && setHocico(bocaDe(a)));
+      // el efecto nunca encima del mandarín: la frase espera lo que dura el ding
+      await efectoYLuegoVoz("ding", async () => {
+        if (sesion.vivo) await hablar(ELOGIO[m], (a) => sesion.vivo && setHocico(bocaDe(a)));
+      });
       if (!sesion.vivo) return;
       setHocico("sonrisa");
       await esperar(400);
@@ -392,6 +400,23 @@ export function PrimerPlano({
       <div className={styles.reloj} style={{ "--r": `${cuadro.reloj * 100}%` } as CSSProperties} aria-hidden="true">
         ⏱
       </div>
+
+      {alCancelar && !fin && (
+        <button
+          type="button"
+          className={styles.cerrar}
+          aria-label="关"
+          data-pinyin="guān"
+          title="关 guān"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => {
+            sesionRef.current.vivo = false;
+            alCancelar();
+          }}
+        >
+          <span aria-hidden="true">✕</span>
+        </button>
+      )}
 
       {mano && !fin && (
         <div className={cx(styles.mano, claseMano)} aria-hidden="true">

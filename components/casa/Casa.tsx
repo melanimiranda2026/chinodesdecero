@@ -12,6 +12,7 @@ import { PrimerPlano } from "./primer-plano/PrimerPlano";
 import { Minimapa } from "./Minimapa";
 import { Tarjetas, type CapaTarjeta } from "./Tarjetas";
 import { desbloquearAudio } from "./audio/voz";
+import { musica } from "./audio/sonido";
 import { useCasa, type AlEvento, type CasaApi, type Punto } from "./useCasa";
 import { NOMBRES_EVENTO, type NombreEvento } from "@/lib/eventos-nombres";
 import { EVENTO_AVANCE, avanceInicial, cargarAviso, cargarAvance, guardarAvance, sincronizar, subirAvance, fusionar, type Avance, type DetalleAvance } from "./avance";
@@ -549,7 +550,15 @@ export function CasaVista({
         </div>
 
         {/* botón 玩, marcador de estrellas y 🔊 */}
-        <button type="button" className={styles.jugar} aria-label="玩" disabled={ocupado || !!quiz} onClick={() => casa.empezarQuiz()}>
+        <button
+          type="button"
+          className={styles.jugar}
+          aria-label="玩"
+          aria-pressed={!!quiz}
+          data-activo={quiz ? "true" : undefined}
+          disabled={ocupado || (!!quiz && quiz.fase !== "juego")}
+          onClick={() => casa.empezarQuiz()}
+        >
           <span className={styles.jugarHz}>玩</span>
           <span data-pinyin>wán</span>
         </button>
@@ -597,6 +606,7 @@ export function CasaVista({
             objeto={casa.primerPlano.objeto}
             estado={estado}
             alTerminar={casa.terminarPrimerPlano}
+            alCancelar={casa.cancelarPrimerPlano}
           />
         )}
       </div>
@@ -609,7 +619,8 @@ export function CasaVista({
         formulario={formulario}
         alEntrar={() => {
           registrar("entrar");
-          desbloquearAudio();
+          desbloquearAudio(); // dentro del toque: así iOS deja sonar el audio
+          musica.tocar("cocina");
           setEntrada(false);
           casa.saludar();
         }}

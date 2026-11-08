@@ -9,8 +9,9 @@ import { useQuiz, type EstadoQuiz } from "./useQuiz";
 import { useVivo } from "./useVivo";
 import { apuntar, limitarVaca, objetoBajo, puntoJunto, type Camara } from "./camara";
 import { GESTO_DE, type Medalla } from "./gestos/medalla";
-import { decir } from "./audio/voz";
+import { callar, decir } from "./audio/voz";
 import { sfx } from "./audio/sonido";
+import { efectoYLuegoVoz } from "./audio/turnos";
 import { useTiempos } from "./useTiempos";
 import { useParticulas, type Particula } from "./useParticulas";
 import type { Hocico, Ojos, Orejas } from "./Vaca";
@@ -46,6 +47,9 @@ export interface CasaApi {
   /** Vista completa. Se ignora mientras la casa está ocupada. */
   verTodo(): void;
   terminarPrimerPlano(m: Medalla): void;
+  /** ✕ del primer plano: sale sin aplicar la acción y libera la casa. */
+  cancelarPrimerPlano(): void;
+  /** El botón 玩: empieza el quiz o, si ya hay uno, lo termina (sin tarjeta). */
   empezarQuiz(): void;
   /** El botón 🔊: repite 给我 + nombre. */
   repetirQuiz(): void;
@@ -65,7 +69,7 @@ function bocaDe(abierta: number): Hocico {
 }
 
 export interface OpcionesCasa {
-  /** Se llama con el id de audio de cada frase que dice la vaca. */
+  /** Se llama con el id de audio de cada frase que la vaca dijo de verdad (el audio sonó). */
   alEscuchar?: (idAudio: string) => void;
 }
 
@@ -92,8 +96,11 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
   useEffect(() => {
     escucharRef.current = ganchos.alEscuchar;
   }, [ganchos.alEscuchar]);
-  const resolverPP = useRef<((m: Medalla) => void) | null>(null);
+  /** null = ✕ (salir sin aplicar la acción). */
+  const resolverPP = useRef<((m: Medalla | null) => void) | null>(null);
   const turnoVoz = useRef(0);
+  /** Frases en curso (para no tocar efectos encima del mandarín). */
+  const hablando = useRef(0);
 
   const { luego, espera } = useTiempos();
   const { particulas, particula, miga, brillos, rafaga } = useParticulas(luego);
@@ -139,30 +146,39 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
     [luego],
   );
 
-  /** La vaca habla: globo + boca. Nunca lanza, aunque `decir` rechace. */
+  /**
+   * La vaca habla: globo + boca. Nunca lanza, aunque `decir` rechace. Devuelve si el audio sonó.
+   * `siMudo`: globo que se muestra si no sonó (p. ej. en el 玩, la respuesta escrita).
+   */
   const hablar = useCallback(
-    async (s: Silaba[], opc: { globo?: Silaba[]; fijo?: boolean } = {}) => {
+    async (s: Silaba[], opc: { globo?: Silaba[]; fijo?: boolean; siMudo?: Silaba[] } = {}): Promise<boolean> => {
       const turno = ++turnoVoz.current;
+      hablando.current++;
       setGlobo(opc.globo ?? s);
+      let sono = false;
       try {
-        escucharRef.current?.(idAudio(s));
-      } catch {
-        /* contar lo escuchado nunca frena a la vaca */
-      }
-      try {
-        await decir(s, { alBoca: (a) => setHocico(bocaDe(a)) });
+        sono = (await decir(s, { alBoca: (a) => setHocico(bocaDe(a)) })) === true;
       } catch {
         /* sin voz: la casa sigue igual */
-      } finally {
-        if (turno === turnoVoz.current) {
-          setHocico("sonrisa");
-          if (!opc.fijo) {
-            luego(() => {
-              if (turno === turnoVoz.current) setGlobo(null);
-            }, 1500);
-          }
+      }
+      hablando.current--;
+      if (sono) {
+        try {
+          escucharRef.current?.(idAudio(s));
+        } catch {
+          /* contar lo escuchado nunca frena a la vaca */
         }
       }
+      if (turno === turnoVoz.current) {
+        setHocico("sonrisa");
+        if (!sono && opc.siMudo) setGlobo(opc.siMudo);
+        if (!opc.fijo) {
+          luego(() => {
+            if (turno === turnoVoz.current) setGlobo(null);
+          }, 1500);
+        }
+      }
+      return sono;
     },
     [luego],
   );
@@ -183,21 +199,27 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
   const cerrarOpciones = useCallback(() => setOpciones(null), []);
   const mostrarOpciones = useCallback((id: ObjetoId, lista: Accion[]) => setOpciones({ id, lista }), []);
 
+  const callarVaca = useCallback(() => {
+    turnoVoz.current++;
+    callar();
+    setGlobo(null);
+    setHocico("sonrisa");
+  }, []);
+
   const { quiz, quizRef, empezarQuiz, responderQuiz, repetirQuiz, cerrarQuiz } = useQuiz({
     ocupadoRef, estadoRef, setOcupado, cerrarOpciones, setCamara, setVaca, setGlobo,
-    vistaTodo: VISTA_TODO, hablar, espera, luego, festejo, mirar, eventoRef,
+    vistaTodo: VISTA_TODO, hablar, callarVaca, espera, luego, festejo, mirar, eventoRef,
   });
 
   const tocar = useCallback(
     async (id: ObjetoId) => {
       if (ocupadoRef.current || quizRef.current || estadoRef.current[id] === "nada") return;
-      sfx("pop");
       brillos(id);
       clase(id, "tiembla", true);
       luego(() => clase(id, "tiembla", false), 1000);
       mirar("izquierda", 900);
       eventoRef.current?.("tocar_objeto", { id });
-      await hablar(OBJETOS[id].nombre);
+      await efectoYLuegoVoz("pop", () => hablar(OBJETOS[id].nombre));
     },
     [ocupadoRef, quizRef, estadoRef, brillos, clase, luego, mirar, hablar],
   );
@@ -205,7 +227,7 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
   const tocarVaca = useCallback(() => {
     if (ocupadoRef.current) return;
     festejo(700);
-    sfx("boing");
+    if (hablando.current === 0) sfx("boing"); // nunca encima del mandarín
   }, [ocupadoRef, festejo]);
 
   const abrirAcciones = useCallback(
@@ -280,19 +302,24 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
 
         if (GESTO_DE[a.anim]) {
           // primer plano: el verbo se hace con el dedo (lo dibuja la Task 9)
-          const m = await new Promise<Medalla>((res) => {
+          const m = await new Promise<Medalla | null>((res) => {
             resolverPP.current = res;
             setPrimerPlano({ accion: a, objeto: objId });
           });
           setPrimerPlano(null);
+          if (m === null) {
+            // ✕: sale sin hacer la acción; todo vuelve a su lugar y la casa queda libre
+            volverASuLugar(objId);
+            if (a.anim === "servirTe") volverASuLugar("beizi");
+            return;
+          }
           aplicarAccion(a);
           volverASuLugar(objId);
           if (a.anim === "servirTe") volverASuLugar("beizi");
           festejo(900);
           eventoRef.current?.("gesto_completo", { anim: a.anim, medalla: m });
         } else {
-          sfx(a.sfx);
-          const voz = hablar(a.frase);
+          const voz = efectoYLuegoVoz(a.sfx, () => hablar(a.frase));
           await animar(a, objId, {
             vaca: vacaRef.current, espera, luego, particula, miga, brillos, rafaga,
             aplicar: () => aplicarAccion(a), clase, llevarA, volverASuLugar, ojos: setOjos,
@@ -327,6 +354,11 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
     resolverPP.current = null;
     r?.(m);
   }, []);
+  const cancelarPrimerPlano = useCallback(() => {
+    const r = resolverPP.current;
+    resolverPP.current = null;
+    r?.(null);
+  }, []);
 
   const empezarArrastre = useCallback(() => {
     cerrarOpciones();
@@ -348,5 +380,6 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
     quiz, posiciones, clases, particulas,
     empezarQuiz, repetirQuiz, cerrarQuiz, saludar, restaurar,
     tocar, tocarVaca, soltarObjetoEnVaca, soltarVaca, elegir, empezarArrastre, verTodo, terminarPrimerPlano,
+    cancelarPrimerPlano,
   };
 }

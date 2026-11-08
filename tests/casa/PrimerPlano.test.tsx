@@ -2,16 +2,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
 vi.mock("@/components/casa/audio/voz", () => ({
-  decir: vi.fn(() => Promise.resolve()),
+  decir: vi.fn(() => Promise.resolve(true)),
+  callar: vi.fn(),
   desbloquearAudio: vi.fn(),
 }));
 vi.mock("@/components/casa/audio/sonido", () => ({
   sfx: vi.fn(),
-  musica: { tocar: vi.fn(), parar: vi.fn(), volumen: vi.fn(), bajar: vi.fn() },
+  musica: { tocar: vi.fn(), parar: vi.fn(), bajar: vi.fn() },
 }));
 
 import { decir } from "@/components/casa/audio/voz";
-import { musica } from "@/components/casa/audio/sonido";
+import { musica, sfx } from "@/components/casa/audio/sonido";
 import { PrimerPlano } from "@/components/casa/primer-plano/PrimerPlano";
 import { CasaVista } from "@/components/casa/Casa";
 import { useCasa } from "@/components/casa/useCasa";
@@ -48,7 +49,7 @@ beforeEach(() => {
     toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "requestAnimationFrame", "cancelAnimationFrame", "performance", "Date"],
   });
   decirMock.mockReset();
-  decirMock.mockImplementation(() => Promise.resolve());
+  decirMock.mockImplementation(() => Promise.resolve(true));
   vi.mocked(musica.tocar).mockClear();
   vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
     left: 0, top: 0, right: 100, bottom: 100, width: 100, height: 100, x: 0, y: 0, toJSON: () => ({}),
@@ -65,6 +66,45 @@ const entrar = () => avanzar(600);
 const salir = () => avanzar(2500);
 
 describe("PrimerPlano", () => {
+  it("✕ (关 guān) sale sin medalla; tocarlo no cuenta como gesto", async () => {
+    const estado = { ...ESTADO_INICIAL };
+    const accion = accionDe("panzi", estado, "comer");
+    const alTerminar = vi.fn();
+    const alCancelar = vi.fn();
+    render(<PrimerPlano accion={accion} objeto="panzi" estado={estado} alTerminar={alTerminar} alCancelar={alCancelar} />);
+    await entrar();
+    const cerrar = screen.getByRole("button", { name: "关" });
+    expect(cerrar.getAttribute("data-pinyin")).toBe("guān");
+    fireEvent.pointerDown(cerrar, en(0.5, 0.5));
+    fireEvent.click(cerrar);
+    expect(alCancelar).toHaveBeenCalledTimes(1);
+    await salir();
+    expect(alTerminar).not.toHaveBeenCalled();
+    expect(screen.getByTestId("primer-plano").dataset.fase).toBe("juega");
+  });
+
+  it("al terminar el gesto el ✕ desaparece, y el elogio empieza después del ding", async () => {
+    const estado = { ...ESTADO_INICIAL };
+    const accion = accionDe("panzi", estado, "comer");
+    const tiempos: Record<string, number> = {};
+    vi.mocked(sfx).mockImplementation((n) => { tiempos[n] ??= performance.now(); });
+    decirMock.mockImplementation((s) => {
+      if (s === TAI_BANG_LE) tiempos.elogio = performance.now();
+      return Promise.resolve(true);
+    });
+    render(<PrimerPlano accion={accion} objeto="panzi" estado={estado} alTerminar={vi.fn()} alCancelar={vi.fn()} />);
+    const pp = screen.getByTestId("primer-plano");
+    await entrar();
+    for (let i = 0; i < 6; i++) {
+      fireEvent.pointerDown(pp, en(0.5, 0.5));
+      fireEvent.pointerUp(pp, en(0.5, 0.5));
+    }
+    await avanzar(10);
+    expect(screen.queryByRole("button", { name: "关" })).toBeNull();
+    await salir();
+    expect(tiempos.elogio - tiempos.ding).toBeGreaterThanOrEqual(450);
+  });
+
   it("al entrar dice la frase de la acción y toca la pista del gesto", async () => {
     const { accion } = montar("panzi", "lleno", "comer");
     await entrar();

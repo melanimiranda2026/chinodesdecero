@@ -2,12 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
 vi.mock("@/components/casa/audio/voz", () => ({
-  decir: vi.fn(() => Promise.resolve()),
+  decir: vi.fn(() => Promise.resolve(true)),
+  callar: vi.fn(),
   desbloquearAudio: vi.fn(),
 }));
 vi.mock("@/components/casa/audio/sonido", () => ({
   sfx: vi.fn(),
-  musica: { tocar: vi.fn(), parar: vi.fn(), volumen: vi.fn(), bajar: vi.fn() },
+  musica: { tocar: vi.fn(), parar: vi.fn(), bajar: vi.fn() },
 }));
 const sesion = vi.hoisted(() => ({ hay: true }));
 vi.mock("@/lib/supabase/navegador", () => ({

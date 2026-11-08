@@ -326,6 +326,7 @@
   cursor: pointer;
 }
 .jugar:disabled { opacity: 0.5; cursor: default; }
+.jugar[data-activo] { background: #ffd24a; }
 .jugar:active { translate: 0 3px; box-shadow: 0 1px 0 #1d130d; }
 .jugarHz { font-family: var(--f-hanzi), serif; font-size: 1.3em; line-height: 1; }
 

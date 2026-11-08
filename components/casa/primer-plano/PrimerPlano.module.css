@@ -163,6 +163,24 @@
   pointer-events: none;
 }
 .barra i { display: block; height: 100%; background: repeating-linear-gradient(-45deg, #f2c14e 0 12px, #f7d77a 12px 24px); transition: width 0.15s; }
+.cerrar {
+  position: absolute;
+  left: 3%;
+  top: 3%;
+  z-index: 7;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  border: 4px solid var(--tinta);
+  background: #fff;
+  color: var(--tinta);
+  font: 900 22px/1 var(--f-texto), sans-serif;
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--tinta);
+}
+.cerrar:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 3px; }
+.cerrar:active { translate: 0 2px; box-shadow: 0 1px 0 var(--tinta); }
+
 .reloj {
   position: absolute;
   right: 3%;

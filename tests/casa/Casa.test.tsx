@@ -3,12 +3,13 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { MutableRefObject } from "react";
 
 vi.mock("@/components/casa/audio/voz", () => ({
-  decir: vi.fn(() => Promise.resolve()),
+  decir: vi.fn(() => Promise.resolve(true)),
+  callar: vi.fn(),
   desbloquearAudio: vi.fn(),
 }));
 vi.mock("@/components/casa/audio/sonido", () => ({
   sfx: vi.fn(),
-  musica: { tocar: vi.fn(), parar: vi.fn(), volumen: vi.fn(), bajar: vi.fn() },
+  musica: { tocar: vi.fn(), parar: vi.fn(), bajar: vi.fn() },
 }));
 
 import { decir } from "@/components/casa/audio/voz";
@@ -38,7 +39,7 @@ const avanzar = (ms: number) => act(async () => { await vi.advanceTimersByTimeAs
 beforeEach(() => {
   vi.useFakeTimers();
   decirMock.mockReset();
-  decirMock.mockImplementation(() => Promise.resolve());
+  decirMock.mockImplementation(() => Promise.resolve(true));
 });
 afterEach(() => {
   vi.useRealTimers();
@@ -49,6 +50,8 @@ describe("Casa", () => {
     render(<Casa />);
     fireEvent.click(screen.getByRole("button", { name: "杯子" }));
     await avanzar(10);
+    expect(decirMock).not.toHaveBeenCalled(); // primero el pop, después el mandarín
+    await avanzar(400);
     expect(decirMock).toHaveBeenCalled();
     expect(decirMock.mock.calls[0][0]).toEqual(OBJETOS.beizi.nombre);
     const globo = screen.getByTestId("globo");
@@ -179,7 +182,7 @@ describe("Casa", () => {
   it("no hay español dentro de la casa (fuera del pinyin)", async () => {
     const { container, api } = montar();
     fireEvent.click(screen.getByRole("button", { name: "苹果" }));
-    await avanzar(10);
+    await avanzar(400);
     act(() => { void api().soltarObjetoEnVaca("beizi"); });
     await avanzar(3000);
     expect(screen.getByTestId("opciones")).toBeTruthy();
@@ -216,14 +219,14 @@ describe("Casa: 玩 (quiz)", () => {
 
     // incorrecto: 不对 y repite la misma ronda
     const otro = q.rondas[1];
-    await act(async () => { void api().soltarObjetoEnVaca(otro); await vi.advanceTimersByTimeAsync(10); });
+    await act(async () => { void api().soltarObjetoEnVaca(otro); await vi.advanceTimersByTimeAsync(450); });
     expect(idsDeLaMock()).toContain("不对");
     await avanzar(600);
     expect(api().quiz!.i).toBe(0);
     expect(idsDeLaMock().at(-1)).toBe("给我" + textoHanzi(OBJETOS[id].nombre));
 
     // correcto: 对 y pasa a la siguiente
-    await act(async () => { void api().soltarObjetoEnVaca(id); await vi.advanceTimersByTimeAsync(10); });
+    await act(async () => { void api().soltarObjetoEnVaca(id); await vi.advanceTimersByTimeAsync(460); });
     expect(idsDeLaMock()).toContain("对");
     await avanzar(600);
     expect(api().quiz!.i).toBe(1);
@@ -236,7 +239,7 @@ describe("Casa: 玩 (quiz)", () => {
     await avanzar(800);
     for (let r = 0; r < 4; r++) {
       const id = api().quiz!.rondas[r];
-      await act(async () => { void api().soltarObjetoEnVaca(id); await vi.advanceTimersByTimeAsync(600); });
+      await act(async () => { void api().soltarObjetoEnVaca(id); await vi.advanceTimersByTimeAsync(1100); });
     }
     await avanzar(2500);
     expect(api().quiz!.fase).toBe("fin");

@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as EventoPuntero, type ReactNode } from "react";
 import { textoHanzi } from "@/lib/silabas";
-import { OBJETOS, type ObjetoId } from "./cocina/datos";
+import { OBJETOS, type EstadoCocina, type ObjetoId } from "./cocina/datos";
 import { enPantalla, objetoBajo, transformCSS } from "./camara";
 import { DibujoObjeto } from "./arte/DibujoObjeto";
 import { FondoCuarto } from "./arte/Capa";
@@ -43,23 +43,90 @@ const ORDEN_MEDALLA = { bronce: 1, plata: 2, oro: 3 } as const;
 const AVISO_MS = 5000;
 const GUARDAR_MS = 500;
 
+const mejorMedalla = (a?: keyof typeof ORDEN_MEDALLA, b?: keyof typeof ORDEN_MEDALLA) =>
+  !a ? b : !b ? a : ORDEN_MEDALLA[a] >= ORDEN_MEDALLA[b] ? a : b;
+
 export function Casa({ onEvento }: { onEvento?: AlEvento }) {
   const avance = useRef<Avance>(avanceInicial());
   const listo = useRef(false);
+  const montado = useRef(false);
   const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Hubo cambios reales (acción, medalla, escuchada) que el servidor aún no tiene. Restaurar nunca lo marca. */
+  const sucio = useRef(false);
+  /** Cuenta los cambios reales: detecta los que ocurren mientras el GET está en vuelo. */
+  const cambios = useRef(0);
+  /** Ya se comparó con la cuenta en esta sesión: recién ahora se puede subir. */
+  const sincronizado = useRef(false);
+  const enSync = useRef(false);
+  /** El estado que acabamos de restaurar: su efecto no cuenta como cambio. */
+  const restaurado = useRef<EstadoCocina | null>(null);
+  const restaurarRef = useRef<(e: EstadoCocina) => void>(() => {});
   const [correo, setCorreo] = useState<string | undefined>(undefined);
   const [aviso, setAviso] = useState<string | null>(null);
 
-  /** Guarda tras ~500 ms sin cambios (y sube a la cuenta si hay sesión). */
+  const guardarYSubir = useCallback(() => {
+    guardarAvance(avance.current);
+    if (sincronizado.current && sucio.current) {
+      const v = cambios.current;
+      void subirAvance(avance.current).then((ok) => {
+        if (ok && cambios.current === v) sucio.current = false;
+      });
+    }
+  }, []);
+
+  /** Compara con la cuenta; si no se puede (sin sesión o falla el GET) no sube nada y reintenta en el próximo cambio. */
+  const intentarSync = useCallback(async () => {
+    if (enSync.current || sincronizado.current) return;
+    enSync.current = true;
+    const v0 = cambios.current;
+    let r;
+    try {
+      r = await sincronizar(avance.current, sucio.current);
+    } finally {
+      enSync.current = false;
+    }
+    if (!montado.current || r.tipo === "sin-sesion" || r.tipo === "fallo") return;
+    sincronizado.current = true;
+    if (cambios.current !== v0) {
+      // Hubo cambios locales durante el GET: se conservan (sumando lo escuchado y las medallas del servidor).
+      if (r.tipo === "remoto") {
+        const l = avance.current;
+        const medallas = { ...r.avance.medallas };
+        for (const [k, m] of Object.entries(l.medallas)) medallas[k] = mejorMedalla(m, medallas[k]);
+        avance.current = { ...l, escuchadas: [...new Set([...r.avance.escuchadas, ...l.escuchadas])], medallas };
+      }
+      sucio.current = true;
+      guardarYSubir();
+      return;
+    }
+    if (r.tipo === "remoto") {
+      avance.current = r.avance;
+      guardarAvance(r.avance);
+      restaurado.current = r.avance.estado;
+      restaurarRef.current(r.avance.estado);
+      setCorreo(r.avance.correo);
+    } else {
+      sucio.current = true;
+      guardarYSubir();
+    }
+  }, [guardarYSubir]);
+
+  /** Guarda tras ~500 ms sin cambios; mientras no se haya comparado con la cuenta, lo intenta de nuevo. */
   const programar = useCallback(() => {
     if (!listo.current) return;
     if (temporizador.current) clearTimeout(temporizador.current);
     temporizador.current = setTimeout(() => {
       temporizador.current = null;
       guardarAvance(avance.current);
-      void subirAvance(avance.current);
+      if (!sincronizado.current) void intentarSync();
+      else guardarYSubir();
     }, GUARDAR_MS);
-  }, []);
+  }, [guardarYSubir, intentarSync]);
+  const marcar = useCallback(() => {
+    sucio.current = true;
+    cambios.current++;
+    programar();
+  }, [programar]);
 
   const alEvento = useCallback<AlEvento>(
     (nombre, datos) => {
@@ -70,35 +137,39 @@ export function Casa({ onEvento }: { onEvento?: AlEvento }) {
         const previa = avance.current.medallas[datos.anim];
         if (m in ORDEN_MEDALLA && (!previa || ORDEN_MEDALLA[m] > ORDEN_MEDALLA[previa])) {
           avance.current = { ...avance.current, medallas: { ...avance.current.medallas, [datos.anim]: m } };
-          programar();
+          marcar();
         }
       }
       onEvento?.(nombre, datos);
     },
-    [onEvento, programar],
+    [onEvento, marcar],
   );
   const alEscuchar = useCallback(
     (id: string) => {
       if (avance.current.escuchadas.includes(id)) return;
       avance.current = { ...avance.current, escuchadas: [...avance.current.escuchadas, id] };
-      programar();
+      marcar();
     },
-    [programar],
+    [marcar],
   );
   const casa = useCasa(alEvento, { alEscuchar });
   const { restaurar } = casa;
-
-  // Una acción cambió el estado de la cocina: se guarda. Va ANTES del efecto de montaje para que la
-  // primera pasada (estado inicial, aún sin restaurar) no pise lo guardado.
   useEffect(() => {
-    if (!listo.current) return;
+    restaurarRef.current = restaurar;
+  }, [restaurar]);
+
+  // Una acción cambió el estado de la cocina: se guarda. Restaurar no cuenta como cambio.
+  useEffect(() => {
+    if (!listo.current || casa.estado === restaurado.current) return;
     avance.current = { ...avance.current, estado: casa.estado };
-    programar();
-  }, [casa.estado, programar]);
+    marcar();
+  }, [casa.estado, marcar]);
 
-  // Al montar: restaura el avance guardado y lee la URL.
+  // Al montar: restaura el avance guardado, lee la URL y se compara con la cuenta (si hay sesión).
   useEffect(() => {
+    montado.current = true;
     avance.current = cargarAvance();
+    restaurado.current = avance.current.estado;
     restaurar(avance.current.estado);
     setCorreo(avance.current.correo);
     listo.current = true;
@@ -120,32 +191,39 @@ export function Casa({ onEvento }: { onEvento?: AlEvento }) {
         /* nada */
       }
     }
-    if (ok) {
-      void sincronizar(avance.current).then(() => {
-        avance.current = cargarAvance();
-        restaurar(avance.current.estado);
-      });
-    }
+    void intentarSync();
 
-    // El correo se deja desde un formulario (tarjeta o pie de página): llega por este aviso.
-    const alCambiar = () => {
-      const a = cargarAvance();
-      avance.current = { ...avance.current, correo: a.correo };
-      setCorreo(a.correo);
+    // El correo se deja desde un formulario (tarjeta o pie de página): llega por este aviso, en memoria.
+    const alCambiar = (e: Event) => {
+      const c = (e as CustomEvent<{ correo?: string }>).detail?.correo;
+      if (!c) return;
+      avance.current = { ...avance.current, correo: c };
+      setCorreo(c);
+      programar();
     };
-    const alSalir = () => {
+    const guardarYa = () => {
       if (temporizador.current) clearTimeout(temporizador.current);
       temporizador.current = null;
       guardarAvance(avance.current);
     };
-    window.addEventListener(EVENTO_AVANCE, alCambiar);
-    window.addEventListener("pagehide", alSalir);
-    return () => {
-      window.removeEventListener(EVENTO_AVANCE, alCambiar);
-      window.removeEventListener("pagehide", alSalir);
-      if (temporizador.current) clearTimeout(temporizador.current);
+    const alOcultar = () => {
+      if (document.visibilityState === "hidden") guardarYa();
     };
-  }, [restaurar]);
+    window.addEventListener(EVENTO_AVANCE, alCambiar);
+    window.addEventListener("pagehide", guardarYa);
+    document.addEventListener("visibilitychange", alOcultar);
+    return () => {
+      montado.current = false;
+      window.removeEventListener(EVENTO_AVANCE, alCambiar);
+      window.removeEventListener("pagehide", guardarYa);
+      document.removeEventListener("visibilitychange", alOcultar);
+      if (temporizador.current) {
+        clearTimeout(temporizador.current);
+        temporizador.current = null;
+        guardarAvance(avance.current); // lo pendiente (<500 ms) no se pierde
+      }
+    };
+  }, [restaurar, intentarSync, programar]);
 
   useEffect(() => {
     if (!aviso) return;

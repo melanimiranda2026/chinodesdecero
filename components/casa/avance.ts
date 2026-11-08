@@ -1,4 +1,5 @@
 import { ESTADO_INICIAL, type EstadoCocina } from "./cocina/datos";
+import { estadosAlcanzables } from "./cocina/acciones";
 import { crearClienteNavegador } from "@/lib/supabase/navegador";
 
 export type MedallaGuardada = "oro" | "plata" | "bronce";
@@ -26,12 +27,20 @@ export const avanceInicial = (): Avance => ({
 const esObjeto = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 
-/** El estado guardado solo vale si tiene exactamente las llaves y los valores conocidos; si no, el inicial. */
+const claveEstado = (e: Record<string, unknown>) =>
+  Object.keys(ESTADO_INICIAL)
+    .map((k) => String(e[k]))
+    .join("|");
+let alcanzables: Set<string> | null = null;
+
+/** El estado guardado solo vale si tiene exactamente las llaves y es uno de los estados alcanzables; si no, el inicial. */
 export function estadoValido(v: unknown): EstadoCocina {
   if (!esObjeto(v)) return { ...ESTADO_INICIAL };
   const claves = Object.keys(ESTADO_INICIAL);
   if (Object.keys(v).length !== claves.length) return { ...ESTADO_INICIAL };
   for (const k of claves) if (typeof v[k] !== "string") return { ...ESTADO_INICIAL };
+  alcanzables ??= new Set(estadosAlcanzables().map(claveEstado));
+  if (!alcanzables.has(claveEstado(v))) return { ...ESTADO_INICIAL };
   return { ...(v as EstadoCocina) };
 }
 
@@ -70,14 +79,18 @@ export function guardarAvance(a: Avance): void {
   }
 }
 
-/** Guarda el correo en el avance y avisa a la casa. */
-export function guardarCorreo(correo: string): void {
-  guardarAvance({ ...cargarAvance(), correo });
+const avisar = (correo?: string) => {
   try {
-    window.dispatchEvent(new Event(EVENTO_AVANCE));
+    window.dispatchEvent(new CustomEvent(EVENTO_AVANCE, { detail: { correo } }));
   } catch {
     /* nada */
   }
+};
+
+/** Guarda el correo (si el disco deja) y avisa a la casa, que lo guarda en memoria. */
+export function guardarCorreo(correo: string): void {
+  guardarAvance({ ...cargarAvance(), correo });
+  avisar(correo);
 }
 
 async function haySesion(): Promise<boolean> {
@@ -89,47 +102,47 @@ async function haySesion(): Promise<boolean> {
   }
 }
 
-/** Sube el avance (sin el correo) si hay sesión. Nunca lanza. */
-export async function subirAvance(a: Avance): Promise<void> {
+/** Sube el avance (sin el correo) si hay sesión. Nunca lanza; true si el servidor lo aceptó. */
+export async function subirAvance(a: Avance): Promise<boolean> {
   try {
-    if (!(await haySesion())) return;
+    if (!(await haySesion())) return false;
     const { correo: _correo, ...datos } = a;
     void _correo;
-    await fetch("/api/avance", {
+    const r = await fetch("/api/avance", {
       method: "PUT",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ datos }),
     });
+    return r.ok;
   } catch {
-    /* se reintenta en el próximo cambio */
+    return false; // se reintenta en el próximo cambio
   }
 }
 
+export type ResultadoSync =
+  | { tipo: "sin-sesion" }
+  | { tipo: "fallo" }
+  /** Gana el servidor (también en empate): hay que adoptarlo. */
+  | { tipo: "remoto"; avance: Avance }
+  /** Gana lo local: el servidor está vacío o tiene menos escuchadas. */
+  | { tipo: "subir" };
+
 /**
- * Al iniciar sesión: gana el avance con más `escuchadas`. Si gana el del servidor se guarda aquí
- * (con el correo local); si gana el local se sube.
+ * Compara con la cuenta SIN escribir nada. Solo `subir` autoriza a subir, y únicamente si el GET
+ * salió bien y el servidor está vacío o el local tiene estrictamente más escuchadas.
+ * `sucio`: hubo cambios reales aquí; si no los hubo, un servidor con datos nunca se pisa.
  */
-export async function sincronizar(a: Avance): Promise<void> {
+export async function sincronizar(a: Avance, sucio = false): Promise<ResultadoSync> {
   try {
-    if (!(await haySesion())) return;
+    if (!(await haySesion())) return { tipo: "sin-sesion" };
     const r = await fetch("/api/avance");
-    if (r.ok) {
-      const { datos } = (await r.json()) as { datos: unknown };
-      if (esObjeto(datos)) {
-        const remoto = validarAvance(datos);
-        if (remoto.escuchadas.length > a.escuchadas.length) {
-          guardarAvance({ ...remoto, correo: a.correo ?? remoto.correo });
-          try {
-            window.dispatchEvent(new Event(EVENTO_AVANCE));
-          } catch {
-            /* nada */
-          }
-          return;
-        }
-      }
-    }
-    await subirAvance(a);
+    if (!r.ok) return { tipo: "fallo" };
+    const { datos } = (await r.json()) as { datos: unknown };
+    if (!esObjeto(datos)) return { tipo: "subir" }; // servidor vacío
+    const remoto = validarAvance(datos);
+    if (sucio && a.escuchadas.length > remoto.escuchadas.length) return { tipo: "subir" };
+    return { tipo: "remoto", avance: { ...remoto, correo: a.correo ?? remoto.correo } };
   } catch {
-    /* nada */
+    return { tipo: "fallo" };
   }
 }

@@ -64,3 +64,23 @@ describe("eventos", () => {
     expect(beacon).not.toHaveBeenCalled();
   });
 });
+
+import { estadoValido } from "@/components/casa/avance";
+import { estadosAlcanzables } from "@/components/casa/cocina/acciones";
+
+describe("estadoValido: valores y combinaciones", () => {
+  it("acepta un estado alcanzable", () => {
+    const e = estadosAlcanzables().find((x) => x.pingguo === "limpio")!;
+    expect(estadoValido(e)).toEqual(e);
+  });
+  it("forma valida con un valor inexistente cae al inicial", () => {
+    expect(estadoValido({ ...ESTADO_INICIAL, pingguo: "xyz" })).toEqual(ESTADO_INICIAL);
+  });
+  it("un valor real de otro objeto pero inalcanzable en este (kuaizi sucio) cae al inicial", () => {
+    // El espacio alcanzable es el producto completo de valores por objeto (864 estados): no hay
+    // "combinacion" imposible, solo valores imposibles; los palillos nunca se ensucian.
+    const e = { ...ESTADO_INICIAL, kuaizi: "sucio" };
+    expect(estadosAlcanzables().some((x) => x.kuaizi === "sucio")).toBe(false);
+    expect(estadoValido(e)).toEqual(ESTADO_INICIAL);
+  });
+});

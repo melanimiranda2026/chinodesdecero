@@ -50,4 +50,13 @@ describe("Correo", () => {
     await waitFor(() => expect((screen.getByRole("button", { name: "Avísame" }) as HTMLButtonElement).disabled).toBe(false));
     expect(cargarAvance().correo).toBeUndefined();
   });
+  it("dos submit seguidos hacen un solo fetch", () => {
+    const f = vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise(() => {}));
+    const { container } = render(<Correo origen="pie" />);
+    fireEvent.change(screen.getByLabelText("Tu correo"), { target: { value: "a@b.cl" } });
+    const form = container.querySelector("form")!;
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    expect(f).toHaveBeenCalledTimes(1);
+  });
 });

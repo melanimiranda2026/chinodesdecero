@@ -57,6 +57,9 @@ export function registrar(nombre: NombreEvento, datos?: object): void {
     if (!escuchando) {
       escuchando = true;
       window.addEventListener("pagehide", () => enviarEventos(true));
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") enviarEventos(true);
+      });
     }
     temporizador ??= setInterval(() => enviarEventos(), CADA_MS);
     if (cola.length >= MAX_LOTE) enviarEventos();

@@ -7,7 +7,7 @@ import { animar, type ClaseObjeto, type Punto } from "./cocina/animar";
 import { NI_HAO, ZHE_SHI } from "./cocina/frases";
 import { useQuiz, type EstadoQuiz } from "./useQuiz";
 import { useVivo } from "./useVivo";
-import { enfocar, limitarVaca, objetoBajo, puntoJunto, type Camara } from "./camara";
+import { apuntar, limitarVaca, objetoBajo, puntoJunto, type Camara } from "./camara";
 import { GESTO_DE, type Medalla } from "./gestos/medalla";
 import { decir } from "./audio/voz";
 import { sfx } from "./audio/sonido";
@@ -218,7 +218,7 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
         const o = OBJETOS[id];
         const dest = puntoJunto(id);
         setVaca(dest);
-        setCamara(enfocar((o.x + dest.x) / 2, (o.y + dest.y - 90) / 2, 1.9));
+        setCamara(apuntar((o.x + dest.x) / 2, (o.y + dest.y - 90) / 2, 1.9));
         await espera(400);
         mirar("sorpresa", 700);
         await hablar([...ZHE_SHI, ...o.nombre]);
@@ -271,7 +271,7 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
         const p = puntoJunto(donde);
         setVaca(p);
         const foco = donde === "fregadero" ? FREGADERO : OBJETOS[donde];
-        setCamara(enfocar((foco.x + p.x) / 2, (foco.y + p.y - 100) / 2, 2.2));
+        setCamara(apuntar((foco.x + p.x) / 2, (foco.y + p.y - 100) / 2, 2.2));
         if (a.lugar === "fregadero") {
           const f = junto(FREGADERO, ANCLAS.enFregadero);
           llevarA(objId, f.x, f.y);
@@ -308,7 +308,7 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
         const siguiente = acciones(sig, estadoRef.current);
         if (siguiente.length) {
           setVaca(puntoJunto(sig));
-          setCamara(enfocar(OBJETOS[sig].x, OBJETOS[sig].y + 60, 1.9));
+          setCamara(apuntar(OBJETOS[sig].x, OBJETOS[sig].y + 60, 1.9));
           await espera(650);
           mostrarOpciones(sig, siguiente);
         }

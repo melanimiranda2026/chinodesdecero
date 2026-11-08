@@ -1,4 +1,4 @@
-import { enfocar, transformCSS, enPantalla, puntoJunto, limitarVaca, objetoBajo, ubicarOpciones, encuadreInicial, encuadrar, centroBase, X_VERTICAL } from "@/components/casa/camara";
+import { enfocar, transformCSS, enPantalla, puntoJunto, limitarVaca, objetoBajo, ubicarOpciones, encuadreInicial, encuadrar, centroBase, X_VERTICAL, ZOOM_VERTICAL, apuntar } from "@/components/casa/camara";
 import { ESTADO_INICIAL, OBJETOS } from "@/components/casa/cocina/datos";
 
 describe("camara", () => {
@@ -93,12 +93,22 @@ describe("camara", () => {
     expect(w.y).toBeCloseTo(v.y);
     expect(w.s).toBeCloseTo(v.s);
   });
-  it("en vertical el primer plano acerca de verdad: zoom relativo al encuadre base", () => {
+  it("en vertical el primer plano acerca, amortiguado sobre el encuadre base", () => {
     const base = encuadreInicial(360, 740).s;
     const z = encuadrar(enfocar(600, 668, 1.9), 360, 740);
-    expect(z.s).toBeCloseTo(1.9 * base);
+    expect(z.s).toBeCloseTo(base * (1 + 0.9 * ZOOM_VERTICAL));
+    expect(z.s).toBeGreaterThan(base);
     expect(encuadrar({ x: 500, y: 500, s: 1 }, 360, 740).s).toBeCloseTo(base);
     // en cuadrado, igual que antes
     expect(encuadrar(enfocar(600, 668, 1.9), 800, 800).s).toBeCloseTo(1.9);
+  });
+  it("la casa apunta sin limitar; el límite lo pone la vista según su aspecto", () => {
+    // cuadrado: igual que antes
+    expect(encuadrar(apuntar(0, 0, 2), 800, 800)).toEqual(enfocar(0, 0, 2));
+    expect(apuntar(500, 500, 0.5)).toEqual({ x: 500, y: 500, s: 1 });
+    // vertical: el refri (x=100) y la vaca a su lado se encuadran contra el borde del cuarto, no en x=263
+    const v = encuadrar(apuntar(100, 405, 1.9), 360, 740); // enfoque en el refri mismo
+    expect(v.x).toBeCloseTo(500 / v.s);
+    expect(enPantalla(v, 0, 0, 740 / 360).x).toBeCloseTo(0);
   });
 });

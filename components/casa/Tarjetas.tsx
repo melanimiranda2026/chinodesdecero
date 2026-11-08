@@ -19,18 +19,28 @@ interface Props {
 export function Tarjetas({ capa, anotado, formulario, alEntrar, alSeguir, alCerrar }: Props) {
   const principal = useRef<HTMLButtonElement>(null);
 
+  // Los callbacks vienen en línea y cambian en cada render: se guardan en una ref
+  // para que el foco y el teclado dependan solo de la capa.
+  const ultimos = useRef({ alSeguir, alCerrar });
+  useEffect(() => {
+    ultimos.current = { alSeguir, alCerrar };
+  });
+
   useEffect(() => {
     if (!capa) return;
+    const previo = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     principal.current?.focus();
-    if (capa === "entrada") return; // la entrada no se cierra con Escape
     const alTeclear = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      if (capa === "metodo") alSeguir();
-      else alCerrar();
+      if (e.key !== "Escape" || capa === "entrada") return; // la entrada no se cierra con Escape
+      if (capa === "metodo") ultimos.current.alSeguir();
+      else ultimos.current.alCerrar();
     };
     document.addEventListener("keydown", alTeclear);
-    return () => document.removeEventListener("keydown", alTeclear);
-  }, [capa, alCerrar, alSeguir]);
+    return () => {
+      document.removeEventListener("keydown", alTeclear);
+      if (previo?.isConnected) previo.focus(); // al cerrar, el foco vuelve a donde estaba
+    };
+  }, [capa]);
 
   if (!capa) return null;
 
@@ -58,7 +68,7 @@ export function Tarjetas({ capa, anotado, formulario, alEntrar, alSeguir, alCerr
           </div>
           <h1 id="t-titulo">Lo acabas de hacer</h1>
           <p>
-            Nadie te tradujo nada: <b>escuchaste, viste y tocaste</b>, y entendiste. Así aprende el cerebro un idioma:
+            Nadie te tradujo nada: <b>escuchaste, viste y tocaste</b>, y lo reconociste. Así aprende el cerebro un idioma:
             sonido primero, significado por la imagen, y repetir jugando.
           </p>
           <p>Eso es el Método Jìn: sumergirte en chino de a poquito.</p>

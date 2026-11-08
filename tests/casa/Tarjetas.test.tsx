@@ -48,3 +48,36 @@ describe("Tarjetas", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 });
+
+describe("Tarjetas: foco", () => {
+  it("un re-render del padre no le quita el foco a un input del formulario", () => {
+    const formulario = <input aria-label="correo" />;
+    const { rerender } = render(<Tarjetas {...base} capa="pronto" formulario={formulario} />);
+    const input = screen.getByLabelText("correo");
+    input.focus();
+    expect(document.activeElement).toBe(input);
+    // callbacks nuevos en cada render, como hace Casa
+    rerender(<Tarjetas {...base} alEntrar={() => {}} alSeguir={() => {}} alCerrar={() => {}} capa="pronto" formulario={formulario} />);
+    rerender(<Tarjetas {...base} alEntrar={() => {}} alSeguir={() => {}} alCerrar={() => {}} capa="pronto" formulario={formulario} />);
+    expect(document.activeElement).toBe(input);
+  });
+  it("Escape usa el último callback", () => {
+    const viejo = vi.fn();
+    const nuevo = vi.fn();
+    const { rerender } = render(<Tarjetas {...base} alCerrar={viejo} capa="pronto" />);
+    rerender(<Tarjetas {...base} alCerrar={nuevo} capa="pronto" />);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(nuevo).toHaveBeenCalled();
+    expect(viejo).not.toHaveBeenCalled();
+  });
+  it("al cerrar la tarjeta el foco vuelve al elemento previo", () => {
+    const b = document.createElement("button");
+    document.body.appendChild(b);
+    b.focus();
+    const { rerender } = render(<Tarjetas {...base} capa="pronto" />);
+    expect(document.activeElement).not.toBe(b);
+    rerender(<Tarjetas {...base} capa={null} />);
+    expect(document.activeElement).toBe(b);
+    b.remove();
+  });
+});

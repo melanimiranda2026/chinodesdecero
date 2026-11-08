@@ -1,11 +1,12 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { S, type Silaba } from "@/lib/silabas";
+import type { Silaba } from "@/lib/silabas";
 import { ANCLAS, ESTADO_INICIAL, FREGADERO, OBJETOS, junto, type EstadoCocina, type ObjetoId } from "./cocina/datos";
 import { acciones, aplicar, type Accion } from "./cocina/acciones";
 import { animar, type ClaseObjeto, type Punto } from "./cocina/animar";
-import { BU_DUI, DUI, GEI_WO, NI_HAO, ZHE_SHI } from "./cocina/frases";
-import { crearQuiz, responder, type Quiz } from "./quiz";
+import { NI_HAO, ZHE_SHI } from "./cocina/frases";
+import { useQuiz, type EstadoQuiz } from "./useQuiz";
+import { useVivo } from "./useVivo";
 import { enfocar, limitarVaca, objetoBajo, puntoJunto, type Camara } from "./camara";
 import { GESTO_DE, type Medalla } from "./gestos/medalla";
 import { decir } from "./audio/voz";
@@ -15,18 +16,10 @@ import { useParticulas, type Particula } from "./useParticulas";
 import type { Hocico, Ojos, Orejas } from "./Vaca";
 
 export type { ClaseObjeto, Punto } from "./cocina/animar";
+export type { EstadoQuiz } from "./useQuiz";
 export type { Particula, TipoParticula } from "./useParticulas";
 
 export type AlEvento = (nombre: string, datos?: Record<string, unknown>) => void;
-
-/** Estado del 玩: "juego" pregunta, "celebra" son los 1,8 s de festejo, "fin" espera la tarjeta del método. */
-export interface EstadoQuiz extends Quiz {
-  i: number;
-  aciertos: number;
-  fase: "juego" | "celebra" | "fin";
-}
-
-const GLOBO_QUIZ: Silaba[] = [...GEI_WO, ...S("？", "?", "5")];
 
 export interface CasaApi {
   estado: EstadoCocina;
@@ -62,20 +55,8 @@ export interface CasaApi {
   saludar(): void;
 }
 
-const registrarFallo = (e: unknown) => console.error("[casa]", e);
 const VISTA_TODO: Camara = { x: 500, y: 500, s: 1 };
 const VACA_INICIAL: Punto = { x: 250, y: 780 };
-
-/** Valor con estado de React y ref sincronizada: las secuencias async leen siempre lo último. */
-function useVivo<T>(inicial: T): [T, { readonly current: T }, (v: T) => void] {
-  const [valor, setValor] = useState(inicial);
-  const ref = useRef(inicial);
-  const poner = useCallback((v: T) => {
-    ref.current = v;
-    setValor(v);
-  }, []);
-  return [valor, ref, poner];
-}
 
 function bocaDe(abierta: number): Hocico {
   return abierta > 0.5 ? "abierta" : abierta > 0.15 ? "o" : "sonrisa";
@@ -95,7 +76,6 @@ export function useCasa(onEvento?: AlEvento): CasaApi {
   const [primerPlano, setPrimerPlano] = useState<CasaApi["primerPlano"]>(null);
   const [posiciones, setPosiciones] = useState<CasaApi["posiciones"]>({});
   const [clases, setClases] = useState<CasaApi["clases"]>({});
-  const [quiz, quizRef, setQuiz] = useVivo<EstadoQuiz | null>(null);
 
   const eventoRef = useRef(onEvento);
   useEffect(() => {
@@ -187,6 +167,11 @@ export function useCasa(onEvento?: AlEvento): CasaApi {
   const cerrarOpciones = useCallback(() => setOpciones(null), []);
   const mostrarOpciones = useCallback((id: ObjetoId, lista: Accion[]) => setOpciones({ id, lista }), []);
 
+  const { quiz, quizRef, empezarQuiz, responderQuiz, repetirQuiz, cerrarQuiz } = useQuiz({
+    ocupadoRef, estadoRef, setOcupado, cerrarOpciones, setCamara, setVaca, setGlobo,
+    vistaTodo: VISTA_TODO, hablar, espera, luego, festejo, mirar, eventoRef,
+  });
+
   const tocar = useCallback(
     async (id: ObjetoId) => {
       if (ocupadoRef.current || quizRef.current || estadoRef.current[id] === "nada") return;
@@ -233,71 +218,6 @@ export function useCasa(onEvento?: AlEvento): CasaApi {
     },
     [ocupadoRef, estadoRef, cerrarOpciones, setOcupado, setVaca, setCamara, espera, mirar, hablar, mostrarOpciones],
   );
-
-  // ---- 玩: la vaca pide 给我 + objeto de oído; se responde arrastrándolo hasta ella ----
-  const pedirQuiz = useCallback(async () => {
-    const q = quizRef.current;
-    if (!q || q.fase !== "juego") return;
-    // el globo muestra solo 给我 ？: la palabra se reconoce de oído
-    await hablar([...GEI_WO, ...OBJETOS[q.rondas[q.i]].nombre], { globo: GLOBO_QUIZ, fijo: true });
-  }, [quizRef, hablar]);
-
-  const empezarQuiz = useCallback(() => {
-    if (ocupadoRef.current || quizRef.current) return;
-    cerrarOpciones();
-    setCamara(VISTA_TODO);
-    setVaca({ x: 420, y: 600 });
-    setQuiz({ ...crearQuiz(estadoRef.current, Math.random), i: 0, aciertos: 0, fase: "juego" });
-    eventoRef.current?.("quiz_inicio");
-    luego(() => void pedirQuiz().catch(registrarFallo), 700);
-  }, [ocupadoRef, quizRef, estadoRef, cerrarOpciones, setCamara, setVaca, setQuiz, luego, pedirQuiz]);
-
-  const responderQuiz = useCallback(
-    async (id: ObjetoId) => {
-      const q = quizRef.current;
-      if (!q || q.fase !== "juego" || ocupadoRef.current) return;
-      setOcupado(true);
-      let sigue = true;
-      try {
-        if (responder(q, q.i, id) === "bien") {
-          sfx("ding");
-          festejo();
-          const i = q.i + 1;
-          const fin = i >= q.rondas.length;
-          setQuiz({ ...q, i, aciertos: q.aciertos + 1, fase: fin ? "celebra" : "juego" });
-          await hablar(DUI);
-          if (fin) {
-            sigue = false;
-            festejo(2000);
-            await espera(1800);
-            setQuiz({ ...q, i, aciertos: q.aciertos + 1, fase: "fin" });
-            eventoRef.current?.("quiz_fin", { aciertos: q.aciertos + 1 });
-          } else {
-            await espera(300);
-          }
-        } else {
-          sfx("boing");
-          mirar("sorpresa", 900);
-          await hablar(BU_DUI);
-          await espera(200);
-        }
-      } finally {
-        setOcupado(false);
-      }
-      if (sigue) await pedirQuiz();
-    },
-    [quizRef, ocupadoRef, setOcupado, setQuiz, festejo, hablar, espera, mirar, pedirQuiz],
-  );
-
-  const repetirQuiz = useCallback(() => {
-    if (ocupadoRef.current) return;
-    pedirQuiz().catch(registrarFallo);
-  }, [ocupadoRef, pedirQuiz]);
-
-  const cerrarQuiz = useCallback(() => {
-    setQuiz(null);
-    setGlobo(null);
-  }, [setQuiz]);
 
   const saludar = useCallback(() => {
     luego(() => {

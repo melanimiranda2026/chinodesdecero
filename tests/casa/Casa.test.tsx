@@ -254,3 +254,41 @@ describe("Casa: 玩 (quiz)", () => {
     expect(screen.getByText("Este cuarto abre pronto. Deja tu correo y te avisamos.")).toBeTruthy();
   });
 });
+
+describe("Casa: quiz, guardas y tarjetas", () => {
+  it("empezarQuiz se ignora mientras la casa está ocupada", async () => {
+    const { api } = montar();
+    act(() => { void api().soltarObjetoEnVaca("beizi"); });
+    await avanzar(10); // abrirAcciones deja ocupado
+    expect(api().ocupado).toBe(true);
+    act(() => api().empezarQuiz());
+    expect(api().quiz).toBeNull();
+  });
+
+  it("un segundo soltar durante el 对/不对 se ignora", async () => {
+    const { api } = montar();
+    act(() => api().empezarQuiz());
+    await avanzar(800);
+    const q = api().quiz!;
+    await act(async () => {
+      void api().soltarObjetoEnVaca(q.rondas[0]);
+      await vi.advanceTimersByTimeAsync(10);
+    });
+    expect(api().ocupado).toBe(true);
+    const llamadas = decirMock.mock.calls.length;
+    await act(async () => {
+      void api().soltarObjetoEnVaca(api().quiz!.rondas[1]);
+      await vi.advanceTimersByTimeAsync(10);
+    });
+    expect(api().quiz!.aciertos).toBe(1);
+    expect(api().quiz!.i).toBe(1);
+    expect(decirMock.mock.calls.length).toBe(llamadas);
+  });
+
+  it("con una tarjeta abierta la casa queda inert y el botón 玩 no se puede usar", () => {
+    const { container } = montar();
+    expect(container.querySelector("[inert]")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
+    expect(container.querySelector("[inert]")).toBeNull();
+  });
+});

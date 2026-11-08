@@ -178,6 +178,7 @@ export function CasaVista({
       data-ocupado={ocupado || undefined}
       data-primer-plano={casa.primerPlano ? `${casa.primerPlano.objeto}:${casa.primerPlano.accion.anim}` : undefined}
     >
+      <div className={styles.interior} inert={capa !== null}>
       <div className={styles.escenario}>
         <div
           ref={mundoRef}
@@ -319,6 +320,7 @@ export function CasaVista({
             alTerminar={casa.terminarPrimerPlano}
           />
         )}
+      </div>
       </div>
 
       <Tarjetas

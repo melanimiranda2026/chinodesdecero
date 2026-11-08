@@ -47,3 +47,6 @@ next-env.d.ts
 # playwright
 /test-results/
 /playwright-report/
+
+# config MCP local (trae la API key de ElevenLabs)
+.mcp.json

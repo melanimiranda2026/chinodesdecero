@@ -1,33 +1,32 @@
 # Audios de la casa
 
-0 de 68 existen. Generado con `npm run audios`; no se edita a mano.
+0 de 67 existen. Generado con `npm run audios`; no se edita a mano.
 
 | Archivo | Hanzi | Pinyin | ¿Existe? |
 |---|---|---|---|
 | public/audio/cocina/bei1_zi5.mp3 | 杯子 | bēi zi | no |
 | public/audio/cocina/zhe4_shi4_bei1_zi5.mp3 | 这是杯子 | zhè shì bēi zi | no |
-| public/audio/cocina/gei3_wo3_bei1_zi5.mp3 | 给我杯子 | gěi wǒ bēi zi | no |
 | public/audio/cocina/wan3.mp3 | 碗 | wǎn | no |
 | public/audio/cocina/zhe4_shi4_wan3.mp3 | 这是碗 | zhè shì wǎn | no |
-| public/audio/cocina/gei3_wo3_wan3.mp3 | 给我碗 | gěi wǒ wǎn | no |
 | public/audio/cocina/pan2_zi5.mp3 | 盘子 | pán zi | no |
 | public/audio/cocina/zhe4_shi4_pan2_zi5.mp3 | 这是盘子 | zhè shì pán zi | no |
-| public/audio/cocina/gei3_wo3_pan2_zi5.mp3 | 给我盘子 | gěi wǒ pán zi | no |
 | public/audio/cocina/kuai4_zi5.mp3 | 筷子 | kuài zi | no |
 | public/audio/cocina/zhe4_shi4_kuai4_zi5.mp3 | 这是筷子 | zhè shì kuài zi | no |
-| public/audio/cocina/gei3_wo3_kuai4_zi5.mp3 | 给我筷子 | gěi wǒ kuài zi | no |
 | public/audio/cocina/ping2_guo3.mp3 | 苹果 | píng guǒ | no |
 | public/audio/cocina/zhe4_shi4_ping2_guo3.mp3 | 这是苹果 | zhè shì píng guǒ | no |
-| public/audio/cocina/gei3_wo3_ping2_guo3.mp3 | 给我苹果 | gěi wǒ píng guǒ | no |
 | public/audio/cocina/bing1_xiang1.mp3 | 冰箱 | bīng xiāng | no |
 | public/audio/cocina/zhe4_shi4_bing1_xiang1.mp3 | 这是冰箱 | zhè shì bīng xiāng | no |
-| public/audio/cocina/gei3_wo3_bing1_xiang1.mp3 | 给我冰箱 | gěi wǒ bīng xiāng | no |
 | public/audio/cocina/guo1.mp3 | 锅 | guō | no |
 | public/audio/cocina/zhe4_shi4_guo1.mp3 | 这是锅 | zhè shì guō | no |
-| public/audio/cocina/gei3_wo3_guo1.mp3 | 给我锅 | gěi wǒ guō | no |
 | public/audio/cocina/cha2_hu2.mp3 | 茶壶 | chá hú | no |
 | public/audio/cocina/zhe4_shi4_cha2_hu2.mp3 | 这是茶壶 | zhè shì chá hú | no |
+| public/audio/cocina/gei3_wo3_bei1_zi5.mp3 | 给我杯子 | gěi wǒ bēi zi | no |
+| public/audio/cocina/gei3_wo3_wan3.mp3 | 给我碗 | gěi wǒ wǎn | no |
+| public/audio/cocina/gei3_wo3_pan2_zi5.mp3 | 给我盘子 | gěi wǒ pán zi | no |
+| public/audio/cocina/gei3_wo3_kuai4_zi5.mp3 | 给我筷子 | gěi wǒ kuài zi | no |
 | public/audio/cocina/gei3_wo3_cha2_hu2.mp3 | 给我茶壶 | gěi wǒ chá hú | no |
+| public/audio/cocina/gei3_wo3_guo1.mp3 | 给我锅 | gěi wǒ guō | no |
+| public/audio/cocina/gei3_wo3_ping2_guo3.mp3 | 给我苹果 | gěi wǒ píng guǒ | no |
 | public/audio/cocina/dao4_shui3.mp3 | 倒水 | dào shuǐ | no |
 | public/audio/cocina/wo3_dao4_shui3.mp3 | 我倒水 | wǒ dào shuǐ | no |
 | public/audio/cocina/dao4_cha2.mp3 | 倒茶 | dào chá | no |
@@ -54,8 +53,8 @@
 | public/audio/cocina/wo3_qie1_ping2_guo3.mp3 | 我切苹果 | wǒ qiē píng guǒ | no |
 | public/audio/cocina/guan1_shang5.mp3 | 关上 | guān shang | no |
 | public/audio/cocina/wo3_guan1_shang5_bing1_xiang1.mp3 | 我关上冰箱 | wǒ guān shang bīng xiāng | no |
-| public/audio/cocina/sheng4_fan4.mp3 | 盛饭 | shèng fàn | no |
-| public/audio/cocina/wo3_sheng4_fan4.mp3 | 我盛饭 | wǒ shèng fàn | no |
+| public/audio/cocina/cheng2_fan4.mp3 | 盛饭 | chéng fàn | no |
+| public/audio/cocina/wo3_cheng2_fan4.mp3 | 我盛饭 | wǒ chéng fàn | no |
 | public/audio/cocina/wo3_xi3_bei1_zi5.mp3 | 我洗杯子 | wǒ xǐ bēi zi | no |
 | public/audio/cocina/wo3_na2_pan2_zi5.mp3 | 我拿盘子 | wǒ ná pán zi | no |
 | public/audio/cocina/chi1_fan4.mp3 | 吃饭 | chī fàn | no |

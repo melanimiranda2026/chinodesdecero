@@ -3,13 +3,14 @@ import { OBJETOS } from "../cocina/datos";
 import { acciones, estadosAlcanzables } from "../cocina/acciones";
 import { BU_DUI, DUI, GEI_WO, HAO, HEN_HAO, NI_HAO, TAI_BANG_LE, ZHE_SHI } from "../cocina/frases";
 import type { ObjetoId } from "../cocina/datos";
+import { OBJETOS_QUIZ } from "../quiz";
 
 /** Todas las frases que la casa puede decir, sin repetidas por idAudio. */
 export function frasesUsadas(): Silaba[][] {
   const todas: Silaba[][] = [];
-  for (const o of Object.values(OBJETOS)) {
-    todas.push(o.nombre, [...ZHE_SHI, ...o.nombre], [...GEI_WO, ...o.nombre]);
-  }
+  for (const o of Object.values(OBJETOS)) todas.push(o.nombre, [...ZHE_SHI, ...o.nombre]);
+  // 给我 + objeto solo para lo que el 玩 puede pedir (el refri no se pide)
+  for (const id of OBJETOS_QUIZ) todas.push([...GEI_WO, ...OBJETOS[id].nombre]);
   const ids = Object.keys(OBJETOS) as ObjetoId[];
   for (const e of estadosAlcanzables()) {
     for (const id of ids) {

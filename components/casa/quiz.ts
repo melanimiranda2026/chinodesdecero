@@ -6,6 +6,8 @@ export interface Quiz {
 
 const FIJOS: ObjetoId[] = ["beizi", "wan", "panzi", "kuaizi", "chahu", "guo"];
 export const RONDAS = 4;
+/** Todo lo que el 给我 puede pedir (la manzana, solo mientras exista). */
+export const OBJETOS_QUIZ: readonly ObjetoId[] = [...FIJOS, "pingguo"];
 
 /** 4 objetos distintos para el 给我: los seis de siempre y la manzana si todavía existe. */
 export function crearQuiz(e: EstadoCocina, azar: () => number): Quiz {

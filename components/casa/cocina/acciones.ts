@@ -47,7 +47,7 @@ export function acciones(id: ObjetoId, E: EstadoCocina): Accion[] {
     case "wan":
       if (e === "vacio")
         return E.guo === "cocido"
-          ? [A(S("盛饭", "shèng fàn", "44"), "🍚", S("我盛饭", "wǒ shèng fàn", "344"), "servirArroz", { sfx: "whoosh", cambia: { wan: "lleno", guo: "sucio" } })]
+          ? [A(S("盛饭", "chéng fàn", "24"), "🍚", S("我盛饭", "wǒ chéng fàn", "324"), "servirArroz", { sfx: "whoosh", cambia: { wan: "lleno", guo: "sucio" } })]
           : [A(NA, "✋", S("我拿碗", "wǒ ná wǎn", "323"), "tomar", { sfx: "whoosh" })];
       if (e === "lleno")
         return [A(S("吃饭", "chī fàn", "14"), "😋", S("我吃饭", "wǒ chī fàn", "314"), "comer", { sfx: "nam", cambia: { wan: "sucio" } })];
@@ -57,7 +57,7 @@ export function acciones(id: ObjetoId, E: EstadoCocina): Accion[] {
         return [A(S("做饭", "zuò fàn", "44"), "🔥", S("我做饭", "wǒ zuò fàn", "344"), "cocinar", { sfx: "brillo", cambia: { guo: "cocido" } })];
       if (e === "cocido")
         return E.wan === "vacio"
-          ? [A(S("盛饭", "shèng fàn", "44"), "🍚", S("我盛饭", "wǒ shèng fàn", "344"), "servirArroz", { objeto: "wan", sfx: "whoosh", cambia: { wan: "lleno", guo: "sucio" } })]
+          ? [A(S("盛饭", "chéng fàn", "24"), "🍚", S("我盛饭", "wǒ chéng fàn", "324"), "servirArroz", { objeto: "wan", sfx: "whoosh", cambia: { wan: "lleno", guo: "sucio" } })]
           : [];
       return [A(XI, "🫧", S("我洗锅", "wǒ xǐ guō", "331"), "lavar", { lugar: "fregadero", sfx: "pop-burbuja", cambia: { guo: "vacio" } })];
     case "panzi":

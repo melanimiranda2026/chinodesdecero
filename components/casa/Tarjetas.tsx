@@ -6,8 +6,10 @@ export type CapaTarjeta = "entrada" | "metodo" | "pronto";
 
 interface Props {
   capa: CapaTarjeta | null;
-  /** Ya dejó su correo: la tarjeta "pronto" cambia de texto. */
+  /** Pidió que le avisemos (marcó la casilla): la tarjeta "pronto" cambia de texto. */
   anotado: boolean;
+  /** Mensaje del enlace del correo (bueno o vencido): se lee en la tarjeta de entrada. */
+  aviso?: string | null;
   /** Hueco del formulario de correo (lo llena la Task 12). */
   formulario?: ReactNode;
   alEntrar: () => void;
@@ -16,7 +18,7 @@ interface Props {
 }
 
 /** Las tarjetas viven fuera de la casa: aquí sí hay español. Son diálogos modales. */
-export function Tarjetas({ capa, anotado, formulario, alEntrar, alSeguir, alCerrar }: Props) {
+export function Tarjetas({ capa, anotado, aviso, formulario, alEntrar, alSeguir, alCerrar }: Props) {
   const principal = useRef<HTMLButtonElement>(null);
 
   // Los callbacks vienen en línea y cambian en cada render: se guardan en una ref
@@ -55,6 +57,11 @@ export function Tarjetas({ capa, anotado, formulario, alEntrar, alSeguir, alCerr
           </svg>
           <h1 id="t-titulo">Método Jìn</h1>
           <p>Sumérgete. Toca, arrastra, escucha.</p>
+          {aviso && (
+            <p role="status" className={styles.avisoEntrada}>
+              {aviso}
+            </p>
+          )}
           <button ref={principal} type="button" className={styles.principal} onClick={alEntrar}>
             Entrar a la casa
           </button>
@@ -68,7 +75,7 @@ export function Tarjetas({ capa, anotado, formulario, alEntrar, alSeguir, alCerr
           </div>
           <h1 id="t-titulo">Lo acabas de hacer</h1>
           <p>
-            Nadie te tradujo nada: <b>escuchaste, viste y tocaste</b>, y lo reconociste. Así aprende el cerebro un idioma:
+            Nadie te tradujo nada: <b>escuchaste, viste y tocaste</b>, y lo reconociste. Así se aprende un idioma de verdad:
             sonido primero, significado por la imagen, y repetir jugando.
           </p>
           <p>Eso es el Método Jìn: sumergirte en chino de a poquito.</p>
@@ -87,7 +94,7 @@ export function Tarjetas({ capa, anotado, formulario, alEntrar, alSeguir, alCerr
           <p>
             {anotado
               ? "Ya estás anotada/o. Te avisamos cuando abra."
-              : "Este cuarto abre pronto. Deja tu correo y te avisamos."}
+              : "Este cuarto abre pronto. Deja tu correo y marca la casilla: te avisamos."}
           </p>
           {!anotado && formulario}
           <button ref={principal} type="button" className={styles.principal} onClick={alCerrar}>

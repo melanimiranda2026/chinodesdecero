@@ -11,14 +11,21 @@ const CUARTOS: { id: Cuarto; icono: string; nombre: string }[] = [
   { id: "bano", icono: "🛁", nombre: "浴室" },
 ];
 
-/** Minimapa 2×2: la cocina es donde estás; los otros tres cuartos están cerrados. */
+/**
+ * Minimapa 2×2: la cocina es donde estás; los otros tres cuartos están cerrados.
+ * Con `anotado` (pidió que le avisemos) los cerrados muestran ⏳ ("pronto") en vez de 🔒.
+ * Dentro de la casa no hay español: el "pronto" es un ícono.
+ */
 export function Minimapa({
   cuartoActual,
+  anotado = false,
   alTocarBloqueado,
 }: {
   cuartoActual: Cuarto;
+  anotado?: boolean;
   alTocarBloqueado: (cuarto: Cuarto) => void;
 }) {
+  const marca = anotado ? "⏳" : "🔒";
   return (
     <div className={styles.mapa} role="group" aria-label="地图">
       {CUARTOS.map(({ id, icono, nombre }) => {
@@ -29,9 +36,10 @@ export function Minimapa({
             type="button"
             data-cuarto={id}
             data-bloqueado={aqui ? undefined : "true"}
-            aria-label={aqui ? nombre : `${nombre} 🔒`}
+            data-pronto={!aqui && anotado ? "true" : undefined}
+            aria-label={aqui ? nombre : `${nombre} ${marca}`}
             aria-current={aqui ? "true" : undefined}
-            className={[styles.cuarto, aqui ? styles.aqui : styles.bloq].join(" ")}
+            className={[styles.cuarto, aqui ? styles.aqui : styles.bloq, !aqui && anotado ? styles.pronto : ""].join(" ")}
             onClick={() => {
               if (aqui) return;
               sfx("boing");

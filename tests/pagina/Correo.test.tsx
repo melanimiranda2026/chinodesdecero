@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Correo } from "@/components/pagina/Correo";
-import { cargarAvance } from "@/components/casa/avance";
+import { CLAVE_AVANCE, EVENTO_AVANCE, cargarAvance } from "@/components/casa/avance";
+import { ESTADO_INICIAL } from "@/components/casa/cocina/datos";
 
 const respuesta = (status: number) => new Response(status === 200 ? '{"ok":true}' : '{"error":"x"}', { status });
 
@@ -21,9 +22,9 @@ describe("Correo", () => {
     render(<Correo origen="pronto" />);
     fireEvent.change(screen.getByLabelText("Tu correo"), { target: { value: "a@b.cl" } });
     fireEvent.click(screen.getByRole("button", { name: "Avísame" }));
-    await screen.findByText(/¡Listo! Te llegará un enlace/);
+    await screen.findByText(/¡Listo! Guardamos tu correo para tu avance/);
     const cuerpo = JSON.parse((f.mock.calls[0][1] as RequestInit).body as string);
-    expect(cuerpo).toEqual({ email: "a@b.cl", consentimiento: false, origen: "pronto" });
+    expect(cuerpo).toMatchObject({ email: "a@b.cl", consentimiento: false, origen: "pronto", sitio: "" });
     expect(cargarAvance().correo).toBe("a@b.cl");
   });
   it("doble clic en Avísame hace un solo fetch y deshabilita el botón", async () => {
@@ -58,5 +59,89 @@ describe("Correo", () => {
     fireEvent.submit(form);
     fireEvent.submit(form);
     expect(f).toHaveBeenCalledTimes(1);
+  });
+
+  const llenar = (valor = "a@b.cl") => fireEvent.change(screen.getByLabelText("Tu correo"), { target: { value: valor } });
+  const enviar = () => fireEvent.click(screen.getByRole("button", { name: "Avísame" }));
+
+  it("con la casilla: dice que te avisamos, deja la línea del enlace y quita el formulario", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(respuesta(200));
+    render(<Correo origen="pie" />);
+    llenar();
+    fireEvent.click(screen.getByRole("checkbox"));
+    enviar();
+    const estado = await screen.findByRole("status");
+    expect(estado.textContent).toContain("Ya estás anotada/o. Te avisamos cuando abra.");
+    expect(estado.textContent).toContain("Te llegará un enlace para guardar tu avance en cualquier dispositivo.");
+    expect(screen.queryByRole("checkbox")).toBeNull();
+  });
+
+  it("sin la casilla: no promete avisar, invita a marcarla y el formulario sigue para marcarla", async () => {
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(respuesta(200));
+    render(<Correo origen="pie" />);
+    llenar();
+    enviar();
+    const estado = await screen.findByRole("status");
+    expect(estado.textContent).not.toContain("Te avisamos");
+    expect(estado.textContent).toContain("Si quieres que te avisemos cuando abra, marca la casilla.");
+    expect(estado.textContent).toContain("Te llegará un enlace para guardar tu avance en cualquier dispositivo.");
+    fireEvent.click(screen.getByRole("checkbox"));
+    await waitFor(() => expect((screen.getByRole("button", { name: "Avísame" }) as HTMLButtonElement).disabled).toBe(false));
+    enviar();
+    await screen.findByText(/Ya estás anotada\/o/);
+    expect(JSON.parse((f.mock.calls[1][1] as RequestInit).body as string).consentimiento).toBe(true);
+  });
+
+  it("avisa a la casa con el correo y si marcó la casilla", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(respuesta(200));
+    const avisos: unknown[] = [];
+    const oir = (e: Event) => avisos.push((e as CustomEvent).detail);
+    window.addEventListener(EVENTO_AVANCE, oir);
+    render(<Correo origen="pie" />);
+    llenar();
+    fireEvent.click(screen.getByRole("checkbox"));
+    enviar();
+    await screen.findByRole("status");
+    window.removeEventListener(EVENTO_AVANCE, oir);
+    expect(avisos).toEqual([{ correo: "a@b.cl", avisar: true }]);
+  });
+
+  it("envía el avance de este navegador sin el correo", async () => {
+    localStorage.setItem(CLAVE_AVANCE, JSON.stringify({ estado: ESTADO_INICIAL, medallas: { cortar: "oro" }, escuchadas: ["x"], correo: "viejo@b.cl" }));
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(respuesta(200));
+    render(<Correo origen="pie" />);
+    llenar();
+    enviar();
+    await screen.findByRole("status");
+    const cuerpo = JSON.parse((f.mock.calls[0][1] as RequestInit).body as string);
+    expect(cuerpo.avance).toEqual({ estado: ESTADO_INICIAL, medallas: { cortar: "oro" }, escuchadas: ["x"] });
+  });
+
+  it("el campo trampa está oculto y fuera del orden de foco; si se llena, viaja como `sitio`", async () => {
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(respuesta(200));
+    const { container } = render(<Correo origen="pie" />);
+    const trampa = container.querySelector('input[name="sitio"]') as HTMLInputElement;
+    expect(trampa.tabIndex).toBe(-1);
+    expect(trampa.closest("[aria-hidden=true]")).toBeTruthy();
+    fireEvent.change(trampa, { target: { value: "bot" } });
+    llenar();
+    enviar();
+    await screen.findByRole("status");
+    expect(JSON.parse((f.mock.calls[0][1] as RequestInit).body as string).sitio).toBe("bot");
+  });
+
+  it("429: pide esperar", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(respuesta(429));
+    render(<Correo origen="pie" />);
+    llenar();
+    enviar();
+    expect((await screen.findByRole("alert")).textContent).toMatch(/Espera un rato/);
+  });
+
+  it("lleva la nota de privacidad con el contacto para borrar el correo", () => {
+    render(<Correo origen="pie" />);
+    expect(screen.getByText(/Usamos tu correo solo para tu avance y, si lo marcas, para avisarte de novedades/).textContent).toContain(
+      "CONFIRMAR@correo",
+    );
   });
 });

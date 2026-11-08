@@ -14,4 +14,9 @@
 }
 .boton:disabled { opacity: 0.6; cursor: progress; }
 .error { margin: 0; color: #b3261e; font-weight: 700; font-size: 14px; }
-.listo { margin: 12px 0; font-weight: 900; color: #1f6b3b; }
+.listo { margin: 0; font-weight: 900; color: #1f6b3b; display: grid; gap: 4px; }
+.listo p { margin: 0; }
+.listo p + p { font-weight: 700; color: #4a2a1c; }
+.nota { margin: 0; font-size: 12px; line-height: 1.4; opacity: 0.8; }
+/* Trampa para bots: fuera de la pantalla, sin foco y oculta a lectores de pantalla. */
+.trampa { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }

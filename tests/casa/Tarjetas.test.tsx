@@ -7,7 +7,7 @@ const base = { anotado: false, alEntrar: vi.fn(), alSeguir: vi.fn(), alCerrar: v
 describe("Tarjetas", () => {
   it("pronto: invita a dejar el correo", () => {
     render(<Tarjetas {...base} capa="pronto" />);
-    expect(screen.getByText("Este cuarto abre pronto. Deja tu correo y te avisamos.")).toBeTruthy();
+    expect(screen.getByText("Este cuarto abre pronto. Deja tu correo y marca la casilla: te avisamos.")).toBeTruthy();
   });
   it("pronto con anotado=true muestra el texto de ya anotada/o", () => {
     render(<Tarjetas {...base} capa="pronto" anotado />);

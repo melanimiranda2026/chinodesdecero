@@ -27,7 +27,7 @@ export function Material() {
               <p className={styles.texto}>{m.descripcion}</p>
               {m.estado === "pronto" ? (
                 <>
-                  <p className={styles.texto}>Déjanos tu correo y te avisamos apenas esté listo.</p>
+                  <p className={styles.texto}>Déjanos tu correo y marca la casilla: te avisamos apenas esté listo.</p>
                   <Correo origen="material" />
                 </>
               ) : (

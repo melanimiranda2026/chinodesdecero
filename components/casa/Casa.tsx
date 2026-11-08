@@ -14,7 +14,7 @@ import { Tarjetas, type CapaTarjeta } from "./Tarjetas";
 import { desbloquearAudio } from "./audio/voz";
 import { useCasa, type AlEvento, type CasaApi, type Punto } from "./useCasa";
 import { NOMBRES_EVENTO, type NombreEvento } from "@/lib/eventos-nombres";
-import { EVENTO_AVANCE, avanceInicial, cargarAvance, guardarAvance, sincronizar, subirAvance, fusionar, type Avance } from "./avance";
+import { EVENTO_AVANCE, avanceInicial, cargarAviso, cargarAvance, guardarAvance, sincronizar, subirAvance, fusionar, type Avance, type DetalleAvance } from "./avance";
 import { registrar } from "./eventos";
 import { Correo } from "@/components/pagina/Correo";
 import styles from "./Casa.module.css";
@@ -40,7 +40,6 @@ const CONOCIDOS = new Set<string>(NOMBRES_EVENTO);
 /** Nombres internos de la casa a nombres del registro de eventos. */
 const ALIAS: Record<string, NombreEvento> = { quiz_fin: "quiz_completo" };
 const ORDEN_MEDALLA = { bronce: 1, plata: 2, oro: 3 } as const;
-const AVISO_MS = 5000;
 const GUARDAR_MS = 500;
 
 export function Casa({ onEvento }: { onEvento?: AlEvento }) {
@@ -60,7 +59,8 @@ export function Casa({ onEvento }: { onEvento?: AlEvento }) {
   /** El estado que acabamos de restaurar: su efecto no cuenta como cambio. */
   const restaurado = useRef<EstadoCocina | null>(null);
   const restaurarRef = useRef<(e: EstadoCocina) => void>(() => {});
-  const [correo, setCorreo] = useState<string | undefined>(undefined);
+  /** Pidió que le avisemos (marcó la casilla): solo entonces "ya estás anotada/o". */
+  const [avisado, setAvisado] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
 
   const guardarYSubir = useCallback(() => {
@@ -97,7 +97,6 @@ export function Casa({ onEvento }: { onEvento?: AlEvento }) {
           restaurado.current = f.estado;
           restaurarRef.current(f.estado);
         }
-        setCorreo(f.correo);
       }
       sucio.current = true;
       guardarYSubir();
@@ -111,7 +110,6 @@ export function Casa({ onEvento }: { onEvento?: AlEvento }) {
       guardarAvance(avance.current);
       restaurado.current = r.avance.estado;
       restaurarRef.current(r.avance.estado);
-      setCorreo(correo);
     } else {
       sucio.current = true;
       guardarYSubir();
@@ -179,7 +177,7 @@ export function Casa({ onEvento }: { onEvento?: AlEvento }) {
     avance.current = cargarAvance();
     restaurado.current = avance.current.estado;
     restaurar(avance.current.estado);
-    setCorreo(avance.current.correo);
+    setAvisado(cargarAviso());
     listo.current = true;
 
     const url = new URL(window.location.href);
@@ -203,10 +201,11 @@ export function Casa({ onEvento }: { onEvento?: AlEvento }) {
 
     // El correo se deja desde un formulario (tarjeta o pie de página): llega por este aviso, en memoria.
     const alCambiar = (e: Event) => {
-      const c = (e as CustomEvent<{ correo?: string }>).detail?.correo;
+      const d = (e as CustomEvent<DetalleAvance>).detail;
+      if (d?.avisar) setAvisado(true);
+      const c = d?.correo;
       if (!c) return;
       avance.current = { ...avance.current, correo: c };
-      setCorreo(c);
       programar();
     };
     const guardarYa = () => {
@@ -233,32 +232,22 @@ export function Casa({ onEvento }: { onEvento?: AlEvento }) {
     };
   }, [restaurar, intentarSync, programar]);
 
-  useEffect(() => {
-    if (!aviso) return;
-    const t = setTimeout(() => setAviso(null), AVISO_MS);
-    return () => clearTimeout(t);
-  }, [aviso]);
-
-  return (
-    <>
-      <CasaVista casa={casa} anotado={!!correo} formulario={<Correo origen="pronto" />} />
-      {aviso && (
-        <div role="status" className={styles.aviso}>
-          {aviso}
-        </div>
-      )}
-    </>
-  );
+  // El aviso (enlace bueno o vencido) va en la tarjeta de entrada, no encima del cuarto.
+  return <CasaVista casa={casa} anotado={avisado} aviso={aviso} formulario={<Correo origen="pronto" />} />;
 }
 
 /** La vista de la casa: recibe el estado del hook y traduce los punteros a sus funciones. */
 export function CasaVista({
   casa,
   anotado = false,
+  aviso = null,
   formulario,
 }: {
   casa: CasaApi;
+  /** Pidió que le avisemos cuando abran los cuartos. */
   anotado?: boolean;
+  /** Mensaje del enlace del correo (se muestra en la tarjeta de entrada). */
+  aviso?: string | null;
   formulario?: ReactNode;
 }) {
   const { estado, camara, vaca, cara, globo, opciones, ocupado, posiciones, clases, particulas } = casa;
@@ -576,7 +565,7 @@ export function CasaVista({
             )}
           </>
         )}
-        <Minimapa cuartoActual="cocina" alTocarBloqueado={() => {
+        <Minimapa cuartoActual="cocina" anotado={anotado} alTocarBloqueado={() => {
           registrar("tocar_bloqueado");
           setPronto(true);
         }} />
@@ -616,6 +605,7 @@ export function CasaVista({
       <Tarjetas
         capa={capa}
         anotado={anotado}
+        aviso={aviso}
         formulario={formulario}
         alEntrar={() => {
           registrar("entrar");

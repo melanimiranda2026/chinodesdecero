@@ -244,14 +244,14 @@ describe("Casa: 玩 (quiz)", () => {
     expect(screen.getByText("Lo acabas de hacer")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Seguir explorando" }));
     expect(api().quiz).toBeNull();
-    expect(screen.getByText("Este cuarto abre pronto. Deja tu correo y te avisamos.")).toBeTruthy();
+    expect(screen.getByText("Este cuarto abre pronto. Deja tu correo y marca la casilla: te avisamos.")).toBeTruthy();
   });
 
   it("tocar un cuarto bloqueado del minimapa abre la tarjeta pronto", () => {
     montar();
     fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
     fireEvent.click(screen.getByRole("button", { name: "卧室 🔒" }));
-    expect(screen.getByText("Este cuarto abre pronto. Deja tu correo y te avisamos.")).toBeTruthy();
+    expect(screen.getByText("Este cuarto abre pronto. Deja tu correo y marca la casilla: te avisamos.")).toBeTruthy();
   });
 });
 

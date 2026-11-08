@@ -133,6 +133,7 @@ describe("sincronizacion con la cuenta", () => {
     fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
     fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
     fireEvent.change(screen.getByLabelText("Tu correo"), { target: { value: "a@b.cl" } });
+    fireEvent.click(screen.getByRole("checkbox"));
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Avísame" }));
       await vi.advanceTimersByTimeAsync(10);
@@ -186,6 +187,7 @@ describe("guardado al desmontar y correo en memoria", () => {
     fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
     fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
     fireEvent.change(screen.getByLabelText("Tu correo"), { target: { value: "a@b.cl" } });
+    fireEvent.click(screen.getByRole("checkbox"));
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Avísame" }));
       await vi.advanceTimersByTimeAsync(10);
@@ -193,5 +195,39 @@ describe("guardado al desmontar y correo en memoria", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cerrar" }));
     fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
     expect(screen.getByText("Ya estás anotada/o. Te avisamos cuando abra.")).toBeTruthy();
+  });
+  it("sin marcar la casilla no dice 'ya estás anotada/o': la tarjeta sigue con el formulario y el mapa con 🔒", async () => {
+    sesion.hay = false;
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(json({ ok: true }));
+    render(<Casa />);
+    await avanzar(10);
+    fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
+    fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
+    fireEvent.change(screen.getByLabelText("Tu correo"), { target: { value: "a@b.cl" } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Avísame" }));
+      await vi.advanceTimersByTimeAsync(10);
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar" }));
+    expect(screen.getByRole("button", { name: "卧室 🔒" })).toBeTruthy();
+    fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
+    expect(screen.queryByText("Ya estás anotada/o. Te avisamos cuando abra.")).toBeNull();
+    expect(screen.getByLabelText("Tu correo")).toBeTruthy();
+  });
+  it("con la casilla, el minimapa cambia el 🔒 por ⏳ (pronto)", async () => {
+    sesion.hay = false;
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(json({ ok: true }));
+    render(<Casa />);
+    await avanzar(10);
+    fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
+    fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
+    fireEvent.change(screen.getByLabelText("Tu correo"), { target: { value: "a@b.cl" } });
+    fireEvent.click(screen.getByRole("checkbox"));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Avísame" }));
+      await vi.advanceTimersByTimeAsync(10);
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar" }));
+    expect(screen.getByRole("button", { name: "卧室 ⏳" }).getAttribute("data-pronto")).toBe("true");
   });
 });

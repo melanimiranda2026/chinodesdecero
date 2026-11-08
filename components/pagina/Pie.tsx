@@ -15,8 +15,8 @@ export function Pie() {
           Guarda tu avance
         </h2>
         <p className={styles.texto}>
-          Deja tu correo y sigue donde quedaste, en cualquier dispositivo. Te avisamos cuando abran el dormitorio, el living
-          y el baño.
+          Deja tu correo y sigue donde quedaste, en cualquier dispositivo. Si marcas la casilla, te avisamos cuando abran el
+          dormitorio, el living y el baño.
         </p>
         <Correo origen="pie" />
       </div>

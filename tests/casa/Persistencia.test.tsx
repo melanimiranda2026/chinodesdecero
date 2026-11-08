@@ -66,7 +66,11 @@ describe("Casa con avance", () => {
     await avanzar(10);
     expect(screen.getByRole("status").textContent).toBe("Ese enlace ya no funciona. Pide uno nuevo dejando tu correo otra vez.");
     expect(window.location.search).toBe("");
+    // va en la tarjeta de entrada (no encima del cuarto) y se va al entrar
+    expect(screen.getByRole("status").closest("[data-capa]")?.getAttribute("data-capa")).toBe("entrada");
     await avanzar(5100);
+    expect(screen.getByRole("status")).toBeTruthy(); // no se esfuma antes de que lo lean
+    fireEvent.click(screen.getByRole("button", { name: "Entrar a la casa" }));
     expect(screen.queryByRole("status")).toBeNull();
   });
 

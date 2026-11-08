@@ -160,7 +160,7 @@ describe("Casa", () => {
     expect(enfocada.s).toBe(1.9);
     act(() => api().verTodo());
     expect(api().camara).toEqual(enfocada);
-    const alejar = screen.getByRole("button", { name: "⤢" }) as HTMLButtonElement;
+    const alejar = screen.getByRole("button", { name: "全部" }) as HTMLButtonElement;
     expect(alejar.disabled).toBe(true);
     fireEvent.pointerDown(document.querySelector("div[class*=mundo]")!);
     expect(api().camara).toEqual(enfocada);

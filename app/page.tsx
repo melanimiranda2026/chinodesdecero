@@ -8,6 +8,7 @@ import styles from "@/components/pagina/pagina.module.css";
 export default function Home() {
   return (
     <main>
+      <h1 className={styles.oculto}>Chino desde cero — Método Jìn</h1>
       {/* La casa ocupa exactamente una pantalla (100svh); abajo, una página normal que se recorre. */}
       <div className={styles.casaSeccion}>
         <Casa />

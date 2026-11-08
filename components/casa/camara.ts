@@ -30,17 +30,22 @@ export function aspectoDe(anchoPx: number, altoPx: number): number {
   return anchoPx > 0 && altoPx > anchoPx ? altoPx / anchoPx : 1;
 }
 
+/** Centro antes del paneo: "ver todo" (s ≤ 1) es el encuadre inicial; un enfoque de la casa conserva su centro. */
+export function centroBase(c: Camara, anchoPx: number, altoPx: number): { x: number; y: number } {
+  return c.s <= 1 ? encuadreInicial(anchoPx, altoPx) : c;
+}
+
 /**
  * La cámara que de verdad se ve: la de la casa (pensada para un escenario cuadrado) llevada al escenario real,
- * más el paneo del dedo. En vertical el zoom nunca baja del encuadre inicial, así el cuarto siempre llena el alto.
+ * más el paneo del dedo. El zoom es relativo al encuadre inicial (en vertical el cuarto ya llena el alto con s base;
+ * un primer plano de 1.9 acerca 1.9 veces más que eso). `enfocar` limita el centro.
  */
 export function encuadrar(c: Camara, anchoPx: number, altoPx: number, pan: { x: number; y: number } = { x: 0, y: 0 }): Camara {
   const a = aspectoDe(anchoPx, altoPx);
   if (a === 1 && pan.x === 0 && pan.y === 0) return c;
   const ini = encuadreInicial(anchoPx, altoPx);
-  // "ver todo" (s = 1) en vertical es el encuadre inicial; un enfoque de la casa conserva su centro
-  const base = c.s <= 1 ? ini : c;
-  return enfocar(base.x + pan.x, base.y + pan.y, Math.max(c.s, ini.s), a);
+  const b = centroBase(c, anchoPx, altoPx);
+  return enfocar(b.x + pan.x, b.y + pan.y, c.s <= 1 ? ini.s : c.s * ini.s, a);
 }
 
 /** El mundo mide ancho x ancho px (1000 unidades = el ancho); en vertical se corre para centrar en el alto. */

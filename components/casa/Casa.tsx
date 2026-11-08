@@ -1,8 +1,8 @@
 "use client";
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as EventoPuntero, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as EventoPuntero, type ReactNode } from "react";
 import { textoHanzi } from "@/lib/silabas";
 import { OBJETOS, type EstadoCocina, type ObjetoId } from "./cocina/datos";
-import { aspectoDe, encuadrar, encuadreInicial, enPantalla, objetoBajo, transformCSS, type Camara } from "./camara";
+import { aspectoDe, centroBase, encuadrar, encuadreInicial, enPantalla, objetoBajo, transformCSS } from "./camara";
 import { DibujoObjeto } from "./arte/DibujoObjeto";
 import { FondoCuarto } from "./arte/Capa";
 import { Vaca } from "./Vaca";
@@ -273,7 +273,8 @@ export function CasaVista({
   // Tamaño real del escenario: en celular vertical deja de ser cuadrado y la cámara se encuadra con zoom y paneo.
   const escenarioRef = useRef<HTMLDivElement>(null);
   const [tam, setTam] = useState({ w: 0, h: 0 });
-  useEffect(() => {
+  // medido antes de pintar (después de hidratar), para no animar el salto al encuadre vertical
+  useLayoutEffect(() => {
     const el = escenarioRef.current;
     if (!el) return;
     const medir = () => {
@@ -286,11 +287,23 @@ export function CasaVista({
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+  // La transición de la cámara se enciende recién un cuadro después de la primera medida.
+  const [medido, setMedido] = useState(false);
+  useEffect(() => {
+    if (medido || tam.w === 0) return;
+    const id = requestAnimationFrame(() => setMedido(true));
+    return () => cancelAnimationFrame(id);
+  }, [medido, tam.w]);
   const aspecto = aspectoDe(tam.w, tam.h);
   const vertical = aspecto > 1;
-  // Paneo del dedo sobre el piso; vale solo para la cámara actual (si la casa mueve la cámara, se olvida).
-  const [paneo, setPaneo] = useState<{ de: Camara; x: number; y: number } | null>(null);
-  const pan = paneo && paneo.de === camara ? paneo : { x: 0, y: 0 };
+  // Paneo del dedo sobre el piso; cada vez que la casa mueve la cámara (enfoque, ⤢, quiz) se olvida.
+  const [paneo, setPaneo] = useState<{ x: number; y: number } | null>(null);
+  const [camaraPrevia, setCamaraPrevia] = useState(camara);
+  if (camaraPrevia !== camara) {
+    setCamaraPrevia(camara);
+    setPaneo(null);
+  }
+  const pan = paneo ?? { x: 0, y: 0 };
   const vista = encuadrar(camara, tam.w, tam.h, pan);
   const piso = useRef<{ cx: number; cy: number; x0: number; y0: number; movio: boolean } | null>(null);
   const [paneando, setPaneando] = useState(false);
@@ -412,7 +425,9 @@ export function CasaVista({
     }
     if (ocupado) return;
     capturar(e);
-    piso.current = { cx: e.clientX, cy: e.clientY, x0: vista.x - camara.x, y0: vista.y - camara.y, movio: false };
+    // el paneo se mide desde el mismo centro que usa encuadrar (en "ver todo" vertical, X_VERTICAL)
+    const b = centroBase(camara, tam.w, tam.h);
+    piso.current = { cx: e.clientX, cy: e.clientY, x0: vista.x - b.x, y0: vista.y - b.y, movio: false };
   };
   const pisoMueve = (e: EventoPuntero<HTMLDivElement>) => {
     const p = piso.current;
@@ -424,7 +439,7 @@ export function CasaVista({
       p.movio = true;
       setPaneando(true);
     }
-    setPaneo({ de: camara, x: p.x0 - dx, y: p.y0 - dy });
+    setPaneo({ x: p.x0 - dx, y: p.y0 - dy });
   };
   const pisoSuelta = (cancelado: boolean) => {
     const p = piso.current;
@@ -449,7 +464,7 @@ export function CasaVista({
       data-primer-plano={casa.primerPlano ? `${casa.primerPlano.objeto}:${casa.primerPlano.accion.anim}` : undefined}
     >
       <div className={styles.interior} inert={capa !== null}>
-      <div ref={escenarioRef} className={styles.escenario}>
+      <div ref={escenarioRef} className={styles.escenario} data-medido={medido || undefined}>
         <div
           ref={mundoRef}
           className={cx(styles.mundo, paneando && styles.paneando)}
@@ -580,7 +595,7 @@ export function CasaVista({
         )}
 
         {camara.s > 1 && (
-          <button type="button" className={styles.alejar} aria-label="⤢" disabled={ocupado} onClick={() => casa.verTodo()}>
+          <button type="button" className={styles.alejar} aria-label="全部" title="全部 quán bù" disabled={ocupado} onClick={() => casa.verTodo()}>
             ⤢
           </button>
         )}

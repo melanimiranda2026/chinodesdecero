@@ -1,4 +1,4 @@
-import { enfocar, transformCSS, enPantalla, puntoJunto, limitarVaca, objetoBajo, ubicarOpciones, encuadreInicial, encuadrar, X_VERTICAL } from "@/components/casa/camara";
+import { enfocar, transformCSS, enPantalla, puntoJunto, limitarVaca, objetoBajo, ubicarOpciones, encuadreInicial, encuadrar, centroBase, X_VERTICAL } from "@/components/casa/camara";
 import { ESTADO_INICIAL, OBJETOS } from "@/components/casa/cocina/datos";
 
 describe("camara", () => {
@@ -81,5 +81,24 @@ describe("camara", () => {
   it("encuadrar: en cuadrado deja la cámara igual", () => {
     const c = enfocar(300, 300, 1.9);
     expect(encuadrar(c, 800, 800)).toEqual(c);
+  });
+  it("paneo sin arrastre desde la vista completa en vertical no mueve la cámara", () => {
+    const todo = { x: 500, y: 500, s: 1 };
+    const v = encuadrar(todo, 360, 740);
+    const b = centroBase(todo, 360, 740);
+    expect(b.x).toBe(X_VERTICAL);
+    const pan = { x: v.x - b.x, y: v.y - b.y };
+    const w = encuadrar(todo, 360, 740, pan);
+    expect(w.x).toBeCloseTo(v.x);
+    expect(w.y).toBeCloseTo(v.y);
+    expect(w.s).toBeCloseTo(v.s);
+  });
+  it("en vertical el primer plano acerca de verdad: zoom relativo al encuadre base", () => {
+    const base = encuadreInicial(360, 740).s;
+    const z = encuadrar(enfocar(600, 668, 1.9), 360, 740);
+    expect(z.s).toBeCloseTo(1.9 * base);
+    expect(encuadrar({ x: 500, y: 500, s: 1 }, 360, 740).s).toBeCloseTo(base);
+    // en cuadrado, igual que antes
+    expect(encuadrar(enfocar(600, 668, 1.9), 800, 800).s).toBeCloseTo(1.9);
   });
 });

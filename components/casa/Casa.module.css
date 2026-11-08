@@ -410,3 +410,11 @@
   margin-top: 10px;
 }
 .principal:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 3px; }
+
+/* Aviso breve fuera de la casa (en español). */
+.aviso {
+  position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+  z-index: 300; pointer-events: none; max-width: min(92vw, 420px); padding: 12px 16px; border-radius: 14px;
+  background: #fff6e6; color: #4a2a1c; border: 3px solid #4a2a1c; font-weight: 900; font-size: 15px;
+  line-height: 1.35; text-align: center; box-shadow: 0 4px 0 rgba(74, 42, 28, 0.35);
+}

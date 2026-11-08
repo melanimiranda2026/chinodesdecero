@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Silaba } from "@/lib/silabas";
+import { idAudio, type Silaba } from "@/lib/silabas";
 import { ANCLAS, ESTADO_INICIAL, FREGADERO, OBJETOS, junto, type EstadoCocina, type ObjetoId } from "./cocina/datos";
 import { acciones, aplicar, type Accion } from "./cocina/acciones";
 import { animar, type ClaseObjeto, type Punto } from "./cocina/animar";
@@ -53,6 +53,8 @@ export interface CasaApi {
   cerrarQuiz(): void;
   /** La vaca festeja y dice 你好 (al entrar a la casa). */
   saludar(): void;
+  /** Pone el estado de la cocina guardado (al cargar el avance). */
+  restaurar(estado: EstadoCocina): void;
 }
 
 const VISTA_TODO: Camara = { x: 500, y: 500, s: 1 };
@@ -62,7 +64,12 @@ function bocaDe(abierta: number): Hocico {
   return abierta > 0.5 ? "abierta" : abierta > 0.15 ? "o" : "sonrisa";
 }
 
-export function useCasa(onEvento?: AlEvento): CasaApi {
+export interface OpcionesCasa {
+  /** Se llama con el id de audio de cada frase que dice la vaca. */
+  alEscuchar?: (idAudio: string) => void;
+}
+
+export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaApi {
   const [estado, estadoRef, setEstado] = useVivo<EstadoCocina>(ESTADO_INICIAL);
   const [camara, , setCamara] = useVivo<Camara>(VISTA_TODO);
   const [vaca, vacaRef, setVaca] = useVivo<Punto>(VACA_INICIAL);
@@ -81,6 +88,10 @@ export function useCasa(onEvento?: AlEvento): CasaApi {
   useEffect(() => {
     eventoRef.current = onEvento;
   }, [onEvento]);
+  const escucharRef = useRef(ganchos.alEscuchar);
+  useEffect(() => {
+    escucharRef.current = ganchos.alEscuchar;
+  }, [ganchos.alEscuchar]);
   const resolverPP = useRef<((m: Medalla) => void) | null>(null);
   const turnoVoz = useRef(0);
 
@@ -133,6 +144,11 @@ export function useCasa(onEvento?: AlEvento): CasaApi {
     async (s: Silaba[], opc: { globo?: Silaba[]; fijo?: boolean } = {}) => {
       const turno = ++turnoVoz.current;
       setGlobo(opc.globo ?? s);
+      try {
+        escucharRef.current?.(idAudio(s));
+      } catch {
+        /* contar lo escuchado nunca frena a la vaca */
+      }
       try {
         await decir(s, { alBoca: (a) => setHocico(bocaDe(a)) });
       } catch {
@@ -319,6 +335,8 @@ export function useCasa(onEvento?: AlEvento): CasaApi {
     setGlobo(null);
   }, [cerrarOpciones, quizRef]);
 
+  const restaurar = useCallback((e: EstadoCocina) => setEstado(e), [setEstado]);
+
   const verTodo = useCallback(() => {
     if (ocupadoRef.current) return; // sin saltos de cámara a mitad de una secuencia
     cerrarOpciones();
@@ -328,7 +346,7 @@ export function useCasa(onEvento?: AlEvento): CasaApi {
   return {
     estado, camara, vaca, cara: { ojos, hocico, orejas, salta }, globo, opciones, ocupado, primerPlano,
     quiz, posiciones, clases, particulas,
-    empezarQuiz, repetirQuiz, cerrarQuiz, saludar,
+    empezarQuiz, repetirQuiz, cerrarQuiz, saludar, restaurar,
     tocar, tocarVaca, soltarObjetoEnVaca, soltarVaca, elegir, empezarArrastre, verTodo, terminarPrimerPlano,
   };
 }

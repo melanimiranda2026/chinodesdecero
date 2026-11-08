@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState, type CSSProperties, type PointerEvent as EventoPuntero, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as EventoPuntero, type ReactNode } from "react";
 import { textoHanzi } from "@/lib/silabas";
 import { OBJETOS, type ObjetoId } from "./cocina/datos";
 import { enPantalla, objetoBajo, transformCSS } from "./camara";
@@ -13,6 +13,10 @@ import { Minimapa } from "./Minimapa";
 import { Tarjetas, type CapaTarjeta } from "./Tarjetas";
 import { desbloquearAudio } from "./audio/voz";
 import { useCasa, type AlEvento, type CasaApi, type Punto } from "./useCasa";
+import { NOMBRES_EVENTO, type NombreEvento } from "@/lib/eventos-nombres";
+import { EVENTO_AVANCE, avanceInicial, cargarAvance, guardarAvance, sincronizar, subirAvance, type Avance } from "./avance";
+import { registrar } from "./eventos";
+import { Correo } from "@/components/pagina/Correo";
 import styles from "./Casa.module.css";
 
 const IDS = Object.keys(OBJETOS) as ObjetoId[];
@@ -32,19 +36,133 @@ type Inicio =
 
 const llegaALaVaca = (p: Punto, vaca: Punto) => Math.hypot(p.x - vaca.x, p.y - (vaca.y - 100)) < RADIO_VACA;
 
-export function Casa({
-  onEvento,
-  anotado = false,
-  formulario,
-}: {
-  onEvento?: AlEvento;
-  /** Ya dejó su correo (la Task 12 lo conecta). */
-  anotado?: boolean;
-  /** Formulario de correo para la tarjeta "pronto" (la Task 12 pasa <Correo origen="pronto" />). */
-  formulario?: ReactNode;
-}) {
-  const casa = useCasa(onEvento);
-  return <CasaVista casa={casa} anotado={anotado} formulario={formulario} />;
+const CONOCIDOS = new Set<string>(NOMBRES_EVENTO);
+/** Nombres internos de la casa a nombres del registro de eventos. */
+const ALIAS: Record<string, NombreEvento> = { quiz_fin: "quiz_completo" };
+const ORDEN_MEDALLA = { bronce: 1, plata: 2, oro: 3 } as const;
+const AVISO_MS = 5000;
+const GUARDAR_MS = 500;
+
+export function Casa({ onEvento }: { onEvento?: AlEvento }) {
+  const avance = useRef<Avance>(avanceInicial());
+  const listo = useRef(false);
+  const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [correo, setCorreo] = useState<string | undefined>(undefined);
+  const [aviso, setAviso] = useState<string | null>(null);
+
+  /** Guarda tras ~500 ms sin cambios (y sube a la cuenta si hay sesión). */
+  const programar = useCallback(() => {
+    if (!listo.current) return;
+    if (temporizador.current) clearTimeout(temporizador.current);
+    temporizador.current = setTimeout(() => {
+      temporizador.current = null;
+      guardarAvance(avance.current);
+      void subirAvance(avance.current);
+    }, GUARDAR_MS);
+  }, []);
+
+  const alEvento = useCallback<AlEvento>(
+    (nombre, datos) => {
+      const n = ALIAS[nombre] ?? nombre;
+      if (CONOCIDOS.has(n)) registrar(n as NombreEvento, datos);
+      if (nombre === "gesto_completo" && datos && typeof datos.anim === "string" && typeof datos.medalla === "string") {
+        const m = datos.medalla as keyof typeof ORDEN_MEDALLA;
+        const previa = avance.current.medallas[datos.anim];
+        if (m in ORDEN_MEDALLA && (!previa || ORDEN_MEDALLA[m] > ORDEN_MEDALLA[previa])) {
+          avance.current = { ...avance.current, medallas: { ...avance.current.medallas, [datos.anim]: m } };
+          programar();
+        }
+      }
+      onEvento?.(nombre, datos);
+    },
+    [onEvento, programar],
+  );
+  const alEscuchar = useCallback(
+    (id: string) => {
+      if (avance.current.escuchadas.includes(id)) return;
+      avance.current = { ...avance.current, escuchadas: [...avance.current.escuchadas, id] };
+      programar();
+    },
+    [programar],
+  );
+  const casa = useCasa(alEvento, { alEscuchar });
+  const { restaurar } = casa;
+
+  // Una acción cambió el estado de la cocina: se guarda. Va ANTES del efecto de montaje para que la
+  // primera pasada (estado inicial, aún sin restaurar) no pise lo guardado.
+  useEffect(() => {
+    if (!listo.current) return;
+    avance.current = { ...avance.current, estado: casa.estado };
+    programar();
+  }, [casa.estado, programar]);
+
+  // Al montar: restaura el avance guardado y lee la URL.
+  useEffect(() => {
+    avance.current = cargarAvance();
+    restaurar(avance.current.estado);
+    setCorreo(avance.current.correo);
+    listo.current = true;
+
+    const url = new URL(window.location.href);
+    const ok = url.searchParams.get("bienvenida") === "1";
+    const fallo = url.searchParams.get("enlace") === "fallo";
+    if (ok || fallo) {
+      setAviso(
+        ok
+          ? "¡Listo! Tu avance quedó guardado en esta cuenta."
+          : "Ese enlace ya no funciona. Pide uno nuevo dejando tu correo otra vez.",
+      );
+      url.searchParams.delete("bienvenida");
+      url.searchParams.delete("enlace");
+      try {
+        window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+      } catch {
+        /* nada */
+      }
+    }
+    if (ok) {
+      void sincronizar(avance.current).then(() => {
+        avance.current = cargarAvance();
+        restaurar(avance.current.estado);
+      });
+    }
+
+    // El correo se deja desde un formulario (tarjeta o pie de página): llega por este aviso.
+    const alCambiar = () => {
+      const a = cargarAvance();
+      avance.current = { ...avance.current, correo: a.correo };
+      setCorreo(a.correo);
+    };
+    const alSalir = () => {
+      if (temporizador.current) clearTimeout(temporizador.current);
+      temporizador.current = null;
+      guardarAvance(avance.current);
+    };
+    window.addEventListener(EVENTO_AVANCE, alCambiar);
+    window.addEventListener("pagehide", alSalir);
+    return () => {
+      window.removeEventListener(EVENTO_AVANCE, alCambiar);
+      window.removeEventListener("pagehide", alSalir);
+      if (temporizador.current) clearTimeout(temporizador.current);
+    };
+  }, [restaurar]);
+
+  useEffect(() => {
+    if (!aviso) return;
+    const t = setTimeout(() => setAviso(null), AVISO_MS);
+    return () => clearTimeout(t);
+  }, [aviso]);
+
+  return (
+    <>
+      <CasaVista casa={casa} anotado={!!correo} formulario={<Correo origen="pronto" />} />
+      {aviso && (
+        <div role="status" className={styles.aviso}>
+          {aviso}
+        </div>
+      )}
+    </>
+  );
 }
 
 /** La vista de la casa: recibe el estado del hook y traduce los punteros a sus funciones. */
@@ -74,6 +192,11 @@ export function CasaVista({
       : pronto
         ? "pronto"
         : null;
+
+  // La tarjeta del método aparece una vez al terminar el 玩.
+  useEffect(() => {
+    if (capa === "metodo") registrar("ver_metodo");
+  }, [capa]);
 
   /** px de pantalla → unidades del cuarto (el ancho del mundo ya incluye el zoom). */
   const aUnidades = (px: number) => {
@@ -291,7 +414,10 @@ export function CasaVista({
             )}
           </>
         )}
-        <Minimapa cuartoActual="cocina" alTocarBloqueado={() => setPronto(true)} />
+        <Minimapa cuartoActual="cocina" alTocarBloqueado={() => {
+          registrar("tocar_bloqueado");
+          setPronto(true);
+        }} />
 
         {globo && <Globo silabas={globo} x={Math.max(12, Math.min(88, pGlobo.x))} y={Math.max(16, pGlobo.y)} />}
 
@@ -328,6 +454,7 @@ export function CasaVista({
         anotado={anotado}
         formulario={formulario}
         alEntrar={() => {
+          registrar("entrar");
           desbloquearAudio();
           setEntrada(false);
           casa.saludar();

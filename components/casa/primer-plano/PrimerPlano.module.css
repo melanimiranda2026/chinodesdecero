@@ -1,0 +1,259 @@
+/* ====== primer plano: minijuego de gesto (portado de docs/prototipo #pp…) ====== */
+.pp {
+  position: absolute;
+  inset: 0;
+  z-index: 150;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  animation: iris 0.5s ease-out;
+}
+.sale { animation: irisSale 0.45s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
+@keyframes iris { from { clip-path: circle(0% at 50% 55%); } to { clip-path: circle(80% at 50% 55%); } }
+@keyframes irisSale { from { clip-path: circle(80% at 50% 55%); } to { clip-path: circle(0% at 50% 55%); } }
+
+/* fondos por gesto */
+.pp[data-fondo="tabla"] {
+  background-color: #fff1ec;
+  background-image: linear-gradient(90deg, rgba(226, 87, 78, 0.28) 50%, transparent 50%), linear-gradient(rgba(226, 87, 78, 0.28) 50%, transparent 50%);
+  background-size: 64px 64px;
+}
+.pp[data-fondo="agua"] {
+  background-color: #eef7ff;
+  background-image: linear-gradient(90deg, rgba(58, 111, 214, 0.22) 50%, transparent 50%), linear-gradient(rgba(58, 111, 214, 0.22) 50%, transparent 50%);
+  background-size: 64px 64px;
+}
+.pp[data-fondo="mesa"] {
+  background-color: #effae6;
+  background-image: linear-gradient(90deg, rgba(127, 178, 79, 0.3) 50%, transparent 50%), linear-gradient(rgba(127, 178, 79, 0.3) 50%, transparent 50%);
+  background-size: 64px 64px;
+}
+.pp[data-fondo="fuego"] {
+  background-color: #fff4c9;
+  background-image: radial-gradient(#f2a93b 18%, transparent 20%), radial-gradient(#f2a93b 18%, transparent 20%);
+  background-size: 56px 56px;
+  background-position: 0 0, 28px 28px;
+}
+.pp[data-fondo="comer"] {
+  background-color: #ffeef5;
+  background-image: radial-gradient(#f59ac0 16%, transparent 18%), radial-gradient(#f59ac0 16%, transparent 18%);
+  background-size: 52px 52px;
+  background-position: 0 0, 26px 26px;
+}
+
+/* la "mesa" bajo el objeto: cambia según el fondo */
+.mesa {
+  position: absolute;
+  left: 50%;
+  top: 57%;
+  width: min(78%, 62cqh);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.75);
+  border: 6px solid var(--tinta);
+  box-shadow: 0 10px 0 rgba(74, 42, 28, 0.25);
+  pointer-events: none;
+}
+.pp[data-fondo="tabla"] .mesa { border-radius: 28px; background: #e2b07a; box-shadow: inset 0 -14px 0 #c8915c, 0 10px 0 rgba(74, 42, 28, 0.25); }
+.pp[data-fondo="agua"] .mesa { background: #bcd9e6; box-shadow: inset 0 14px 0 #8fb4c4, 0 10px 0 rgba(74, 42, 28, 0.25); }
+.pp[data-fondo="fuego"] .mesa { background: #3b3b3b; box-shadow: inset 0 0 0 18px #555, 0 10px 0 rgba(74, 42, 28, 0.25); }
+
+/* zona del gesto: las coordenadas 0–1 son relativas a este cuadrado */
+.zona {
+  position: absolute;
+  left: 50%;
+  top: 57%;
+  width: min(62%, 50cqh);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.pieza { position: relative; width: 100%; aspect-ratio: 1; }
+.llena { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.liquido { position: absolute; left: 0; right: 0; bottom: 0; }
+.trazos { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+
+/* capas animadas por nombre */
+.mugre { opacity: calc(1 - var(--limpio, 0)); transition: opacity 0.15s; }
+.mitadIzq { animation: separaIzq 0.45s cubic-bezier(0.3, 1.5, 0.5, 1) forwards; }
+.mitadDer { animation: separaDer 0.45s cubic-bezier(0.3, 1.5, 0.5, 1) forwards; }
+@keyframes separaIzq { to { transform: translateX(-9%) rotate(-6deg); } }
+@keyframes separaDer { to { transform: translateX(9%) rotate(6deg); } }
+
+.espuma {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff, rgba(220, 240, 255, 0.85));
+  border: 2px solid #9cc7e0;
+  pointer-events: none;
+  transition: opacity 0.6s;
+  animation: aparece 0.25s ease-out;
+}
+.miga {
+  position: absolute;
+  width: 2.4%;
+  height: 2.4%;
+  border-radius: 40%;
+  background: #e8c27a;
+  border: 1.5px solid var(--tinta);
+  pointer-events: none;
+  animation: migas 0.9s ease-out forwards;
+}
+@keyframes migas { to { translate: var(--dx) var(--dy); opacity: 0; rotate: 120deg; } }
+.gota { animation: gota 0.6s ease-in forwards; }
+@keyframes gota { to { translate: 0 30px; opacity: 0; } }
+.vapor {
+  position: absolute;
+  top: 18%;
+  width: 3%;
+  height: 18%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+  pointer-events: none;
+  animation: vapor 1.4s ease-out infinite;
+}
+@keyframes vapor { from { opacity: 0; translate: 0 0; } 30% { opacity: 1; } to { opacity: 0; translate: 6px -140%; } }
+.cuchara {
+  position: absolute;
+  font-size: clamp(30px, 8cqmin, 64px);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+@keyframes aparece { from { opacity: 0; scale: 0.85; } }
+
+/* cartel: ícono + verbo + pinyin */
+.cartel {
+  position: absolute;
+  left: 50%;
+  top: 3%;
+  transform: translateX(-50%) rotate(-2deg);
+  z-index: 6;
+  background: #fff;
+  border: 5px solid var(--tinta);
+  border-radius: 20px;
+  padding: 0.25em 1em 0.3em;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  box-shadow: 0 6px 0 var(--tinta);
+  pointer-events: none;
+  white-space: nowrap;
+  animation: cartel 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) backwards 0.25s;
+}
+@keyframes cartel { from { transform: translateX(-50%) translateY(-150%) rotate(-8deg); } }
+.icono { font-size: clamp(26px, 6cqmin, 52px); }
+.hz { display: block; font-family: var(--f-hanzi), serif; font-weight: 400; font-size: clamp(30px, 8cqmin, 70px); line-height: 1; text-align: center; }
+.py { display: block; font-weight: 900; font-size: clamp(13px, 2.8cqmin, 24px); text-align: center; }
+
+.barra {
+  position: absolute;
+  left: 50%;
+  top: 19%;
+  width: 56%;
+  height: 3.2%;
+  min-height: 14px;
+  transform: translateX(-50%);
+  z-index: 6;
+  background: #fff;
+  border: 4px solid var(--tinta);
+  border-radius: 999px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.barra i { display: block; height: 100%; background: repeating-linear-gradient(-45deg, #f2c14e 0 12px, #f7d77a 12px 24px); transition: width 0.15s; }
+.cerrar {
+  position: absolute;
+  left: 3%;
+  top: 3%;
+  z-index: 7;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  border: 4px solid var(--tinta);
+  background: #fff;
+  color: var(--tinta);
+  font: 900 22px/1 var(--f-texto), sans-serif;
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--tinta);
+}
+.cerrar:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 3px; }
+.cerrar:active { translate: 0 2px; box-shadow: 0 1px 0 var(--tinta); }
+
+.reloj {
+  position: absolute;
+  right: 3%;
+  top: 3%;
+  width: 12%;
+  max-width: 72px;
+  aspect-ratio: 1;
+  z-index: 6;
+  border-radius: 50%;
+  border: 4px solid var(--tinta);
+  background: conic-gradient(#e2574e var(--r, 0%), #fff 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(14px, 3.4cqmin, 28px);
+  pointer-events: none;
+}
+
+/* mano guía, hasta el primer toque */
+.mano {
+  position: absolute;
+  z-index: 7;
+  left: 50%;
+  top: 57%;
+  font-size: clamp(34px, 8cqmin, 70px);
+  pointer-events: none;
+  filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.25));
+  translate: -50% -50%;
+}
+.mCortar { animation: mCortar 1.2s ease-in-out infinite; }
+.mFrotar { animation: mFrotar 1s linear infinite; }
+.mMantener { animation: mMantener 1s ease-in-out infinite; }
+.mGirar { animation: mGirar 1.4s linear infinite; }
+.mTocar { animation: mTocar 0.7s ease-in-out infinite; }
+@keyframes mCortar { 0% { translate: -160% -40%; } 60%, 100% { translate: 120% 60%; opacity: 0; } }
+@keyframes mFrotar { 0% { translate: -50% -100%; } 25% { translate: 20% -50%; } 50% { translate: -50% 0%; } 75% { translate: -120% -50%; } 100% { translate: -50% -100%; } }
+@keyframes mMantener { 50% { scale: 0.8; translate: -50% -30%; } 0%, 100% { translate: -50% -50%; } }
+@keyframes mGirar { from { transform: rotate(0) translateX(140%) rotate(0); } to { transform: rotate(360deg) translateX(140%) rotate(-360deg); } }
+@keyframes mTocar { 50% { scale: 0.8; } }
+
+/* vaca chica abajo a la izquierda */
+.vaca { position: absolute; left: 1%; bottom: 0; width: 26%; max-width: 200px; aspect-ratio: 1; z-index: 8; pointer-events: none; }
+
+/* medalla */
+.medalla {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.85) 0 30%, rgba(255, 240, 200, 0.3) 60%, transparent 80%);
+}
+.m { font-size: clamp(90px, 24cqmin, 220px); animation: medalla 0.7s cubic-bezier(0.3, 1.7, 0.5, 1); }
+.rayos {
+  position: absolute;
+  width: min(90%, 90cqh);
+  aspect-ratio: 1;
+  background: repeating-conic-gradient(rgba(242, 193, 78, 0.35) 0 10deg, transparent 10deg 20deg);
+  border-radius: 50%;
+  animation: gira 6s linear infinite;
+  z-index: -1;
+}
+@keyframes medalla { from { opacity: 0; scale: 0.5; rotate: -30deg; } }
+@keyframes gira { to { rotate: 360deg; } }
+.confeti { position: absolute; width: 1.6%; height: 2.6%; z-index: 10; pointer-events: none; animation: confeti 1.6s ease-in forwards; }
+@keyframes confeti { from { translate: 0 0; rotate: 0deg; } to { translate: var(--dx) 110cqmin; rotate: 720deg; } }
+
+/* menos movimiento: sin confeti, rayos quietos, mano y medalla sin animar */
+@media (prefers-reduced-motion: reduce) {
+  .confeti { display: none; }
+  .rayos, .m, .mano, .vapor, .cartel { animation: none; }
+  .pp, .sale { animation-name: none; }
+}

@@ -1,5 +1,6 @@
 import { enfocar, transformCSS, enPantalla, puntoJunto, limitarVaca, objetoBajo, ubicarOpciones, encuadreInicial, encuadrar, centroBase, X_VERTICAL, ZOOM_VERTICAL, apuntar } from "@/components/casa/camara";
-import { ESTADO_INICIAL, OBJETOS } from "@/components/casa/cocina/datos";
+import { PISO_LIBRE, proyectar } from "@/components/casa/cocina/iso";
+import { ESTADO_INICIAL, FREGADERO, OBJETOS } from "@/components/casa/cocina/datos";
 
 describe("camara", () => {
   it("enfocar limita el centro al cuarto", () => {
@@ -14,14 +15,21 @@ describe("camara", () => {
     expect(enPantalla(enfocar(500, 500, 1), 500, 500)).toEqual({ x: 50, y: 50 });
   });
   it("puntoJunto", () => {
-    expect(puntoJunto("fregadero")).toEqual({ x: 450, y: 560 });
-    expect(puntoJunto("bingxiang")).toEqual({ x: 270, y: 580 });
-    expect(puntoJunto("guo")).toEqual({ x: 741, y: 560 });
-    expect(puntoJunto("panzi")).toEqual({ x: 430, y: 860 });
+    // en el piso, frente al mueble: siempre dentro del piso libre
+    for (const id of ["fregadero", "bingxiang", "guo", "panzi", "pingguo"] as const) {
+      const p = puntoJunto(id);
+      expect(limitarVaca(p.x, p.y)).toEqual(p);
+    }
+    expect(puntoJunto("guo")).toEqual(OBJETOS.guo.pie);
+    expect(puntoJunto("fregadero").y).toBeGreaterThan(FREGADERO.y);
   });
   it("limitarVaca", () => {
-    expect(limitarVaca(0, 0)).toEqual({ x: 80, y: 520 });
-    expect(limitarVaca(2000, 2000)).toEqual({ x: 920, y: 990 });
+    // fuera del piso: vuelve a la esquina del piso libre más cercana
+    const atras = proyectar(PISO_LIBRE.min, PISO_LIBRE.min), adelante = proyectar(PISO_LIBRE.max, PISO_LIBRE.max);
+    expect(limitarVaca(500, 0)).toEqual({ x: atras.x, y: atras.y });
+    expect(limitarVaca(500, 2000)).toEqual({ x: adelante.x, y: adelante.y });
+    // dentro del piso libre no cambia
+    expect(limitarVaca(500, 600)).toEqual({ x: 500, y: 600 });
   });
   it("objetoBajo ignora estado nada", () => {
     const o = OBJETOS.pingguo;
@@ -51,10 +59,11 @@ describe("camara", () => {
     expect(encuadreInicial(1280, 800)).toEqual({ x: 500, y: 500, s: 1 });
     expect(encuadreInicial(0, 0)).toEqual({ x: 500, y: 500, s: 1 });
   });
-  it("encuadreInicial: en vertical el cuarto llena el alto, con la vaca (x=250) entera a la vista", () => {
+  it("encuadreInicial: en vertical el cuarto llena el alto, con la vaca (x=434) entera a la vista", () => {
     const c = encuadreInicial(360, 740);
     expect(c.x).toBe(X_VERTICAL);
-    expect(c.x - 500 / c.s).toBeLessThanOrEqual(250 - 100); // borde izquierdo visible antes que la vaca
+    expect(c.x - 500 / c.s).toBeLessThanOrEqual(434 - 85); // borde izquierdo visible antes que la vaca
+    expect(c.x + 500 / c.s).toBeGreaterThanOrEqual(434 + 85);
     expect(c.y).toBe(500);
     expect(c.s).toBeCloseTo(740 / 360);
   });

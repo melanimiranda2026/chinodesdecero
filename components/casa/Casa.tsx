@@ -460,7 +460,7 @@ export function CasaVista({
 
   // el zoom que cuenta para el globo es el relativo al encuadre de "ver todo" (en vertical ya parte con zoom)
   const zoomRel = vista.s / encuadreInicial(tam.w, tam.h).s;
-  const pGlobo = enPantalla(vista, vaca.x, vaca.y - 215 / Math.max(1, zoomRel * 0.8), aspecto);
+  const pGlobo = enPantalla(vista, vaca.x, vaca.y - 170 / Math.max(1, zoomRel * 0.8), aspecto);
 
   return (
     <div

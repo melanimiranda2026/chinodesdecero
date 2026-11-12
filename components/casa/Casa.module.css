@@ -115,13 +115,13 @@
 .encoge { transform: scale(0.7); }
 .tiembla { animation: tiembla 0.12s linear 8; }
 
-/* capa "puerta" del refri: gira sobre el borde izquierdo de su capa */
+/* capa "puerta" del refri: gira sobre su bisagra (el borde del fondo), a 80.4 % del ancho del cuadro
+   (lo calcula scripts/arte-iso.ts). Abierta, queda reflejada: en isométrico eso es la puerta girada 90°. */
 .puerta {
-  transform-box: fill-box;
-  transform-origin: left center;
-  transition: transform 0.5s ease;
+  transform-origin: 80.4% 50%;
+  transition: transform 0.5s cubic-bezier(0.45, 0.05, 0.25, 1);
 }
-.puertaAbierta { transform: scaleX(0.12) skewY(-8deg); }
+.puertaAbierta { transform: scaleX(-1); }
 
 @keyframes tiembla { 50% { transform: translateX(3px) rotate(2deg); } }
 @keyframes respira {
@@ -200,7 +200,7 @@
 /* ---------- vaca ---------- */
 .vaca {
   position: absolute;
-  width: 22%;
+  width: 17%;
   aspect-ratio: 1;
   padding: 0;
   margin: 0;

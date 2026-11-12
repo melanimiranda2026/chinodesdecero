@@ -3,13 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "tsx scripts/arte-manifiesto.ts",
     "dev": "next dev --turbopack",
+    "prebuild": "tsx scripts/arte-manifiesto.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
     "e2e": "next build && playwright test",
-    "audios": "tsx scripts/lista-audios.ts"
+    "audios": "tsx scripts/lista-audios.ts",
+    "arte": "tsx scripts/arte-manifiesto.ts",
+    "arte:generar": "tsx scripts/arte-iso.ts && tsx scripts/arte-manifiesto.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

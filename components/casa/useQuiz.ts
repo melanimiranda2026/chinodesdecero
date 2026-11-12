@@ -68,7 +68,7 @@ export function useQuiz(d: Deps) {
     }
     cerrarOpciones();
     setCamara(vistaTodo);
-    setVaca({ x: 420, y: 600 });
+    setVaca({ x: 478, y: 613 }); // centro del piso
     setQuiz({ ...crearQuiz(estadoRef.current, Math.random), i: 0, aciertos: 0, fase: "juego" });
     eventoRef.current?.("quiz_inicio");
     luego(() => void pedirQuiz().catch(registrarFallo), 700);

@@ -1,27 +1,32 @@
-# Cómo reemplazar el arte por tus dibujos
+# Cómo editar el arte de la cocina
 
-Todo lo que se ve hoy en la cocina es un dibujo provisorio hecho en código. Cuando tengas tus dibujos, cada uno se cambia **reemplazando un archivo y una línea**. No hay que tocar nada más: las animaciones solo mueven capas por su nombre.
+La cocina es isométrica. Todo el dibujo lo genera el código (`scripts/arte-iso.ts`) como archivos SVG en `public/arte/cocina/`: uno por cuarto y uno por capa de cada objeto. Puedes repintar cualquiera en Krita: si guardas un PNG o WebP con **el mismo nombre** al lado del SVG, el juego usa tu dibujo en vez del generado. No hay que tocar código.
 
-## Cómo se cambia un dibujo
+## Paso a paso en Krita
 
-1. Exporta el dibujo como **PNG o WebP** con fondo transparente (tamaños abajo). WebP pesa mucho menos y carga más rápido en el celular; si exportas PNG, se puede convertir después (ver "La vaca").
-2. Guárdalo en `public/arte/cocina/` con el nombre `<objeto>_<capa>.png` (o `.webp`), por ejemplo `public/arte/cocina/panzi_plato.png`.
-3. Abre `components/casa/arte/registro.ts`, busca el objeto y cambia la línea de esa capa:
+1. Abre el SVG en Krita (Archivo → Abrir), por ejemplo `public/arte/cocina/guo_olla.svg`. Revisa que el lienzo quede del tamaño del archivo (Imagen → Propiedades): 1024 × 1024 px los objetos, 2000 × 2000 px el cuarto. Si Krita pregunta la resolución al importar, deja la que propone y corrige el tamaño a esos px.
+2. Pinta encima con la tableta, en capas nuevas. Puedes ocultar o borrar la capa del SVG si lo redibujas entero.
+3. **No cambies el tamaño del lienzo ni muevas el dibujo**: cada archivo está encuadrado para caer justo en su lugar del cuarto.
+4. Exporta como PNG con fondo transparente (Archivo → Exportar), con el mismo nombre: `guo_olla.png`, en la misma carpeta.
+5. En tu computador: reinicia `npm run dev` y recarga. El manifiesto (`npm run arte`) corre solo al partir y elige tu PNG.
+6. En la página publicada: sube el PNG a GitHub. El build de Vercel corre el manifiesto solo.
 
-```ts
-// antes
-plato: svg(P.PanziPlato),
-// después
-plato: { tipo: "img", src: "/arte/cocina/panzi_plato.png" },
-```
+Para volver al dibujo generado, borra el PNG.
 
-Listo. Puedes cambiar una capa a la vez; las que no cambies siguen con el provisorio.
+Si guardas el trabajo de Krita (`.kra`), déjalo fuera de `public/` (por ejemplo en una carpeta `arte-krita/`), para que no se publique.
 
-## Tamaños
+## Reglas para que nada se rompa
 
-- **Objetos:** 1024 x 1024 px, fondo transparente. El objeto va centrado y ocupa lo mismo que el provisorio (casi todo el cuadrado). Todas las capas de un mismo objeto usan **el mismo cuadrado y el mismo centro**, para que calcen al apilarse.
-- **El cuarto:** 2000 x 2000 px, una sola imagen (sin los objetos: ellos van aparte).
-- **La vaca:** igual a las capas actuales de `public/vaca/` (mismo cuadrado y mismo centro que `vaca_cuerpo.webp`).
+- **Mismo encuadre**: todas las capas de un objeto comparten cuadro y se apilan. El objeto apoya en el mismo punto que el SVG (la sombrita bajo él marca el punto de apoyo).
+- **La puerta del refri** (`bingxiang_puerta`) gira sobre su bisagra, al **80,4 %** del ancho del cuadro (el borde de atrás de la puerta). Si la redibujas, deja la bisagra en ese mismo borde.
+- **La capa `mugre`** es la que se borra al frotar: solo las manchas, sobre fondo transparente.
+- **El cuarto** (`cuarto_cocina`) no lleva los objetos de la tabla de abajo: ellos van aparte y se colocan solos. Sí lleva los muebles y la decoración.
+- Dentro de la casa no hay texto en español: si un dibujo lleva letras, que sean hanzi.
+- Nada descargado de redes: los dibujos son tuyos o generados por nosotros.
+
+## Cambiar el dibujo generado
+
+Si en vez de pintar encima prefieres cambiar el diseño (colores, muebles, posiciones), se edita `scripts/arte-iso.ts` y se corre `npm run arte:generar`. Las medidas del cuarto y de los muebles están en `components/casa/cocina/iso.ts`; dónde va cada objeto, en `components/casa/cocina/datos.ts` (`LUGARES`). Si mueves un mueble, el juego se entera solo: las posiciones salen de los mismos números.
 
 ## La vaca
 
@@ -31,7 +36,7 @@ Si tienes las capas en PNG, déjalas en `public/vaca/` y corre `node scripts/vac
 
 ## Capas de cada objeto
 
-Archivo esperado: `public/arte/cocina/<objeto>_<capa>.png`. Las capas se apilan en el orden de la tabla (de atrás hacia adelante).
+Archivo: `public/arte/cocina/<objeto>_<capa>.svg` (o tu `.png` / `.webp` con el mismo nombre). Las capas se apilan en el orden de la tabla (de atrás hacia adelante).
 
 | Objeto | Capa | Qué muestra | Estados en que se ve |
 |---|---|---|---|
@@ -58,10 +63,6 @@ Archivo esperado: `public/arte/cocina/<objeto>_<capa>.png`. Las capas se apilan 
 | chahu (tetera) | `tetera` | La tetera | siempre |
 | kuaizi (palillos) | `palillos` | Los dos palillos | siempre |
 
-La capa **`puerta`** del refri tiene que llegar hasta el borde izquierdo de su cuadrado: gira sobre el borde izquierdo de la capa (la bisagra).
-
-La capa **`mugre`** es siempre la que se borra al frotar. Dibújala sobre fondo transparente, solo las manchas, en el mismo lugar que irían sobre el objeto.
-
 ## Piezas de los minijuegos (primer plano)
 
 Misma regla (cuadrado 1024 x 1024). Están en `ARTE_PRIMER_PLANO`.
@@ -85,21 +86,3 @@ Guarda el PNG en `public/arte/cocina/` y, en `components/casa/arte/registro.ts`,
 | `public/arte/cocina/vaso_mascara.png` | `vaso_mascara: svg(P.VasoMascara),` | `vaso_mascara: { tipo: "img", src: "/arte/cocina/vaso_mascara.png" },` |
 | `public/arte/cocina/olla_grande.png` | `olla_grande: svg(P.OllaGrande),` | `olla_grande: { tipo: "img", src: "/arte/cocina/olla_grande.png" },` |
 | `public/arte/cocina/trozos.png` | `trozos: svg(P.Trozos),` | `trozos: { tipo: "img", src: "/arte/cocina/trozos.png" },` |
-
-## El cuarto
-
-Archivo: `public/arte/cocina/cuarto_cocina.png`, de **2000 x 2000 px**, cuadrado y completo (el programa lo muestra encajado en el cuadro de 1000 unidades del cuarto). No dibujes los objetos de la cocina: van aparte y se colocan solos.
-
-En `registro.ts`, dentro de `FONDO_CUARTO`, cambia:
-
-```ts
-// antes
-export const FONDO_CUARTO: Record<"cocina", Capa> = { cocina: svg(CocinaCuarto) };
-// después
-export const FONDO_CUARTO: Record<"cocina", Capa> = { cocina: { tipo: "img", src: "/arte/cocina/cuarto_cocina.png" } };
-```
-
-## Importante
-
-- Los dibujos son solo tuyos o generados por nosotros. Nada descargado de redes.
-- Dentro de la casa no hay texto en español: si un dibujo lleva letras, que sean hanzi.

@@ -62,7 +62,7 @@ export interface CasaApi {
 }
 
 const VISTA_TODO: Camara = { x: 500, y: 500, s: 1 };
-const VACA_INICIAL: Punto = { x: 250, y: 780 };
+const VACA_INICIAL: Punto = { x: 434, y: 613 }; // piso: u 5, v 6.5
 
 function bocaDe(abierta: number): Hocico {
   return abierta > 0.5 ? "abierta" : abierta > 0.15 ? "o" : "sonrisa";

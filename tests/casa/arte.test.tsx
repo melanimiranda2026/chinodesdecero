@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ARTE, ARTE_PRIMER_PLANO, ARTE_VACA, FONDO_CUARTO } from "@/components/casa/arte/registro";
 import { Capa, FondoCuarto } from "@/components/casa/arte/Capa";
@@ -84,8 +84,13 @@ describe("Vaca", () => {
 });
 
 describe("FondoCuarto", () => {
-  it("siempre usa el encuadre 0 0 1000 1000", () => {
+  it("es el archivo del cuarto, cuadrado de 1000 x 1000 unidades", () => {
     const { container } = render(<FondoCuarto cuarto="cocina" />);
-    expect(container.querySelector("svg")!.getAttribute("viewBox")).toBe("0 0 1000 1000");
+    const src = container.querySelector("img")!.getAttribute("src")!;
+    expect(src).toMatch(/^\/arte\/cocina\/cuarto_cocina\.(svg|png|webp)$/);
+    if (src.endsWith(".svg")) {
+      const svg = readFileSync(join(process.cwd(), "public", src), "utf8");
+      expect(svg).toContain('viewBox="0 0 1000 1000"');
+    }
   });
 });

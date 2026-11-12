@@ -1,16 +1,25 @@
 import type { FC } from "react";
 import type { ObjetoId } from "../cocina/datos";
 import * as P from "./placeholders/objetos";
-import { CocinaCuarto } from "./placeholders/Cocina";
+import manifiesto from "./manifiesto-arte.json";
 
 /**
- * REGISTRO DE ARTE. Para reemplazar un dibujo: cambia `{ tipo: "svg", … }` por
- * `{ tipo: "img", src: "/arte/cocina/<objeto>_<capa>.png" }` (o `.webp`). Ver docs/arte.md.
+ * REGISTRO DE ARTE. Cada capa es un archivo en public/arte/cocina/<objeto>_<capa>.svg (generado por
+ * `npm run arte:generar`). Para cambiar un dibujo, guarda un PNG o WebP con el mismo nombre al lado del SVG:
+ * el manifiesto (`npm run arte`, corre solo antes de dev y build) elige el dibujo a mano. Ver docs/arte.md.
  * Las animaciones solo mueven capas por su nombre; nada depende del interior del dibujo.
  */
 export type Capa = { tipo: "svg"; Componente: FC } | { tipo: "img"; src: string };
 
 const svg = (Componente: FC): Capa => ({ tipo: "svg", Componente });
+
+const MANIFIESTO = manifiesto as Record<string, string>;
+/** Capa de un archivo de public/arte/ (`cocina/guo_olla`): el dibujo a mano si existe, si no el SVG generado. */
+export function arte(clave: string): Capa {
+  const src = MANIFIESTO[clave];
+  if (!src) throw new Error(`Falta el arte "${clave}" en public/arte/ (corre npm run arte:generar)`);
+  return { tipo: "img", src };
+}
 
 interface ArteObjeto {
   capas: Record<string, Capa>;
@@ -18,38 +27,38 @@ interface ArteObjeto {
   visibles: (estado: string) => string[];
 }
 
+const capasDe = (id: ObjetoId, nombres: string[]) =>
+  Object.fromEntries(nombres.map((n) => [n, arte(`cocina/${id}_${n}`)])) as Record<string, Capa>;
+
 export const ARTE: Record<ObjetoId, ArteObjeto> = {
   bingxiang: {
-    capas: { cuerpo: svg(P.BingxiangCuerpo), interior: svg(P.BingxiangInterior), puerta: svg(P.BingxiangPuerta) },
+    capas: capasDe("bingxiang", ["cuerpo", "interior", "puerta"]),
     visibles: () => ["cuerpo", "interior", "puerta"],
   },
   pingguo: {
-    capas: {
-      entera: svg(P.PingguoEntera), mugre: svg(P.PingguoMugre),
-      mitad_izq: svg(P.PingguoMitadIzq), mitad_der: svg(P.PingguoMitadDer),
-    },
+    capas: capasDe("pingguo", ["entera", "mugre", "mitad_izq", "mitad_der"]),
     visibles: (e) =>
       e === "sucio" ? ["entera", "mugre"] : e === "limpio" ? ["entera"] : e === "cortado" ? ["mitad_izq", "mitad_der"] : [],
   },
   beizi: {
-    capas: { vaso: svg(P.BeiziVaso), agua: svg(P.BeiziAgua), te: svg(P.BeiziTe), mugre: svg(P.BeiziMugre) },
+    capas: capasDe("beizi", ["vaso", "agua", "te", "mugre"]),
     visibles: (e) =>
       e === "agua" ? ["agua", "vaso"] : e === "te" ? ["te", "vaso"] : e === "sucio" ? ["vaso", "mugre"] : ["vaso"],
   },
   panzi: {
-    capas: { plato: svg(P.PanziPlato), jiaozi: svg(P.PanziJiaozi), mugre: svg(P.PanziMugre) },
+    capas: capasDe("panzi", ["plato", "jiaozi", "mugre"]),
     visibles: (e) => (e === "lleno" ? ["plato", "jiaozi"] : e === "sucio" ? ["plato", "mugre"] : ["plato"]),
   },
   wan: {
-    capas: { bol: svg(P.WanBol), arroz: svg(P.WanArroz), mugre: svg(P.WanMugre) },
+    capas: capasDe("wan", ["bol", "arroz", "mugre"]),
     visibles: (e) => (e === "lleno" ? ["bol", "arroz"] : e === "sucio" ? ["bol", "mugre"] : ["bol"]),
   },
   guo: {
-    capas: { olla: svg(P.GuoOlla), arroz: svg(P.GuoArroz), mugre: svg(P.GuoMugre) },
+    capas: capasDe("guo", ["olla", "arroz", "mugre"]),
     visibles: (e) => (e === "cocido" ? ["olla", "arroz"] : e === "sucio" ? ["olla", "mugre"] : ["olla"]),
   },
-  chahu: { capas: { tetera: svg(P.ChahuTetera) }, visibles: () => ["tetera"] },
-  kuaizi: { capas: { palillos: svg(P.KuaiziPalillos) }, visibles: () => ["palillos"] },
+  chahu: { capas: capasDe("chahu", ["tetera"]), visibles: () => ["tetera"] },
+  kuaizi: { capas: capasDe("kuaizi", ["palillos"]), visibles: () => ["palillos"] },
 };
 
 /** Piezas de los minijuegos (mismo encuadre que los objetos). */
@@ -60,8 +69,8 @@ export const ARTE_PRIMER_PLANO: Record<string, Capa> = {
   trozos: svg(P.Trozos),
 };
 
-/** El cuarto completo en una sola capa de 1000x1000 unidades. */
-export const FONDO_CUARTO: Record<"cocina", Capa> = { cocina: svg(CocinaCuarto) };
+/** El cuarto completo (isométrico) en una sola capa de 1000x1000 unidades, sin los objetos. */
+export const FONDO_CUARTO: Record<"cocina", Capa> = { cocina: arte("cocina/cuarto_cocina") };
 
 /**
  * Capas de la vaca (todas del mismo cuadrado y centro que el cuerpo). Se cambian por nombre; PNG o WebP.

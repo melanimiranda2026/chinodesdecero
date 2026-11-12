@@ -1,4 +1,5 @@
-import { FREGADERO, OBJETOS, type EstadoCocina, type ObjetoId } from "@/components/casa/cocina/datos";
+import { OBJETOS, PIE_FREGADERO, type EstadoCocina, type ObjetoId } from "@/components/casa/cocina/datos";
+import { PISO_LIBRE, alPiso, proyectar } from "@/components/casa/cocina/iso";
 
 // Unidades de cuarto: 0-1000 en ambos ejes. Porcentajes de pantalla: 0-100.
 export type Camara = { x: number; y: number; s: number };
@@ -16,8 +17,8 @@ export function enfocar(x: number, y: number, s: number, aspecto = 1): Camara {
   return { x: limitar(x, mx, 1000 - mx), y: limitar(y, my, 1000 - my), s: z };
 }
 
-/** Centro x del encuadre vertical: un poco a la izquierda del medio para que la vaca (parte en x=250) se vea entera. */
-export const X_VERTICAL = 390;
+/** Centro x del encuadre vertical: un poco a la izquierda del medio: el lavaplatos, la cocina y la vaca. */
+export const X_VERTICAL = 440;
 
 /**
  * Lo que la casa quiere mirar: centro y zoom sin limitar (s ≥ 1). La vista lo limita con `encuadrar`
@@ -75,20 +76,20 @@ export function enPantalla(c: Camara, x: number, y: number, aspecto = 1): { x: n
   return { x: 50 + ((x - c.x) * c.s) / 10, y: 50 + ((y - c.y) * c.s) / 10 / aspecto };
 }
 
-/** Dónde se para la vaca para usar algo. */
+/** Dónde se para la vaca para usar algo (en el piso, frente al mueble). */
 export function puntoJunto(id: ObjetoId | "fregadero"): { x: number; y: number } {
-  if (id === "fregadero") return { x: FREGADERO.x, y: 560 };
-  if (id === "bingxiang") return { x: 270, y: 580 };
-  const o = OBJETOS[id];
-  if (o.y < 400) return { x: o.x, y: 560 }; // cosas del mesón
-  return { x: 430, y: o.y + 130 }; // cosas de la mesa
+  if (id === "fregadero") return PIE_FREGADERO;
+  return OBJETOS[id].pie;
 }
 
+/** La vaca no sale del piso libre (el rombo del piso sin los muebles). */
 export function limitarVaca(x: number, y: number): { x: number; y: number } {
-  return { x: limitar(x, 80, 920), y: limitar(y, 520, 990) };
+  const { u, v } = alPiso(x, y);
+  const p = proyectar(limitar(u, PISO_LIBRE.min, PISO_LIBRE.max), limitar(v, PISO_LIBRE.min, PISO_LIBRE.max));
+  return { x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 };
 }
 
-/** Objeto más cercano a (vaca.x, vaca.y - 90), dentro de w/2 + 70; ignora los "nada". */
+/** Objeto más cercano a (vaca.x, vaca.y - 90), dentro de min(w/2, 50) + 70; ignora los "nada". */
 export function objetoBajo(vaca: { x: number; y: number }, e: EstadoCocina): ObjetoId | null {
   let mejor: ObjetoId | null = null;
   let dist = Infinity;
@@ -96,7 +97,8 @@ export function objetoBajo(vaca: { x: number; y: number }, e: EstadoCocina): Obj
     if (e[id] === "nada") continue;
     const o = OBJETOS[id];
     const d = Math.hypot(o.x - vaca.x, o.y - (vaca.y - 90));
-    if (d < o.w / 2 + 70 && d < dist) {
+    // el alcance no crece con el cuadro del refri (300 de ancho): si no, "ganaría" a todo lo cercano
+    if (d < Math.min(o.w / 2, 50) + 70 && d < dist) {
       mejor = id;
       dist = d;
     }

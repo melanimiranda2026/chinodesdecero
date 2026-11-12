@@ -15,7 +15,7 @@ vi.mock("@/components/casa/audio/sonido", () => ({
 import { decir } from "@/components/casa/audio/voz";
 import { Casa, CasaVista } from "@/components/casa/Casa";
 import { useCasa, type AlEvento, type CasaApi } from "@/components/casa/useCasa";
-import { ANCLAS, OBJETOS, junto } from "@/components/casa/cocina/datos";
+import { ANCLAS, FREGADERO, OBJETOS, junto } from "@/components/casa/cocina/datos";
 import { acciones } from "@/components/casa/cocina/acciones";
 import { ESTADO_INICIAL } from "@/components/casa/cocina/datos";
 import { textoHanzi } from "@/lib/silabas";
@@ -174,9 +174,10 @@ describe("Casa", () => {
   });
 
   it("las anclas de los efectos viven en los datos", () => {
-    expect(ANCLAS.llave).toEqual({ x: 490, y: 278 });
-    expect(junto(OBJETOS.bingxiang, ANCLAS.salidaRefri)).toEqual({ x: 100, y: 300 });
-    expect(junto(OBJETOS.chahu, ANCLAS.picoTetera)).toEqual({ x: 362, y: 286 });
+    // la llave sale del dibujo isométrico (u 0.75, v 3, altura 3.05) y cae sobre el lavaplatos
+    expect(ANCLAS.llave).toEqual({ x: 401, y: 320.5 });
+    expect(ANCLAS.llave.y).toBeLessThan(FREGADERO.y);
+    expect(junto(OBJETOS.chahu, ANCLAS.picoTetera)).toEqual({ x: OBJETOS.chahu.x + 24, y: OBJETOS.chahu.y - 6 });
   });
 
   it("no hay español dentro de la casa (fuera del pinyin)", async () => {

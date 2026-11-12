@@ -39,6 +39,9 @@ body {
 /* Vaca: respira siempre; salta cuando se emociona. */
 .vaca-cuerpo { animation: respira-vaca 3s ease-in-out infinite; }
 .vaca-cuerpo.vaca-salta { animation: saltito-vaca 0.5s ease-out 2; }
+@media (prefers-reduced-motion: reduce) {
+  .vaca-cuerpo, .vaca-cuerpo.vaca-salta { animation: none; }
+}
 @keyframes respira-vaca { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(0.993, 1.012); } }
 @keyframes saltito-vaca {
   0% { transform: translateY(0) scale(1); }

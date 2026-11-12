@@ -9,7 +9,7 @@
   -webkit-user-select: none;
   animation: iris 0.5s ease-out;
 }
-.sale { animation: irisSale 0.45s ease-in forwards; }
+.sale { animation: irisSale 0.45s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
 @keyframes iris { from { clip-path: circle(0% at 50% 55%); } to { clip-path: circle(80% at 50% 55%); } }
 @keyframes irisSale { from { clip-path: circle(80% at 50% 55%); } to { clip-path: circle(0% at 50% 55%); } }
 
@@ -121,7 +121,7 @@
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
-@keyframes aparece { from { opacity: 0; scale: 0.4; } }
+@keyframes aparece { from { opacity: 0; scale: 0.85; } }
 
 /* cartel: ícono + verbo + pinyin */
 .cartel {
@@ -246,7 +246,7 @@
   animation: gira 6s linear infinite;
   z-index: -1;
 }
-@keyframes medalla { from { scale: 0; rotate: -30deg; } }
+@keyframes medalla { from { opacity: 0; scale: 0.5; rotate: -30deg; } }
 @keyframes gira { to { rotate: 360deg; } }
 .confeti { position: absolute; width: 1.6%; height: 2.6%; z-index: 10; pointer-events: none; animation: confeti 1.6s ease-in forwards; }
 @keyframes confeti { from { translate: 0 0; rotate: 0deg; } to { translate: var(--dx) 110cqmin; rotate: 720deg; } }
@@ -255,4 +255,5 @@
 @media (prefers-reduced-motion: reduce) {
   .confeti { display: none; }
   .rayos, .m, .mano, .vapor, .cartel { animation: none; }
+  .pp, .sale { animation-name: none; }
 }

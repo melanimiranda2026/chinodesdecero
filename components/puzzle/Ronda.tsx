@@ -67,7 +67,7 @@ export function Ronda({ frase, etapa, pausada, onError, onCompleta, onSiguiente,
   const hablar = useCallback(
     async (audio: string) => {
       setHablando(true);
-      await decir([], { src: `/audio/puzzle/${audio}.mp3`, alBoca: boca });
+      await decir([], { src: `/audio/puzzle/${audio}.mp3`, alBoca: boca, juego: "puzzle" });
       if (vivo.current) setHablando(false);
     },
     [boca],
@@ -82,7 +82,7 @@ export function Ronda({ frase, etapa, pausada, onError, onCompleta, onSiguiente,
 
   const terminar = useCallback(async () => {
     setFase("diciendo");
-    sfx("ding");
+    sfx("ding", "puzzle");
     await espera(380);
     if (!vivo.current) return;
     setCara({ ojos: "felices", hocico: "sonrisa", orejas: "arriba", salta: true });
@@ -92,7 +92,7 @@ export function Ronda({ frase, etapa, pausada, onError, onCompleta, onSiguiente,
       await espera(250);
       if (!vivo.current) return;
       setResponde(true);
-      await decir([], { src: `/audio/puzzle/${frase.respuesta.audio}.mp3`, alBoca: boca });
+      await decir([], { src: `/audio/puzzle/${frase.respuesta.audio}.mp3`, alBoca: boca, juego: "puzzle" });
       if (!vivo.current) return;
     }
     setCara({ ojos: "felices", hocico: "sonrisa", orejas: "arriba" });
@@ -105,7 +105,7 @@ export function Ronda({ frase, etapa, pausada, onError, onCompleta, onSiguiente,
     (hueco: number, pieza: number): boolean => {
       const actual = filaRef.current;
       if (hueco < 0 || !cabe(frase, actual, hueco, pieza)) {
-        sfx("boing");
+        sfx("boing", "puzzle");
         setRebota(pieza);
         setCara((c) => ({ ...c, ojos: "sorpresa", orejas: "normales", salta: false }));
         setTimeout(() => vivo.current && setCara((c) => ({ ...c, ojos: "abiertos" })), 700);
@@ -117,7 +117,7 @@ export function Ronda({ frase, etapa, pausada, onError, onCompleta, onSiguiente,
       nueva[hueco] = pieza;
       filaRef.current = nueva;
       setFila(nueva);
-      sfx("pop");
+      sfx("pop", "puzzle");
       if (completa(nueva)) void terminar();
       return true;
     },

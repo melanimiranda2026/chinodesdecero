@@ -352,7 +352,7 @@ function Nota({ tema, onSeguir, onMapa }: { tema: number; onSeguir: () => void; 
   const [boca, setBoca] = useState(false);
   useEffect(() => {
     const id = setTimeout(() => {
-      void decir([], { src: `/audio/puzzle/${ejemplo.audio}.mp3`, alBoca: (a) => setBoca(a > 0.22) });
+      void decir([], { src: `/audio/puzzle/${ejemplo.audio}.mp3`, alBoca: (a) => setBoca(a > 0.22), juego: "puzzle" });
     }, 500);
     return () => {
       clearTimeout(id);
@@ -403,8 +403,8 @@ function Fin({
   const frase = perfecto ? TAI_BANG_LE : HEN_HAO;
   const [boca, setBoca] = useState(false);
   useEffect(() => {
-    sfx("brillo");
-    const id = setTimeout(() => void decir(frase, { alBoca: (a) => setBoca(a > 0.22) }), 450);
+    sfx("brillo", "puzzle");
+    const id = setTimeout(() => void decir(frase, { alBoca: (a) => setBoca(a > 0.22), juego: "puzzle" }), 450);
     return () => {
       clearTimeout(id);
       callar();
@@ -473,7 +473,7 @@ function SinVasos({
 }) {
   useEffect(() => {
     callar();
-    sfx("tragos");
+    sfx("tragos", "puzzle");
   }, []);
   return (
     <div className={styles.sinVasos} role="dialog" aria-modal="true" aria-labelledby="sin-vasos-titulo">

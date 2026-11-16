@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { Casa, type ControlCasa } from "@/components/casa/Casa";
-import { callar } from "@/components/casa/audio/voz";
+import { callar, enfocarJuego } from "@/components/casa/audio/voz";
 import { Puzzle } from "@/components/puzzle/Puzzle";
 import { CLAVE_JUEGO, EVENTO_JUEGO, juegoInicial, recordarJuego, type Juego } from "./juego";
 import { PORTADA } from "./contenido";
@@ -34,6 +34,7 @@ export function Portada() {
       /* sin almacenamiento */
     }
     const inicial = juegoInicial(window.location.search, guardado);
+    enfocarJuego(inicial);
     if (inicial === "puzzle") {
       setPuzzleMontado(true);
       setJuego("puzzle");
@@ -43,11 +44,16 @@ export function Portada() {
       if (j === "cocina" || j === "puzzle") cambiar(j);
     };
     window.addEventListener(EVENTO_JUEGO, alCambiar);
-    return () => window.removeEventListener(EVENTO_JUEGO, alCambiar);
+    return () => {
+      window.removeEventListener(EVENTO_JUEGO, alCambiar);
+      enfocarJuego(null);
+    };
   }, []);
 
   const cambiar = (j: Juego) => {
+    // la pestaña oculta se calla: la frase que sonaba se corta y lo que su juego siga pidiendo ya no suena
     callar();
+    enfocarJuego(j);
     if (j === "puzzle") setPuzzleMontado(true);
     setJuego(j);
   };
@@ -154,7 +160,7 @@ export function Portada() {
         </div>
         <div className={styles.marco}>
           <div id="juego-cocina" role="tabpanel" aria-labelledby="pestana-cocina" data-juego="cocina" className={styles.panel} hidden={juego !== "cocina"}>
-            <Casa ref={casa} />
+            <Casa ref={casa} activo={juego === "cocina"} />
           </div>
           {puzzleMontado && (
             <div id="juego-puzzle" role="tabpanel" aria-labelledby="pestana-puzzle" data-juego="puzzle" className={cx(styles.panel, styles.panelPuzzle)} hidden={juego !== "puzzle"}>

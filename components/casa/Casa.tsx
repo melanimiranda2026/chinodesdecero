@@ -49,7 +49,7 @@ export interface ControlCasa {
   entrar(): void;
 }
 
-export function Casa({ onEvento, ref }: { onEvento?: AlEvento; ref?: Ref<ControlCasa> }) {
+export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; ref?: Ref<ControlCasa>; activo?: boolean }) {
   const avance = useRef<Avance>(avanceInicial());
   const listo = useRef(false);
   const montado = useRef(false);
@@ -240,7 +240,7 @@ export function Casa({ onEvento, ref }: { onEvento?: AlEvento; ref?: Ref<Control
   }, [restaurar, intentarSync, programar]);
 
   // El aviso (enlace bueno o vencido) se muestra arriba, dentro de la casa.
-  return <CasaVista ref={ref} casa={casa} anotado={avisado} aviso={aviso} formulario={<Correo origen="pronto" />} />;
+  return <CasaVista ref={ref} casa={casa} activo={activo} anotado={avisado} aviso={aviso} formulario={<Correo origen="pronto" />} />;
 }
 
 /** La vista de la casa: recibe el estado del hook y traduce los punteros a sus funciones. */
@@ -250,8 +250,11 @@ export function CasaVista({
   aviso = null,
   formulario,
   ref,
+  activo = true,
 }: {
   casa: CasaApi;
+  /** false = su pestaña está oculta: las tarjetas esperan (sin ver_metodo ni foco) hasta que vuelva a verse. */
+  activo?: boolean;
   ref?: Ref<ControlCasa>;
   /** Pidió que le avisemos cuando abran los cuartos. */
   anotado?: boolean;
@@ -322,7 +325,7 @@ export function CasaVista({
     casa.saludar();
   };
   useImperativeHandle(ref, () => ({ entrar }));
-  const capa: CapaTarjeta | null = quiz?.fase === "fin" ? "metodo" : pronto ? "pronto" : null;
+  const capa: CapaTarjeta | null = !activo ? null : quiz?.fase === "fin" ? "metodo" : pronto ? "pronto" : null;
 
   // La tarjeta del método aparece una vez al terminar el 玩.
   useEffect(() => {

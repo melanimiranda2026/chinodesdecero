@@ -8,6 +8,21 @@
 let ctx: AudioContext | null = null;
 const buffers = new Map<string, Promise<AudioBuffer | null>>();
 
+/** Los juegos que comparten la voz y los efectos (la portada los muestra en pestañas). */
+export type JuegoVoz = "cocina" | "puzzle";
+/** El juego que se ve; null = no hay pestañas (página propia, pruebas): todo suena. */
+let foco: JuegoVoz | null = null;
+
+/** La portada avisa qué pestaña se ve: lo que pida el juego oculto ya no suena. */
+export function enfocarJuego(j: JuegoVoz | null): void {
+  foco = j;
+}
+
+/** ¿Puede sonar lo que pide este juego? Sin juego pedido o sin foco, siempre. */
+export function puedeSonar(j?: JuegoVoz): boolean {
+  return !j || !foco || j === foco;
+}
+
 function constructor(): typeof AudioContext | undefined {
   if (typeof window === "undefined") return undefined;
   return window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -89,5 +104,6 @@ export function cargar(url: string): Promise<AudioBuffer | null> {
 /** Solo para pruebas. */
 export function reiniciarMotor(): void {
   ctx = null;
+  foco = null;
   buffers.clear();
 }

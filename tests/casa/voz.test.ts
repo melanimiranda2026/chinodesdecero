@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { S } from "@/lib/silabas";
-import { callar, decir, desbloquearAudio } from "@/components/casa/audio/voz";
+import { callar, decir, desbloquearAudio, enfocarJuego } from "@/components/casa/audio/voz";
 import { musica, sfx } from "@/components/casa/audio/sonido";
 import { efectoYLuegoVoz, ESPERA_SFX_DEFECTO } from "@/components/casa/audio/turnos";
 import { reiniciarMotor } from "@/components/casa/audio/motor";
@@ -77,6 +77,7 @@ beforeEach(() => {
   vi.stubGlobal("Audio", AudioFalso);
 });
 afterEach(() => {
+  enfocarJuego(null);
   musica.parar();
   vi.useRealTimers();
   vi.unstubAllGlobals();
@@ -319,6 +320,17 @@ describe("decir con Web Audio (contexto compartido y buffers)", () => {
     expect(fm.stop).toHaveBeenCalled();
   });
 
+  it("música: volver a pedir la misma pista (Web Audio) no la reinicia, ni mientras carga", async () => {
+    musica.tocar("cocina");
+    musica.tocar("cocina"); // todavía cargando
+    await vaciar();
+    musica.tocar("cocina"); // ya sonando
+    await vaciar();
+    const musicas = Ctx.ultimo.sonando().filter((f) => f.loop);
+    expect(musicas).toHaveLength(1);
+    expect(musicas[0].stop).not.toHaveBeenCalled();
+  });
+
   it("los efectos no suenan mientras habla la vaca, y el mandarín corta un efecto que sonaba", async () => {
     sfx("pop");
     await vaciar();
@@ -334,6 +346,77 @@ describe("decir con Web Audio (contexto compartido y buffers)", () => {
     sfx("boing");
     await vaciar();
     expect(red.fetches).toContain("/sfx/boing.mp3");
+  });
+});
+
+describe("juego en foco (pestañas de la portada)", () => {
+  it("una frase del juego oculto no suena, no corta la del visible y resuelve false", async () => {
+    vi.useFakeTimers();
+    enfocarJuego("puzzle");
+    const visible = decir(NI_HAO, { juego: "puzzle" });
+    expect(AudioFalso.instancias).toHaveLength(1);
+    const oculto = await decir(WO, { juego: "cocina" });
+    expect(oculto).toBe(false);
+    expect(AudioFalso.instancias).toHaveLength(1); // nada nuevo
+    expect(AudioFalso.instancias[0].paused).toBe(false); // la del puzzle sigue
+    await Promise.resolve();
+    AudioFalso.instancias[0].onended?.();
+    await expect(visible).resolves.toBe(true);
+  });
+
+  it("sin juego en foco, o sin juego pedido, todo suena como antes", async () => {
+    const suena = async (p: Promise<boolean>) => {
+      await Promise.resolve();
+      AudioFalso.instancias.at(-1)!.onended?.();
+      return p;
+    };
+    await expect(suena(decir(NI_HAO, { juego: "cocina" }))).resolves.toBe(true);
+    enfocarJuego("puzzle");
+    await expect(suena(decir(NI_HAO))).resolves.toBe(true);
+    enfocarJuego(null);
+    await expect(suena(decir(NI_HAO, { juego: "cocina" }))).resolves.toBe(true);
+    expect(AudioFalso.instancias).toHaveLength(3);
+  });
+
+  it("los efectos del juego oculto tampoco suenan (efectoYLuegoVoz incluido)", async () => {
+    vi.useFakeTimers();
+    enfocarJuego("puzzle");
+    sfx("pop", "cocina");
+    expect(AudioFalso.instancias).toHaveLength(0);
+    const hablar = vi.fn(async () => true);
+    void efectoYLuegoVoz("ding", hablar, { juego: "cocina" });
+    expect(AudioFalso.instancias).toHaveLength(0);
+    sfx("pop", "puzzle");
+    expect(AudioFalso.instancias.map((a) => a.src)).toEqual(["/sfx/pop.mp3"]);
+  });
+});
+
+describe("música sin reinicios", () => {
+  it("tocar la pista que ya suena no la reinicia (HTMLAudio)", () => {
+    musica.tocar("cocina");
+    musica.tocar("cocina");
+    expect(AudioFalso.instancias).toHaveLength(1);
+    expect(AudioFalso.instancias[0].paused).toBe(false);
+    musica.tocar("g-cortar");
+    expect(AudioFalso.instancias).toHaveLength(2);
+    expect(AudioFalso.instancias[0].paused).toBe(true);
+  });
+
+  it("si la pista no pudo sonar, el próximo tocar la reintenta", async () => {
+    AudioFalso.playRechaza = true;
+    musica.tocar("cocina");
+    await Promise.resolve();
+    await Promise.resolve();
+    AudioFalso.playRechaza = false;
+    musica.tocar("cocina");
+    expect(AudioFalso.instancias).toHaveLength(2);
+  });
+
+  it("después de parar, vuelve a sonar", () => {
+    musica.tocar("cocina");
+    musica.parar();
+    musica.tocar("cocina");
+    expect(AudioFalso.instancias).toHaveLength(2);
   });
 });
 

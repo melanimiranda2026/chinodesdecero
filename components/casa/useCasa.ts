@@ -159,7 +159,7 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
       setGlobo(opc.globo ?? s);
       let sono = false;
       try {
-        sono = (await decir(s, { alBoca: (a) => setHocico(bocaDe(a)) })) === true;
+        sono = (await decir(s, { alBoca: (a) => setHocico(bocaDe(a)), juego: "cocina" })) === true;
       } catch {
         /* sin voz: la casa sigue igual */
       }
@@ -222,7 +222,7 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
       luego(() => clase(id, "tiembla", false), 1000);
       mirar("izquierda", 900);
       eventoRef.current?.("tocar_objeto", { id });
-      await efectoYLuegoVoz("pop", () => hablar(OBJETOS[id].nombre));
+      await efectoYLuegoVoz("pop", () => hablar(OBJETOS[id].nombre), { juego: "cocina" });
     },
     [ocupadoRef, quizRef, estadoRef, brillos, clase, luego, mirar, hablar],
   );
@@ -230,7 +230,7 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
   const tocarVaca = useCallback(() => {
     if (ocupadoRef.current) return;
     festejo(700);
-    if (hablando.current === 0) sfx("boing"); // nunca encima del mandarín
+    if (hablando.current === 0) sfx("boing", "cocina"); // nunca encima del mandarín
   }, [ocupadoRef, festejo]);
 
   const abrirAcciones = useCallback(
@@ -326,7 +326,7 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
           festejo(900);
           eventoRef.current?.("gesto_completo", { anim: a.anim, medalla: m });
         } else {
-          const voz = efectoYLuegoVoz(a.sfx, () => hablar(a.frase));
+          const voz = efectoYLuegoVoz(a.sfx, () => hablar(a.frase), { juego: "cocina" });
           await animar(a, objId, {
             vaca: vacaRef.current, espera, luego, particula, miga, brillos, rafaga,
             aplicar: () => aplicarAccion(a), clase, llevarA, volverASuLugar, ojos: setOjos,

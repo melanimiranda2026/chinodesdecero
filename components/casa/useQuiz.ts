@@ -86,7 +86,7 @@ export function useQuiz(d: Deps) {
           const i = q.i + 1;
           const fin = i >= q.rondas.length;
           setQuiz({ ...q, i, aciertos: q.aciertos + 1, fase: fin ? "celebra" : "juego" });
-          await efectoYLuegoVoz("ding", () => hablar(DUI));
+          await efectoYLuegoVoz("ding", () => hablar(DUI), { juego: "cocina" });
           if (fin) {
             sigue = false;
             festejo(2000);
@@ -98,7 +98,7 @@ export function useQuiz(d: Deps) {
           }
         } else {
           mirar("sorpresa", 900);
-          await efectoYLuegoVoz("boing", () => hablar(BU_DUI));
+          await efectoYLuegoVoz("boing", () => hablar(BU_DUI), { juego: "cocina" });
           await espera(200);
         }
       } finally {

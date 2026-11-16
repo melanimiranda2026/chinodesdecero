@@ -1,13 +1,15 @@
 import { idAudio, type Silaba } from "@/lib/silabas";
-import { cargar, contexto, listo } from "./motor";
+import { cargar, contexto, listo, puedeSonar, type JuegoVoz } from "./motor";
 import { musica } from "./sonido";
 
-export { desbloquearAudio } from "./motor";
+export { desbloquearAudio, enfocarJuego, type JuegoVoz } from "./motor";
 
 export interface OpcionesDecir {
   alBoca?: (abierta: number) => void;
   /** Archivo a tocar en vez de `/audio/cocina/<idAudio>.mp3` (el puzzle usa los nombres del banco). */
   src?: string;
+  /** Qué juego habla: si la portada muestra otra pestaña, la frase no suena (ni corta la que suena). */
+  juego?: JuegoVoz;
 }
 
 let cortarActual: (() => void) | null = null;
@@ -21,9 +23,11 @@ export function callar(): void {
  * Toca la frase con la voz de la vaca. SIEMPRE resuelve: al terminar, ante un error (fetch 404,
  * decodificación, play() rechazado), si se pide otra frase, o al pasar 500 + 380·sílabas + 1500 ms
  * sin que empiece (ya sonando: la duración real + 1500 ms).
- * Resuelve `true` solo si el audio llegó a sonar.
+ * Resuelve `true` solo si el audio llegó a sonar. Si su juego está oculto, resuelve `false` de inmediato:
+ * así una secuencia que siguió corriendo en la pestaña oculta nunca habla encima del juego que se ve.
  */
 export function decir(s: Silaba[], opciones: OpcionesDecir = {}): Promise<boolean> {
+  if (!puedeSonar(opciones.juego)) return Promise.resolve(false);
   cortarActual?.();
   const { alBoca } = opciones;
   const src = opciones.src ?? `/audio/cocina/${idAudio(s)}.mp3`;

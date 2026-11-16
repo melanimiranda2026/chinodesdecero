@@ -42,7 +42,7 @@ export function Minimapa({
             className={[styles.cuarto, aqui ? styles.aqui : styles.bloq, !aqui && anotado ? styles.pronto : ""].join(" ")}
             onClick={() => {
               if (aqui) return;
-              sfx("boing");
+              sfx("boing", "cocina");
               alTocarBloqueado(id);
             }}
           >

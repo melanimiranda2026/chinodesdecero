@@ -59,6 +59,8 @@ describe("Casa", () => {
     await avanzar(400);
     expect(decirMock).toHaveBeenCalled();
     expect(decirMock.mock.calls[0][0]).toEqual(OBJETOS.beizi.nombre);
+    // la voz de la casa dice de qué juego es (en la portada, la pestaña oculta no suena)
+    expect(decirMock.mock.calls[0][1]?.juego).toBe("cocina");
     const globo = screen.getByTestId("globo");
     expect(within(globo).getByText("杯")).toBeTruthy();
     expect(within(globo).getByText("bēi")).toBeTruthy();

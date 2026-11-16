@@ -41,7 +41,8 @@ export function Tarjetas({ capa, anotado, formulario, alSeguir, alCerrar }: Prop
     document.addEventListener("keydown", alTeclear);
     return () => {
       document.removeEventListener("keydown", alTeclear);
-      if (previo?.isConnected) previo.focus(); // al cerrar, el foco vuelve a donde estaba
+      // al cerrar, el foco vuelve a donde estaba (no si quedó en una pestaña oculta)
+      if (previo?.isConnected && !previo.closest("[hidden]")) previo.focus();
     };
   }, [capa]);
 

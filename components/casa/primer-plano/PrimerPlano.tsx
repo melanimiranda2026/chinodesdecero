@@ -57,7 +57,7 @@ const bocaDe = (a: number): Hocico => (a > 0.5 ? "abierta" : a > 0.15 ? "o" : "s
 /** `decir` que nunca rechaza: sin voz, el juego sigue igual. */
 async function hablar(s: Silaba[], alBoca: (a: number) => void): Promise<void> {
   try {
-    await decir(s, { alBoca });
+    await decir(s, { alBoca, juego: "cocina" });
   } catch {
     /* sin voz */
   }
@@ -190,7 +190,7 @@ export function PrimerPlano({
       // el efecto nunca encima del mandarín: la frase espera lo que dura el ding
       await efectoYLuegoVoz("ding", async () => {
         if (sesion.vivo) await hablar(ELOGIO[m], (a) => sesion.vivo && setHocico(bocaDe(a)));
-      });
+      }, { juego: "cocina" });
       if (!sesion.vivo) return;
       setHocico("sonrisa");
       await esperar(400);
@@ -213,7 +213,7 @@ export function PrimerPlano({
       const t = ahora();
       g.tic(t);
       if (tipo === "llenar" && "rebalso" in g && (g.rebalso as () => boolean)()) {
-        sfx("boing");
+        sfx("boing", "cocina");
         setOjos("sorpresa");
         setDerrame(true);
         setTimeout(() => {
@@ -223,7 +223,7 @@ export function PrimerPlano({
       }
       if ((tipo === "llenar" || tipo === "beber") && apretadoRef.current && t - ultimoSfx.current > 650) {
         ultimoSfx.current = t;
-        sfx("tragos");
+        sfx("tragos", "cocina");
       }
       pintar();
       if (revisar()) return;
@@ -260,7 +260,7 @@ export function PrimerPlano({
       setTrazo({ a: p, b: p });
     } else if (tipo === "morder" && g.progreso() > antes) {
       setMordidas((ms) => [...ms, { u: p.u, v: p.v, r: 17 + (ms.length + 1) * 2 }]);
-      sfx("nam");
+      sfx("nam", "cocina");
       golpe();
       setHocico("abierta");
       setTimeout(() => setHocico("sonrisa"), 200);
@@ -293,7 +293,7 @@ export function PrimerPlano({
       const t = ahora();
       if (t - ultimoSfx.current > 350) {
         ultimoSfx.current = t;
-        sfx("pop-burbuja");
+        sfx("pop-burbuja", "cocina");
       }
     } else if (tipo === "girar") {
       setCuchara(p);
@@ -313,7 +313,7 @@ export function PrimerPlano({
       const a = inicioTrazo.current;
       if (a && g.progreso() > antes) {
         setCortes((cs) => [...cs, { a, b: p }]);
-        sfx("golpe");
+        sfx("golpe", "cocina");
         golpe();
       }
       inicioTrazo.current = null;

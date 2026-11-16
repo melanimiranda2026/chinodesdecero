@@ -7,6 +7,7 @@ vi.mock("@/components/casa/audio/voz", () => ({
   decir: vi.fn(() => Promise.resolve(true)),
   callar: vi.fn(),
   desbloquearAudio: vi.fn(),
+  enfocarJuego: vi.fn(),
 }));
 vi.mock("@/components/casa/audio/sonido", () => ({
   sfx: vi.fn(),
@@ -15,7 +16,7 @@ vi.mock("@/components/casa/audio/sonido", () => ({
 const registrar = vi.fn();
 vi.mock("@/components/casa/eventos", () => ({ registrar: (...a: unknown[]) => registrar(...a) }));
 
-import { decir, desbloquearAudio, callar } from "@/components/casa/audio/voz";
+import { decir, desbloquearAudio, callar, enfocarJuego } from "@/components/casa/audio/voz";
 import { CLAVE_JUEGO, EVENTO_JUEGO } from "@/components/pagina/juego";
 import { musica } from "@/components/casa/audio/sonido";
 import { NI_HAO } from "@/components/casa/cocina/frases";
@@ -131,6 +132,19 @@ describe("Portada: pestañas", () => {
     fireEvent.click(screen.getByRole("tab", { name: /厨房/ }));
     expect(container.querySelector<HTMLElement>('[data-juego="cocina"]')!.hidden).toBe(false);
     expect(container.querySelector<HTMLElement>('[data-juego="puzzle"]')!.hidden).toBe(true);
+  });
+
+  it("la pestaña que se ve es la única que puede sonar: la portada enfoca su juego", () => {
+    vi.mocked(enfocarJuego).mockClear();
+    const { unmount } = render(<Portada />);
+    expect(enfocarJuego).toHaveBeenLastCalledWith("cocina");
+    fireEvent.click(screen.getByRole("tab", { name: /拼图/ }));
+    expect(enfocarJuego).toHaveBeenLastCalledWith("puzzle");
+    fireEvent.click(screen.getByRole("tab", { name: /厨房/ }));
+    expect(enfocarJuego).toHaveBeenLastCalledWith("cocina");
+    unmount();
+    expect(enfocarJuego).toHaveBeenLastCalledWith(null);
+    localStorage.removeItem(CLAVE_JUEGO);
   });
 
   it("elegir una pestaña la recuerda en localStorage y en la URL", () => {

@@ -94,6 +94,8 @@ describe("Puzzle", () => {
     await armar();
     await avanzar(1000);
     expect(vi.mocked(decir).mock.calls.some(([, o]) => o?.src === "/audio/puzzle/wochi_pingguo.mp3")).toBe(true);
+    // toda frase del puzzle dice de qué juego es (en la portada, la pestaña oculta no suena)
+    expect(vi.mocked(decir).mock.calls.every(([, o]) => o?.juego === "puzzle")).toBe(true);
     expect(screen.getByRole("button", { name: "Siguiente" })).toBeTruthy();
     expect(vasos()).toBe(5);
   });

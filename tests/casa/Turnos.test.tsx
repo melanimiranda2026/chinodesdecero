@@ -100,10 +100,10 @@ describe("efectos nunca encima del mandarín", () => {
     act(() => { void api().tocar("beizi"); });
     await avanzar(400); // ya habla
     act(() => api().tocarVaca());
-    expect(sfxMock).not.toHaveBeenCalledWith("boing");
+    expect(sfxMock).not.toHaveBeenCalledWith("boing", "cocina");
     await act(async () => { terminar(true); await vi.advanceTimersByTimeAsync(10); });
     act(() => api().tocarVaca());
-    expect(sfxMock).toHaveBeenCalledWith("boing");
+    expect(sfxMock).toHaveBeenCalledWith("boing", "cocina");
   });
 });
 

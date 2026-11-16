@@ -1,4 +1,4 @@
-import { cargar, contexto, listo } from "./motor";
+import { cargar, contexto, listo, puedeSonar, type JuegoVoz } from "./motor";
 
 /** Efectos y música de fondo. Todo es opcional: si el navegador no deja, se ignora. */
 
@@ -13,15 +13,15 @@ let vozActiva = false;
 /** Efectos sonando ahora (para cortarlos si empieza el mandarín). */
 const sonando = new Set<() => void>();
 
-/** Toca un efecto. Nunca encima del mandarín: si la vaca está hablando, no suena. */
-export function sfx(nombre: string): void {
-  if (vozActiva) return;
+/** Toca un efecto. Nunca encima del mandarín: si la vaca está hablando, no suena. Tampoco si su juego está oculto. */
+export function sfx(nombre: string, juego?: JuegoVoz): void {
+  if (vozActiva || !puedeSonar(juego)) return;
   const url = `/sfx/${nombre}.mp3`;
   if (contexto()) {
     void (async () => {
       const c = await listo();
       const b = c && (await cargar(url));
-      if (!c || !b || vozActiva) return;
+      if (!c || !b || vozActiva || !puedeSonar(juego)) return;
       const g = c.createGain();
       g.gain.value = VOLUMEN_SFX;
       const s = c.createBufferSource();
@@ -65,6 +65,8 @@ let fuente: AudioBufferSourceNode | null = null;
 let ganancia: GainNode | null = null;
 let el: HTMLAudioElement | null = null;
 let pedido = 0;
+/** La pista que suena (o está cargando): pedirla otra vez no la reinicia. null si no hay o no pudo sonar. */
+let actual: Pista | null = null;
 
 const volumen = () => (vozActiva ? Math.min(VOLUMEN_MUSICA, VOLUMEN_MUSICA_BAJO) : VOLUMEN_MUSICA);
 
@@ -98,18 +100,26 @@ function soltarMusica() {
   ganancia = null;
   try { el?.pause(); } catch { /* nada */ }
   el = null;
+  actual = null;
 }
 
 export const musica = {
   tocar(pista: Pista): void {
+    if (pista === actual) return; // ya suena: volver a la cocina no la empieza de nuevo
     soltarMusica();
+    actual = pista;
     const n = ++pedido;
     const url = `/musica/${pista}.mp3`;
+    /** No sonó: el próximo tocar la reintenta. */
+    const fallo = () => {
+      if (n === pedido) actual = null;
+    };
     if (contexto()) {
       void (async () => {
         const c = await listo();
         const b = c && (await cargar(url));
-        if (!c || !b || n !== pedido) return;
+        if (n !== pedido) return;
+        if (!c || !b) return fallo();
         const g = c.createGain();
         g.gain.value = volumen();
         const s = c.createBufferSource();
@@ -120,17 +130,17 @@ export const musica = {
         s.start();
         fuente = s;
         ganancia = g;
-      })().catch(() => {});
+      })().catch(fallo);
       return;
     }
-    if (typeof Audio === "undefined") return;
+    if (typeof Audio === "undefined") return fallo();
     try {
       el = new Audio(url);
       el.loop = true;
       aplicarVolumen();
-      void Promise.resolve(el.play()).catch(() => {});
+      void Promise.resolve(el.play()).catch(fallo);
     } catch {
-      /* sin música */
+      fallo(); // sin música
     }
   },
   parar(): void {

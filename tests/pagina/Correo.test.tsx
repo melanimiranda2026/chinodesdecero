@@ -141,7 +141,7 @@ describe("Correo", () => {
   it("lleva la nota de privacidad con el contacto para borrar el correo", () => {
     render(<Correo origen="pie" />);
     expect(screen.getByText(/Usamos tu correo solo para tu avance y, si lo marcas, para avisarte de novedades/).textContent).toContain(
-      "CONFIRMAR@correo",
+      "niu@chinoconlavaca.com",
     );
   });
 });

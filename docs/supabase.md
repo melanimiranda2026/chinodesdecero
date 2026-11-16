@@ -19,7 +19,7 @@ Aplicar en orden `supabase/migrations/0001_inicial.sql` y `supabase/migrations/0
 
 - **Solo a quienes tengan `consentimiento_confirmado = true`.** `consentimiento = true` sin confirmar no basta (cualquiera puede escribir un correo ajeno en el formulario).
 - **Todo correo de novedades lleva el enlace de baja**: `<NEXT_PUBLIC_SITE_URL>/baja?e=<token_baja>` (el `token_baja` de esa fila).
-- Para pedir que borremos un correo, la página indica un contacto: hoy es el marcador `CONFIRMAR@correo` (`components/pagina/Correo.tsx`, `CONTACTO_PRIVACIDAD`). **Cambiarlo por el correo real antes de publicar.**
+- Para pedir que borremos un correo, la página indica un contacto: es `niu@chinoconlavaca.com` (`components/pagina/Correo.tsx`, `CONTACTO_PRIVACIDAD`).
 
 ## Enlace mágico entre dispositivos
 

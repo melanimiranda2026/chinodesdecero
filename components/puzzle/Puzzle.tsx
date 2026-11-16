@@ -113,7 +113,7 @@ export function Puzzle({ ventana = false }: { ventana?: boolean } = {}) {
   const sigue = siguienteNivel(ganados);
 
   return (
-    <div className={styles.juego} onPointerDown={entrarAudio}>
+    <div className={cx(styles.juego, !ventana && styles.enPagina)} onPointerDown={entrarAudio}>
       <header className={styles.barra}>
         {!ventana && (
           <>

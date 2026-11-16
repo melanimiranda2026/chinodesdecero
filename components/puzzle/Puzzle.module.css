@@ -14,6 +14,8 @@
 }
 .juego ::selection { background: #ffd24a; color: var(--tinta); }
 .cargando { min-height: 100svh; }
+/* En su propia página el menú fijo va arriba: la barra se pega justo debajo. */
+.enPagina .barra { top: calc(var(--alto-menu, 0px) + 8px); }
 
 /* ---------- barra ---------- */
 .barra {

@@ -8,6 +8,7 @@ import { Metodo } from "@/components/pagina/Metodo";
 import { Material } from "@/components/pagina/Material";
 import { Siguenos } from "@/components/pagina/Siguenos";
 import { Pie } from "@/components/pagina/Pie";
+import { Sobre } from "@/components/pagina/Sobre";
 import { METODO, MATERIAL, TIKTOK } from "@/components/pagina/contenido";
 
 describe("secciones de la página", () => {
@@ -72,7 +73,6 @@ describe("secciones de la página", () => {
   });
 });
 
-import { Sobre } from "@/components/pagina/Sobre";
 
 describe("Sobre nosotros", () => {
   it("muestra título, correo mailto y enlace a TikTok, sin prometer aprender en TikTok", () => {

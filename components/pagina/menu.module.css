@@ -6,7 +6,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 4px;
-  height: 48px;
+  height: var(--alto-menu);
   padding: 0 6px;
   background: var(--papel);
   border-bottom: 3px solid var(--tinta);

@@ -16,7 +16,7 @@ const registrar = vi.fn();
 vi.mock("@/components/casa/eventos", () => ({ registrar: (...a: unknown[]) => registrar(...a) }));
 
 import { decir, desbloquearAudio, callar } from "@/components/casa/audio/voz";
-import { EVENTO_JUEGO } from "@/components/pagina/juego";
+import { CLAVE_JUEGO, EVENTO_JUEGO } from "@/components/pagina/juego";
 import { musica } from "@/components/casa/audio/sonido";
 import { NI_HAO } from "@/components/casa/cocina/frases";
 import { Portada } from "@/components/pagina/Portada";
@@ -131,6 +131,23 @@ describe("Portada: pestañas", () => {
     fireEvent.click(screen.getByRole("tab", { name: /厨房/ }));
     expect(container.querySelector<HTMLElement>('[data-juego="cocina"]')!.hidden).toBe(false);
     expect(container.querySelector<HTMLElement>('[data-juego="puzzle"]')!.hidden).toBe(true);
+  });
+
+  it("elegir una pestaña la recuerda en localStorage y en la URL", () => {
+    render(<Portada />);
+    fireEvent.click(screen.getByRole("tab", { name: /拼图/ }));
+    expect(localStorage.getItem(CLAVE_JUEGO)).toBe("puzzle");
+    expect(window.location.search).toContain("juego=puzzle");
+    localStorage.removeItem(CLAVE_JUEGO);
+  });
+
+  it("“Jugar ahora” con el puzzle activo vuelve a la cocina", () => {
+    const { container } = render(<Portada />);
+    fireEvent.click(screen.getByRole("tab", { name: /拼图/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Jugar ahora/ }));
+    expect(screen.getByRole("tab", { name: /厨房/ }).getAttribute("aria-selected")).toBe("true");
+    expect(container.querySelector<HTMLElement>('[data-juego="cocina"]')!.hidden).toBe(false);
+    localStorage.removeItem(CLAVE_JUEGO);
   });
 
   it("con ?juego=puzzle arranca en el puzzle", () => {

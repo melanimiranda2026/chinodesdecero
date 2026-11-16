@@ -13,8 +13,8 @@ export function juegoInicial(search: string, guardado: string | null): Juego {
   return "cocina";
 }
 
-/** Cambia de pestaña desde cualquier parte de la página: recuerda, actualiza la URL, avisa y lleva a la ventana. */
-export function elegirJuego(j: Juego): void {
+/** Recuerda la pestaña: localStorage y ?juego= (manteniendo el hash). No avisa ni hace scroll. */
+export function recordarJuego(j: Juego): void {
   try {
     localStorage.setItem(CLAVE_JUEGO, j);
   } catch {
@@ -27,6 +27,11 @@ export function elegirJuego(j: Juego): void {
   } catch {
     /* ignorar */
   }
+}
+
+/** Cambia de pestaña desde cualquier parte de la página: recuerda, avisa y lleva a la ventana. */
+export function elegirJuego(j: Juego): void {
+  recordarJuego(j);
   window.dispatchEvent(new CustomEvent<Juego>(EVENTO_JUEGO, { detail: j }));
   document.getElementById("juegos")?.scrollIntoView?.({ behavior: "smooth", block: "nearest" });
 }

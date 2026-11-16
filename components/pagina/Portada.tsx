@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Casa, type ControlCasa } from "@/components/casa/Casa";
 import { callar } from "@/components/casa/audio/voz";
 import { Puzzle } from "@/components/puzzle/Puzzle";
-import { CLAVE_JUEGO, EVENTO_JUEGO, juegoInicial, type Juego } from "./juego";
+import { CLAVE_JUEGO, EVENTO_JUEGO, juegoInicial, recordarJuego, type Juego } from "./juego";
 import { PORTADA } from "./contenido";
 import styles from "./portada.module.css";
 
@@ -66,6 +66,11 @@ export function Portada() {
   }, [grande]);
 
   const jugar = () => {
+    // si estaba el puzzle, primero vuelve a la cocina (callar incluido)
+    if (juego !== "cocina") {
+      cambiar("cocina");
+      recordarJuego("cocina");
+    }
     // todo dentro del clic: desbloquear el audio de iOS, música de la cocina y el saludo
     casa.current?.entrar();
     ventana.current?.scrollIntoView?.({ behavior: "smooth", block: "nearest" });
@@ -121,7 +126,10 @@ export function Portada() {
                 aria-selected={juego === p.id}
                 aria-controls={`juego-${p.id}`}
                 className={cx(styles.pestana, juego === p.id && styles.activa)}
-                onClick={() => cambiar(p.id)}
+                onClick={() => {
+                  cambiar(p.id);
+                  recordarJuego(p.id);
+                }}
               >
                 <span aria-hidden="true">{p.icono}</span> <span lang="zh">{p.hanzi}</span>{" "}
                 <span className={styles.py} data-pinyin>

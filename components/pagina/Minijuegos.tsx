@@ -64,8 +64,9 @@ export function Minijuegos() {
             href="/puzzle"
             className={styles.boton}
             onClick={(e) => {
-              e.preventDefault();
               registrar("abrir_minijuego", { juego: "puzzle" });
+              if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button !== 0) return;
+              e.preventDefault();
               elegirJuego("puzzle");
             }}
           >

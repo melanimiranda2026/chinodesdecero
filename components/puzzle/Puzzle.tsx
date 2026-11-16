@@ -25,6 +25,18 @@ type Pantalla =
   | { tipo: "ronda"; tema: number; etapa: Etapa; frase: number; errores: number; gratis: boolean }
   | { tipo: "fin"; tema: number; etapa: Etapa; perfecto: boolean; gratis: boolean };
 
+/** Una ronda desde su primera frase. */
+const rondaDe = (tema: number, etapa: Etapa, gratis: boolean): Pantalla => ({ tipo: "ronda", tema, etapa, frase: 0, errores: 0, gratis });
+
+/**
+ * Empieza un nivel (desde el mapa, el fin o al abrir el puzzle): registra su inicio y devuelve la pantalla.
+ * Con `nota`, la etapa 1 nueva pasa antes por la regla.
+ */
+function abrirRonda(tema: number, etapa: Etapa, { gratis = false, nota = false }: { gratis?: boolean; nota?: boolean } = {}): Pantalla {
+  registrar("puzzle_nivel_inicio", { nivel: idNivel(TEMAS[tema].id, etapa), repaso: gratis });
+  return nota ? { tipo: "nota", tema } : rondaDe(tema, etapa, gratis);
+}
+
 /** Reloj que avanza cada 20 s (la cuenta regresiva de los vasos). */
 function useAhora(): number {
   const [ahora, setAhora] = useState(() => Date.now());
@@ -42,6 +54,7 @@ export function Puzzle({ ventana = false }: { ventana?: boolean } = {}) {
   const [gasto, setGasto] = useState(0); // para animar el vaso que se vacía
   const ahora = useAhora();
   const audioListo = useRef(false);
+  const raiz = useRef<HTMLDivElement>(null);
 
   // El avance vive en el navegador: se lee al montar (no en el render del servidor).
   useEffect(() => {
@@ -49,7 +62,7 @@ export function Puzzle({ ventana = false }: { ventana?: boolean } = {}) {
     setAvance(a);
     // Abre listo para jugar: directo a la ronda que toca (sin la Nota); si ya ganó todo, el mapa.
     const sig = siguienteNivel(new Set(a.ganados));
-    setPantalla(sig ? { tipo: "ronda", tema: sig.tema, etapa: sig.etapa, frase: 0, errores: 0, gratis: false } : { tipo: "mapa" });
+    setPantalla(sig ? abrirRonda(sig.tema, sig.etapa) : { tipo: "mapa" });
     setCorreoGuardado(!!cargarAvance().correo);
   }, []);
 
@@ -83,7 +96,7 @@ export function Puzzle({ ventana = false }: { ventana?: boolean } = {}) {
     if (!ventana) musica.parar();
   }, [ventana]);
 
-  if (!avance) return <div className={styles.cargando} aria-busy="true" />;
+  if (!avance) return <div className={cx(styles.cargando, !ventana && styles.enPagina)} aria-busy="true" />;
 
   const ganados = new Set(avance.ganados);
   const vasos = recargar(avance.vasos, ahora);
@@ -99,10 +112,10 @@ export function Puzzle({ ventana = false }: { ventana?: boolean } = {}) {
   const jugar = (tema: number, etapa: Etapa) => {
     entrarAudio();
     const gratis = ganados.has(idNivel(TEMAS[tema].id, etapa));
-    registrar("puzzle_nivel_inicio", { nivel: idNivel(TEMAS[tema].id, etapa), repaso: gratis });
-    if (etapa === 1 && !gratis) setPantalla({ tipo: "nota", tema });
-    else setPantalla({ tipo: "ronda", tema, etapa, frase: 0, errores: 0, gratis });
+    setPantalla(abrirRonda(tema, etapa, { gratis, nota: etapa === 1 && !gratis }));
+    // arriba del nivel: en su página, la pantalla; en la ventana de la portada, el panel que lo envuelve
     if (!ventana) window.scrollTo?.({ top: 0 });
+    else if (raiz.current?.parentElement) raiz.current.parentElement.scrollTop = 0;
   };
 
   const llenarConCorreo = () => {
@@ -113,7 +126,12 @@ export function Puzzle({ ventana = false }: { ventana?: boolean } = {}) {
   const sigue = siguienteNivel(ganados);
 
   return (
-    <div className={cx(styles.juego, !ventana && styles.enPagina)} onPointerDown={entrarAudio}>
+    <div
+      ref={raiz}
+      className={cx(styles.juego, !ventana && styles.enPagina)}
+      onPointerDown={entrarAudio}
+      onClickCapture={entrarAudio} // teclado y switch: Enter/Espacio dan click sin pointerdown
+    >
       <header className={styles.barra}>
         {!ventana && (
           <>
@@ -144,7 +162,7 @@ export function Puzzle({ ventana = false }: { ventana?: boolean } = {}) {
       {pantalla.tipo === "nota" && (
         <Nota
           tema={pantalla.tema}
-          onSeguir={() => setPantalla({ tipo: "ronda", tema: pantalla.tema, etapa: 1, frase: 0, errores: 0, gratis: false })}
+          onSeguir={() => setPantalla(rondaDe(pantalla.tema, 1, false))}
           onMapa={() => setPantalla({ tipo: "mapa" })}
         />
       )}

@@ -13,7 +13,7 @@ vi.mock("@/components/casa/audio/sonido", () => ({
 const registrar = vi.fn();
 vi.mock("@/components/casa/eventos", () => ({ registrar: (...a: unknown[]) => registrar(...a) }));
 
-import { decir } from "@/components/casa/audio/voz";
+import { decir, desbloquearAudio } from "@/components/casa/audio/voz";
 import { Puzzle } from "@/components/puzzle/Puzzle";
 import { CLAVE_PUZZLE } from "@/components/puzzle/avance";
 import { TEMAS } from "@/components/puzzle/datos";
@@ -21,6 +21,8 @@ import { nombrePieza } from "@/components/puzzle/Pieza";
 import { FormaPieza } from "@/components/puzzle/FormaPieza";
 import { renderToString } from "react-dom/server";
 import { EVENTO_AVANCE } from "@/components/casa/avance";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 const avanzar = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
 const vasos = () => Number(screen.getByTestId("vasos").getAttribute("data-vasos"));
@@ -62,6 +64,43 @@ describe("Puzzle listo para jugar", () => {
     render(<Puzzle />);
     await avanzar(0);
     expect(screen.getByText(/Armaste todos los niveles/)).toBeTruthy();
+  });
+
+  it("abrir directo en la ronda registra el inicio del nivel, igual que elegirlo en el mapa", async () => {
+    render(<Puzzle />);
+    await avanzar(0);
+    expect(registrar).toHaveBeenCalledWith("puzzle_nivel_inicio", { nivel: "orden-1", repaso: false });
+    expect(registrar.mock.calls.filter((c) => c[0] === "puzzle_nivel_inicio")).toHaveLength(1);
+  });
+
+  it("con teclado (click sin pointerdown) también se desbloquea el audio, una sola vez", async () => {
+    vi.mocked(desbloquearAudio).mockClear();
+    render(<Puzzle />);
+    await avanzar(0);
+    fireEvent.click(document.querySelector<HTMLButtonElement>('button[data-pieza="0"]')!);
+    fireEvent.click(document.querySelector<HTMLButtonElement>('button[data-pieza="1"]')!);
+    expect(desbloquearAudio).toHaveBeenCalledTimes(1);
+  });
+
+  it("en la ventana no ocupa toda la pantalla y abrir un nivel vuelve arriba del panel", async () => {
+    const { container } = render(
+      <div data-panel>
+        <Puzzle ventana />
+      </div>,
+    );
+    await avanzar(0);
+    const panel = container.querySelector<HTMLElement>("[data-panel]")!;
+    const raiz = panel.firstElementChild as HTMLElement;
+    expect(raiz.className).not.toMatch(/enPagina/);
+    const css = readFileSync(join(process.cwd(), "components/puzzle/Puzzle.module.css"), "utf8");
+    const regla = (sel: string) => css.match(new RegExp(`(^|\\n)${sel.replace(".", "\\.")}\\s*\\{([^}]*)\\}`))?.[2] ?? "";
+    expect(regla(".juego")).not.toMatch(/100svh/); // en la ventana: solo lo que ocupa
+    expect(regla(".cargando")).not.toMatch(/100svh/);
+    expect(regla(".enPagina")).toMatch(/min-height:\s*100svh/); // en su página: toda la pantalla
+    Object.defineProperty(panel, "scrollTop", { value: 300, writable: true, configurable: true });
+    fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
+    expect(panel.scrollTop).toBe(0);
   });
 
   it("en modo ventana no hay enlace Volver al inicio", async () => {

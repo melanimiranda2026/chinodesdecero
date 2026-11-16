@@ -1,3 +1,4 @@
+import { entrarCasa } from "./entrar";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
@@ -49,7 +50,7 @@ describe("Casa con avance", () => {
   it("cuenta lo que dice la vaca, sin repetir, y guarda tras ~500 ms", async () => {
     render(<Casa />);
     await avanzar(10);
-    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
+    entrarCasa();
     fireEvent.click(screen.getByRole("button", { name: "杯子" }));
     await avanzar(100);
     expect(cargarAvance().escuchadas).toEqual([]); // aún no pasó el debounce
@@ -67,11 +68,23 @@ describe("Casa con avance", () => {
     await avanzar(10);
     expect(screen.getByRole("status").textContent).toBe("Ese enlace ya no funciona. Pide uno nuevo dejando tu correo otra vez.");
     expect(window.location.search).toBe("");
-    // va en la tarjeta de entrada (no encima del cuarto) y se va al entrar
-    expect(screen.getByRole("status").closest("[data-capa]")?.getAttribute("data-capa")).toBe("entrada");
+    // va arriba, dentro de la casa (no en una tarjeta de entrada)
+    expect(screen.getByRole("status").closest("[data-casa]")).toBeTruthy();
+    expect(document.querySelector("div[data-capa]")).toBeNull();
     await avanzar(5100);
     expect(screen.getByRole("status")).toBeTruthy(); // no se esfuma antes de que lo lean
-    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
+    entrarCasa();
+    expect(screen.getByRole("status")).toBeTruthy(); // entrar no lo quita
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar" }));
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("el aviso se cierra solo a los 8 s", async () => {
+    window.history.replaceState(null, "", "/?bienvenida=1");
+    render(<Casa />);
+    await avanzar(7000);
+    expect(screen.getByRole("status")).toBeTruthy();
+    await avanzar(1500);
     expect(screen.queryByRole("status")).toBeNull();
   });
 
@@ -85,7 +98,7 @@ describe("Casa con avance", () => {
 
   it("la tarjeta pronto lleva el formulario de correo", async () => {
     render(<Casa />);
-    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
+    entrarCasa();
     fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
     expect(screen.getByRole("button", { name: "Avísame" })).toBeTruthy();
   });

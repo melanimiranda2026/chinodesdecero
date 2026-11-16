@@ -1,3 +1,4 @@
+import { entrarCasa } from "./entrar";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { MutableRefObject } from "react";
@@ -12,7 +13,7 @@ vi.mock("@/components/casa/audio/sonido", () => ({
   musica: { tocar: vi.fn(), parar: vi.fn(), bajar: vi.fn() },
 }));
 
-import { decir } from "@/components/casa/audio/voz";
+import { decir, desbloquearAudio } from "@/components/casa/audio/voz";
 import { Casa, CasaVista } from "@/components/casa/Casa";
 import { useCasa, type AlEvento, type CasaApi } from "@/components/casa/useCasa";
 import { ANCLAS, FREGADERO, OBJETOS, junto } from "@/components/casa/cocina/datos";
@@ -244,7 +245,7 @@ describe("Casa: 玩 (quiz)", () => {
     }
     await avanzar(2500);
     expect(api().quiz!.fase).toBe("fin");
-    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
+    entrarCasa();
     expect(screen.getByText("Lo acabas de hacer")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Seguir explorando" }));
     expect(api().quiz).toBeNull();
@@ -253,7 +254,7 @@ describe("Casa: 玩 (quiz)", () => {
 
   it("tocar un cuarto bloqueado del minimapa abre la tarjeta pronto", () => {
     montar();
-    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
+    entrarCasa();
     fireEvent.click(screen.getByRole("button", { name: "卧室 🔒" }));
     expect(screen.getByText("Este cuarto abre pronto. Deja tu correo y marca la casilla: te avisamos.")).toBeTruthy();
   });
@@ -291,8 +292,33 @@ describe("Casa: quiz, guardas y tarjetas", () => {
 
   it("con una tarjeta abierta la casa queda inert y el botón 玩 no se puede usar", () => {
     const { container } = montar();
-    expect(container.querySelector("[inert]")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
     expect(container.querySelector("[inert]")).toBeNull();
+    entrarCasa();
+    fireEvent.click(screen.getByRole("button", { name: "卧室 🔒" }));
+    expect(container.querySelector("[inert]")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar" }));
+    expect(container.querySelector("[inert]")).toBeNull();
+  });
+
+  it("se puede tocar un objeto sin apretar Jugar", async () => {
+    montar();
+    expect(screen.queryByRole("button", { name: "Jugar" })).toBeNull();
+    expect(document.querySelector('[data-capa="entrada"]')).toBeNull();
+    decirMock.mockClear();
+    const objeto = screen.getByRole("button", { name: "杯子" });
+    fireEvent.pointerDown(objeto); // el mismo toque arranca la casa y llega al objeto
+    fireEvent.click(objeto);
+    await avanzar(3000);
+    expect(decirMock.mock.calls.some((c) => c[0] === OBJETOS.beizi.nombre)).toBe(true);
+  });
+
+  it("el primer toque desbloquea el audio y la vaca saluda, una sola vez", async () => {
+    vi.mocked(desbloquearAudio).mockClear();
+    montar();
+    entrarCasa();
+    entrarCasa();
+    expect(desbloquearAudio).toHaveBeenCalledTimes(1);
+    await avanzar(600);
+    expect(decirMock.mock.calls.length).toBeGreaterThan(0); // la vaca saluda
   });
 });

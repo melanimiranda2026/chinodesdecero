@@ -56,7 +56,7 @@ describe("Portada: hero", () => {
   it("“Jugar ahora” arranca el juego dentro del clic: audio, música, saludo y sin tarjeta de entrada", async () => {
     const { container } = render(<Portada />);
     const ventana = container.querySelector<HTMLElement>("[data-ventana]")!;
-    expect(ventana.querySelector('[data-capa="entrada"]')).toBeTruthy();
+    expect(ventana.querySelector('[data-capa="entrada"]')).toBeNull();
     const scroll = vi.fn();
     ventana.scrollIntoView = scroll;
 
@@ -78,13 +78,13 @@ describe("Portada: hero", () => {
     expect(vi.mocked(decir).mock.calls.filter((c) => c[0] === NI_HAO)).toHaveLength(1);
   });
 
-  it("la tarjeta de entrada vive dentro de la ventana del juego y su botón también arranca", async () => {
+  it("el primer toque dentro de la ventana del juego arranca, sin tarjeta de entrada", async () => {
     const { container } = render(<Portada />);
     const ventana = container.querySelector<HTMLElement>("[data-ventana]")!;
-    const tarjeta = within(ventana).getByRole("dialog");
-    fireEvent.click(within(tarjeta).getByRole("button", { name: "Jugar" }));
-    expect(desbloquearAudio).toHaveBeenCalledTimes(1);
     expect(within(ventana).queryByRole("dialog")).toBeNull();
+    expect(within(ventana).queryByRole("button", { name: "Jugar" })).toBeNull();
+    fireEvent.pointerDown(ventana.querySelector("[data-casa]")!);
+    expect(desbloquearAudio).toHaveBeenCalledTimes(1);
     // el minimapa y el 玩 también están dentro
     expect(within(ventana).getByRole("button", { name: "玩" })).toBeTruthy();
     fireEvent.click(within(ventana).getByRole("button", { name: "卧室 🔒" }));

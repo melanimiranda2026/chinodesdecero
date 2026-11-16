@@ -1,3 +1,4 @@
+import { entrarCasa } from "./entrar";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
@@ -73,7 +74,7 @@ describe("sincronizacion con la cuenta", () => {
     const puts = red(() => json({ error: "servidor" }, 500));
     render(<Casa />);
     await avanzar(100);
-    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
+    entrarCasa();
     fireEvent.click(screen.getByRole("button", { name: "杯子" }));
     await avanzar(3000);
     expect(cargarAvance().escuchadas.length).toBeGreaterThan(0);
@@ -114,7 +115,7 @@ describe("sincronizacion con la cuenta", () => {
     red(() => json(remotoCon(["r"])), () => new Promise<void>((r) => (soltar = r)));
     render(<Casa />);
     await avanzar(10);
-    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
+    entrarCasa();
     await avanzar(600); // el saludo suma ni2_hao3 mientras el GET sigue pendiente
     await act(async () => {
       soltar();
@@ -131,7 +132,7 @@ describe("sincronizacion con la cuenta", () => {
     red(() => json(remotoCon(["r"])), () => new Promise<void>((r) => (soltar = r)));
     render(<Casa />);
     await avanzar(10);
-    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
+    entrarCasa();
     fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
     fireEvent.change(screen.getByLabelText("Tu correo"), { target: { value: "a@b.cl" } });
     fireEvent.click(screen.getByRole("checkbox"));
@@ -168,7 +169,7 @@ describe("guardado al desmontar y correo en memoria", () => {
     sesion.hay = false;
     const { unmount } = render(<Casa />);
     await avanzar(10);
-    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
+    entrarCasa();
     await avanzar(450); // el saludo ya sumo una escuchada, el debounce no vencio
     expect(cargarAvance().escuchadas).toEqual([]);
     unmount();
@@ -185,7 +186,7 @@ describe("guardado al desmontar y correo en memoria", () => {
     });
     render(<Casa />);
     await avanzar(10);
-    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
+    entrarCasa();
     fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
     fireEvent.change(screen.getByLabelText("Tu correo"), { target: { value: "a@b.cl" } });
     fireEvent.click(screen.getByRole("checkbox"));
@@ -202,7 +203,7 @@ describe("guardado al desmontar y correo en memoria", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(json({ ok: true }));
     render(<Casa />);
     await avanzar(10);
-    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
+    entrarCasa();
     fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
     fireEvent.change(screen.getByLabelText("Tu correo"), { target: { value: "a@b.cl" } });
     await act(async () => {
@@ -220,7 +221,7 @@ describe("guardado al desmontar y correo en memoria", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(json({ ok: true }));
     render(<Casa />);
     await avanzar(10);
-    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
+    entrarCasa();
     fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
     fireEvent.change(screen.getByLabelText("Tu correo"), { target: { value: "a@b.cl" } });
     fireEvent.click(screen.getByRole("checkbox"));

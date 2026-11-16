@@ -45,7 +45,7 @@ const GUARDAR_MS = 500;
 
 /** Lo que la página puede pedirle a la casa desde afuera (el "▶ Jugar ahora" del hero). */
 export interface ControlCasa {
-  /** Igual que el botón de la tarjeta de entrada; llamarlo dentro del clic (iOS). No hace nada si ya entró. */
+  /** Igual que el primer toque en la casa; llamarlo dentro del clic (iOS). No hace nada si ya entró. */
   entrar(): void;
 }
 
@@ -239,7 +239,7 @@ export function Casa({ onEvento, ref }: { onEvento?: AlEvento; ref?: Ref<Control
     };
   }, [restaurar, intentarSync, programar]);
 
-  // El aviso (enlace bueno o vencido) va en la tarjeta de entrada, no encima del cuarto.
+  // El aviso (enlace bueno o vencido) se muestra arriba, dentro de la casa.
   return <CasaVista ref={ref} casa={casa} anotado={avisado} aviso={aviso} formulario={<Correo origen="pronto" />} />;
 }
 
@@ -255,7 +255,7 @@ export function CasaVista({
   ref?: Ref<ControlCasa>;
   /** Pidió que le avisemos cuando abran los cuartos. */
   anotado?: boolean;
-  /** Mensaje del enlace del correo (se muestra en la tarjeta de entrada). */
+  /** Mensaje del enlace del correo (se muestra arriba, dentro de la casa). */
   aviso?: string | null;
   formulario?: ReactNode;
 }) {
@@ -265,8 +265,15 @@ export function CasaVista({
   const sinClick = useRef(false);
   const [arrObj, setArrObj] = useState<{ id: ObjetoId; x: number; y: number } | null>(null);
   const [arrVaca, setArrVaca] = useState<Punto | null>(null);
-  // La entrada se pinta ya en el servidor; solo el botón toca el audio (en el cliente).
+  // Ya no hay tarjeta de entrada: el primer toque en la casa (o "Jugar ahora") desbloquea el audio.
   const [entrada, setEntrada] = useState(true);
+  // El aviso del enlace se ve arriba y se cierra con ✕ o solo a los 8 s.
+  const [avisoCerrado, setAvisoCerrado] = useState<string | null>(null);
+  useEffect(() => {
+    if (!aviso) return;
+    const id = setTimeout(() => setAvisoCerrado(aviso), 8000);
+    return () => clearTimeout(id);
+  }, [aviso]);
   const [pronto, setPronto] = useState(false);
   // Tamaño real del escenario: en celular vertical deja de ser cuadrado y la cámara se encuadra con zoom y paneo.
   const escenarioRef = useRef<HTMLDivElement>(null);
@@ -315,13 +322,7 @@ export function CasaVista({
     casa.saludar();
   };
   useImperativeHandle(ref, () => ({ entrar }));
-  const capa: CapaTarjeta | null = entrada
-    ? "entrada"
-    : quiz?.fase === "fin"
-      ? "metodo"
-      : pronto
-        ? "pronto"
-        : null;
+  const capa: CapaTarjeta | null = quiz?.fase === "fin" ? "metodo" : pronto ? "pronto" : null;
 
   // La tarjeta del método aparece una vez al terminar el 玩.
   useEffect(() => {
@@ -466,10 +467,19 @@ export function CasaVista({
     <div
       className={styles.casa}
       data-casa
+      onPointerDownCapture={entrar}
       data-vertical={vertical || undefined}
       data-ocupado={ocupado || undefined}
       data-primer-plano={casa.primerPlano ? `${casa.primerPlano.objeto}:${casa.primerPlano.accion.anim}` : undefined}
     >
+      {aviso && avisoCerrado !== aviso && (
+        <div className={styles.aviso}>
+          <p role="status">{aviso}</p>
+          <button type="button" aria-label="Cerrar" onClick={() => setAvisoCerrado(aviso)}>
+            ✕
+          </button>
+        </div>
+      )}
       <div className={styles.interior} inert={capa !== null}>
       <div ref={escenarioRef} className={styles.escenario} data-medido={medido || undefined}>
         <div
@@ -632,9 +642,7 @@ export function CasaVista({
       <Tarjetas
         capa={capa}
         anotado={anotado}
-        aviso={aviso}
         formulario={formulario}
-        alEntrar={entrar}
         alSeguir={() => {
           // después del método, la invitación a dejar el correo
           casa.cerrarQuiz();

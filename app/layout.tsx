@@ -1,10 +1,19 @@
 import type { Metadata } from "next";
-import { ZCOOL_KuaiLe, Nunito, Silkscreen } from "next/font/google";
+import { Nunito, Silkscreen } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { Filtros } from "@/components/casa/arte/placeholders/Filtros";
 import { Analytics } from "@vercel/analytics/react";
 
-const hanzi = ZCOOL_KuaiLe({ weight: "400", subsets: ["latin"], variable: "--f-hanzi", display: "swap" });
+// Xiaolai SC (小赖, OFL): solo los hanzi que usa la web. Regenerar con `npm run fuente`.
+// Tiene un solo peso; se declara para 400-900 y así el navegador nunca la engorda a la fuerza.
+const hanzi = localFont({
+  src: "./fuentes/xiaolai-hanzi.woff2",
+  weight: "400 900",
+  variable: "--f-hanzi",
+  display: "swap",
+  fallback: ["PingFang SC", "Microsoft YaHei", "Noto Sans SC", "sans-serif"],
+});
 const texto = Nunito({ weight: ["700", "900"], subsets: ["latin"], variable: "--f-texto", display: "swap" });
 const pixel = Silkscreen({ weight: ["400", "700"], subsets: ["latin"], variable: "--f-pixel", display: "swap" });
 

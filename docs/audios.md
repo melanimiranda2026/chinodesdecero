@@ -1,9 +1,15 @@
-# Audios de la casa
+# Audios de la casa y del puzzle
 
-67 de 67 existen. Generado con `npm run audios`; no se edita a mano.
+91 de 91 existen. Generado con `npm run audios`; no se edita a mano.
 
 | Archivo | Hanzi | Pinyin | ¿Existe? |
 |---|---|---|---|
+| public/audio/cocina/ping2_guo3.mp3 | 苹果 | píng guǒ | sí |
+| public/audio/cocina/zhe4_shi4_ping2_guo3.mp3 | 这是苹果 | zhè shì píng guǒ | sí |
+| public/audio/cocina/guo1.mp3 | 锅 | guō | sí |
+| public/audio/cocina/zhe4_shi4_guo1.mp3 | 这是锅 | zhè shì guō | sí |
+| public/audio/cocina/cha2_hu2.mp3 | 茶壶 | chá hú | sí |
+| public/audio/cocina/zhe4_shi4_cha2_hu2.mp3 | 这是茶壶 | zhè shì chá hú | sí |
 | public/audio/cocina/bei1_zi5.mp3 | 杯子 | bēi zi | sí |
 | public/audio/cocina/zhe4_shi4_bei1_zi5.mp3 | 这是杯子 | zhè shì bēi zi | sí |
 | public/audio/cocina/wan3.mp3 | 碗 | wǎn | sí |
@@ -12,14 +18,8 @@
 | public/audio/cocina/zhe4_shi4_pan2_zi5.mp3 | 这是盘子 | zhè shì pán zi | sí |
 | public/audio/cocina/kuai4_zi5.mp3 | 筷子 | kuài zi | sí |
 | public/audio/cocina/zhe4_shi4_kuai4_zi5.mp3 | 这是筷子 | zhè shì kuài zi | sí |
-| public/audio/cocina/ping2_guo3.mp3 | 苹果 | píng guǒ | sí |
-| public/audio/cocina/zhe4_shi4_ping2_guo3.mp3 | 这是苹果 | zhè shì píng guǒ | sí |
 | public/audio/cocina/bing1_xiang1.mp3 | 冰箱 | bīng xiāng | sí |
 | public/audio/cocina/zhe4_shi4_bing1_xiang1.mp3 | 这是冰箱 | zhè shì bīng xiāng | sí |
-| public/audio/cocina/guo1.mp3 | 锅 | guō | sí |
-| public/audio/cocina/zhe4_shi4_guo1.mp3 | 这是锅 | zhè shì guō | sí |
-| public/audio/cocina/cha2_hu2.mp3 | 茶壶 | chá hú | sí |
-| public/audio/cocina/zhe4_shi4_cha2_hu2.mp3 | 这是茶壶 | zhè shì chá hú | sí |
 | public/audio/cocina/gei3_wo3_bei1_zi5.mp3 | 给我杯子 | gěi wǒ bēi zi | sí |
 | public/audio/cocina/gei3_wo3_wan3.mp3 | 给我碗 | gěi wǒ wǎn | sí |
 | public/audio/cocina/gei3_wo3_pan2_zi5.mp3 | 给我盘子 | gěi wǒ pán zi | sí |
@@ -27,21 +27,21 @@
 | public/audio/cocina/gei3_wo3_cha2_hu2.mp3 | 给我茶壶 | gěi wǒ chá hú | sí |
 | public/audio/cocina/gei3_wo3_guo1.mp3 | 给我锅 | gěi wǒ guō | sí |
 | public/audio/cocina/gei3_wo3_ping2_guo3.mp3 | 给我苹果 | gěi wǒ píng guǒ | sí |
-| public/audio/cocina/dao4_shui3.mp3 | 倒水 | dào shuǐ | sí |
-| public/audio/cocina/wo3_dao4_shui3.mp3 | 我倒水 | wǒ dào shuǐ | sí |
+| public/audio/cocina/xi3.mp3 | 洗 | xǐ | sí |
+| public/audio/cocina/wo3_xi3_ping2_guo3.mp3 | 我洗苹果 | wǒ xǐ píng guǒ | sí |
+| public/audio/cocina/zuo4_fan4.mp3 | 做饭 | zuò fàn | sí |
+| public/audio/cocina/wo3_zuo4_fan4.mp3 | 我做饭 | wǒ zuò fàn | sí |
 | public/audio/cocina/dao4_cha2.mp3 | 倒茶 | dào chá | sí |
 | public/audio/cocina/wo3_dao4_cha2.mp3 | 我倒茶 | wǒ dào chá | sí |
+| public/audio/cocina/dao4_shui3.mp3 | 倒水 | dào shuǐ | sí |
+| public/audio/cocina/wo3_dao4_shui3.mp3 | 我倒水 | wǒ dào shuǐ | sí |
 | public/audio/cocina/na2.mp3 | 拿 | ná | sí |
 | public/audio/cocina/wo3_na2_wan3.mp3 | 我拿碗 | wǒ ná wǎn | sí |
 | public/audio/cocina/chi1_jiao3_zi5.mp3 | 吃饺子 | chī jiǎo zi | sí |
 | public/audio/cocina/wo3_chi1_jiao3_zi5.mp3 | 我吃饺子 | wǒ chī jiǎo zi | sí |
 | public/audio/cocina/wo3_na2_kuai4_zi5.mp3 | 我拿筷子 | wǒ ná kuài zi | sí |
-| public/audio/cocina/xi3.mp3 | 洗 | xǐ | sí |
-| public/audio/cocina/wo3_xi3_ping2_guo3.mp3 | 我洗苹果 | wǒ xǐ píng guǒ | sí |
 | public/audio/cocina/da3_kai1.mp3 | 打开 | dǎ kāi | sí |
 | public/audio/cocina/wo3_da3_kai1_bing1_xiang1.mp3 | 我打开冰箱 | wǒ dǎ kāi bīng xiāng | sí |
-| public/audio/cocina/zuo4_fan4.mp3 | 做饭 | zuò fàn | sí |
-| public/audio/cocina/wo3_zuo4_fan4.mp3 | 我做饭 | wǒ zuò fàn | sí |
 | public/audio/cocina/he1.mp3 | 喝 | hē | sí |
 | public/audio/cocina/wo3_he1_shui3.mp3 | 我喝水 | wǒ hē shuǐ | sí |
 | public/audio/cocina/he1_cha2.mp3 | 喝茶 | hē chá | sí |
@@ -57,9 +57,9 @@
 | public/audio/cocina/wo3_cheng2_fan4.mp3 | 我盛饭 | wǒ chéng fàn | sí |
 | public/audio/cocina/wo3_xi3_bei1_zi5.mp3 | 我洗杯子 | wǒ xǐ bēi zi | sí |
 | public/audio/cocina/wo3_na2_pan2_zi5.mp3 | 我拿盘子 | wǒ ná pán zi | sí |
+| public/audio/cocina/wo3_xi3_guo1.mp3 | 我洗锅 | wǒ xǐ guō | sí |
 | public/audio/cocina/chi1_fan4.mp3 | 吃饭 | chī fàn | sí |
 | public/audio/cocina/wo3_chi1_fan4.mp3 | 我吃饭 | wǒ chī fàn | sí |
-| public/audio/cocina/wo3_xi3_guo1.mp3 | 我洗锅 | wǒ xǐ guō | sí |
 | public/audio/cocina/na2_jiao3_zi5.mp3 | 拿饺子 | ná jiǎo zi | sí |
 | public/audio/cocina/wo3_na2_jiao3_zi5.mp3 | 我拿饺子 | wǒ ná jiǎo zi | sí |
 | public/audio/cocina/na2_ping2_guo3.mp3 | 拿苹果 | ná píng guǒ | sí |
@@ -71,3 +71,27 @@
 | public/audio/cocina/hen2_hao3.mp3 | 很好 | hén hǎo | sí |
 | public/audio/cocina/hao3.mp3 | 好 | hǎo | sí |
 | public/audio/cocina/ni2_hao3.mp3 | 你好 | ní hǎo | sí |
+| public/audio/puzzle/wochi_pingguo.mp3 | 我吃苹果 | wǒ chī píng guǒ | sí |
+| public/audio/puzzle/wohe_kafei.mp3 | 我喝咖啡 | wǒ hē kā fēi | sí |
+| public/audio/puzzle/wo_jintian_pingguo.mp3 | 我今天在家吃苹果 | wǒ jīn tiān zài jiā chī píng guǒ | sí |
+| public/audio/puzzle/wo_jintian_kafei.mp3 | 我今天在家喝咖啡 | wǒ jīn tiān zài jiā hē kā fēi | sí |
+| public/audio/puzzle/shei_jintian_pingguo.mp3 | 谁今天在家吃苹果 | shéi jīn tiān zài jiā chī píng guǒ | sí |
+| public/audio/puzzle/ni_shenmeshihou_pingguo.mp3 | 你什么时候在家吃苹果 | nǐ shén me shí hou zài jiā chī píng guǒ | sí |
+| public/audio/puzzle/ni_zainali_pingguo.mp3 | 你今天在哪里吃苹果 | nǐ jīn tiān zài nǎ li chī píng guǒ | sí |
+| public/audio/puzzle/ni_chi_shenme.mp3 | 你今天在家吃什么 | nǐ jīn tiān zài jiā chī shén me | sí |
+| public/audio/puzzle/ni_he_kafei_ma.mp3 | 你喝咖啡吗 | nǐ hē kā fēi ma | sí |
+| public/audio/puzzle/he.mp3 | 喝 | hē | sí |
+| public/audio/puzzle/ni_he_niunai_ma.mp3 | 你喝牛奶吗 | nǐ hē niú nǎi ma | sí |
+| public/audio/puzzle/bu_he.mp3 | 不喝 | bù hē | sí |
+| public/audio/puzzle/ni_chi_pingguo_ma.mp3 | 你吃苹果吗 | nǐ chī píng guǒ ma | sí |
+| public/audio/puzzle/chi.mp3 | 吃 | chī | sí |
+| public/audio/puzzle/wochi_le.mp3 | 我吃了 | wǒ chī le | sí |
+| public/audio/puzzle/nichi_le_ma.mp3 | 你吃了吗 | nǐ chī le ma | sí |
+| public/audio/puzzle/wochi_guo_hanbao.mp3 | 我吃过汉堡 | wǒ chī guo hàn bǎo | sí |
+| public/audio/puzzle/wochi_guo_pisa.mp3 | 我吃过披萨 | wǒ chī guo pī sà | sí |
+| public/audio/puzzle/womei_chi.mp3 | 我没吃 | wǒ méi chī | sí |
+| public/audio/puzzle/womei_he_kafei.mp3 | 我没喝咖啡 | wǒ méi hē kā fēi (? nativo: 咖啡 queda bajo al final de la frase) | sí |
+| public/audio/puzzle/womei_chi_pingguo.mp3 | 我没吃苹果 | wǒ méi chī píng guǒ (? nativo: nueva) | sí |
+| public/audio/puzzle/wo_mingtian_pingguo.mp3 | 我明天吃苹果 | wǒ míng tiān chī píng guǒ (? nativo: 明 no se ve subir en la medición) | sí |
+| public/audio/puzzle/wo_mingtian_kafei.mp3 | 我明天喝咖啡 | wǒ míng tiān hē kā fēi (? nativo: 明 no se ve subir en la medición) | sí |
+| public/audio/puzzle/ni_mingtian_chi_shenme.mp3 | 你明天吃什么 | nǐ míng tiān chī shén me (? nativo: 什 baja un poco antes de subir) | sí |

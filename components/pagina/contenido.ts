@@ -54,3 +54,19 @@ export const PORTADA = {
   comoFunciona: "Cómo funciona",
   confianza: "Gratis · sin registrarte · funciona en tu celular",
 } as const;
+
+/** El centro de minijuegos (sección de la portada). Agregar un juego = una entrada aquí y su tarjeta. */
+export const MINIJUEGOS = {
+  titulo: "Elige tu juego",
+  bajada: "Cada juego practica algo distinto. Juega uno al día y la vaca hace los repasos por ti.",
+  cocina: {
+    titulo: "La cocina",
+    texto: "Toca los objetos, escucha cómo se llaman y ayuda a la vaca a cocinar. Tus primeras palabras, sin traducir.",
+    boton: "Entrar a la cocina",
+  },
+  puzzle: {
+    titulo: "El puzzle",
+    texto: "El chino es como un puzzle: cada pieza tiene su lugar. Arma frases, preguntas, pasado y futuro. Al final, sin una gota de español.",
+    boton: "Jugar al puzzle",
+  },
+} as const;

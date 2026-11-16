@@ -144,7 +144,7 @@
 }
 @keyframes cartel { from { transform: translateX(-50%) translateY(-150%) rotate(-8deg); } }
 .icono { font-size: clamp(26px, 6cqmin, 52px); }
-.hz { display: block; font-family: var(--f-hanzi), serif; font-weight: 400; font-size: clamp(30px, 8cqmin, 70px); line-height: 1; text-align: center; }
+.hz { display: block; font-family: var(--f-hanzi), sans-serif; font-weight: 400; font-size: clamp(30px, 8cqmin, 70px); line-height: 1; text-align: center; }
 .py { display: block; font-weight: 900; font-size: clamp(13px, 2.8cqmin, 24px); text-align: center; }
 
 .barra {

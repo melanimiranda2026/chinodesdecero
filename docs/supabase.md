@@ -19,7 +19,7 @@ Aplicar en orden `supabase/migrations/0001_inicial.sql` y `supabase/migrations/0
 
 - **Solo a quienes tengan `consentimiento_confirmado = true`.** `consentimiento = true` sin confirmar no basta (cualquiera puede escribir un correo ajeno en el formulario).
 - **Todo correo de novedades lleva el enlace de baja**: `<NEXT_PUBLIC_SITE_URL>/baja?e=<token_baja>` (el `token_baja` de esa fila).
-- Para pedir que borremos un correo, la página indica un contacto: hoy es el marcador `CONFIRMAR@correo` (`components/pagina/Correo.tsx`, `CONTACTO_PRIVACIDAD`). **Cambiarlo por el correo real antes de publicar.**
+- Para pedir que borremos un correo, la página indica un contacto: es `niu@chinoconlavaca.com` (`components/pagina/Correo.tsx`, `CONTACTO_PRIVACIDAD`).
 
 ## Enlace mágico entre dispositivos
 
@@ -32,7 +32,11 @@ El enlace del correo tiene que abrir en cualquier dispositivo (la persona deja e
 <p><a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email">Entrar</a></p>
 ```
 
-Si se deja la plantilla por defecto (`{{ .ConfirmationURL }}`), el enlace no funciona en otro dispositivo.
+Si se deja la plantilla por defecto (`{{ .ConfirmationURL }}`), el enlace falla: llega a `/auth/callback` sin `token_hash` (los datos vienen en el `#` de la URL, que el servidor no ve) y la casa muestra "este enlace ya no funciona".
+
+**Lo mismo en "Confirm signup".** La primera vez que un correo se suscribe, Supabase crea la cuenta y manda esa plantilla, no la de Magic Link. Tiene que llevar el mismo enlace (`type=email` sirve para las dos).
+
+Editar plantillas exige SMTP propio (ver "Correo en producción"): hoy es Resend, remitente `niu@chinoconlavaca.com`. En Resend, dejar apagado el seguimiento de clics y aperturas: reescribe los enlaces y empuja los correos a spam.
 
 ## URLs de Auth
 

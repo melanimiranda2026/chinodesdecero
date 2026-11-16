@@ -13,6 +13,8 @@ import { OBJETOS, type ObjetoId } from "../components/casa/cocina/datos";
 
 const SALIDA = join(process.cwd(), "public", "arte", "cocina");
 mkdirSync(SALIDA, { recursive: true });
+/** Partes del cuarto por separado, solo para armar las capas de Krita (scripts/arte-krita.ts). */
+const PARTES = join(process.cwd(), "arte-krita", "fuentes");
 
 // ---------- paleta (tomada de la imagen de inspiración: salvia, crema, madera, toques terracota) ----------
 const T = "#6B4A35"; // tinta: contorno café
@@ -106,8 +108,12 @@ function archivo(nombre: string, vista: [number, number, number, number], px: nu
 function cuarto() {
   const defs: string[] = [];
   const out: string[] = [];
+  /** Partes del cuarto para las capas de Krita (arte-krita/cuarto_cocina.ora): cada una empieza donde se marca. */
+  const partes: [string, number][] = [];
+  const parte = (nombre: string) => partes.push([nombre, out.length]);
   const L = ISO.lado, H = ISO.altoPared, t = 0.35, losa = 0.6;
 
+  parte("piso");
   // sombra suave del diorama sobre el fondo
   defs.push(`<filter id="difuso" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="14"/></filter>`);
   out.push(cara([[0, 0, -losa], [L + 0.4, 0, -losa], [L + 0.4, L + 0.4, -losa], [0, L + 0.4, -losa]], "rgba(120,80,40,0.22)", 0, 'filter="url(#difuso)" transform="translate(10 16)"'));
@@ -141,6 +147,7 @@ function cuarto() {
     out.push(linea([6.1 + Math.cos(a) * r0, 6.2 + Math.sin(a) * r0, 0], [6.1 + Math.cos(a) * r1, 6.2 + Math.sin(a) * r1, 0], C.terracotaOsc, 1.6));
   }
 
+  parte("paredes");
   // paredes
   out.push(cara([[0, 0, 0], [0, L, 0], [0, L, H], [0, 0, H]], C.paredIzq));
   out.push(cara([[0, 0, 0], [L, 0, 0], [L, 0, H], [0, 0, H]], C.paredDer));
@@ -165,6 +172,7 @@ function cuarto() {
   for (let s = 0.4; s < MUEBLES.mesonIzq.v1; s += 0.4) out.push(linea([0.002, s, zA0], [0.002, s, zA1], C.azulejoLinea, 1.2));
   for (let s = 0.4; s < MUEBLES.mesonDer.u1; s += 0.4) out.push(linea([s, 0.002, zA0], [s, 0.002, zA1], C.azulejoLinea, 1.2));
 
+  parte("ventana");
   // ---- ventana (pared izquierda) ----
   const [wv0, wv1, wz0, wz1] = [1.9, 4.1, 3.25, 5.35];
   const [gVid, uVid] = degradado("#E6F6FB", "#A9D6EA", true);
@@ -174,7 +182,7 @@ function cuarto() {
   // árboles afuera
   for (const [v, z, r] of [[2.4, 3.6, 0.42], [2.9, 3.5, 0.5], [3.6, 3.65, 0.38]] as const) {
     const p = proyectar(0.005, v, z);
-    out.push(`<ellipse cx="${f(p.x)}" cy="${f(p.y)}" rx="${f(r * ISO.A * 0.9)}" ry="${f(r * ISO.Z * 1.1)}" fill="#BFDDB0" stroke="none" transform="skewY(-26.57)" transform-origin="${f(p.x)} ${f(p.y)}"/>`);
+    out.push(`<ellipse cx="${f(p.x)}" cy="${f(p.y)}" rx="${f(r * ISO.A * 0.9)}" ry="${f(r * ISO.Z * 1.1)}" fill="#BFDDB0" stroke="none" transform="translate(${f(p.x)} ${f(p.y)}) skewY(-26.57) translate(${f(-(p.x))} ${f(-(p.y))})"/>`);
   }
   out.push(linea([0.005, (wv0 + wv1) / 2, wz0 + 0.13], [0.005, (wv0 + wv1) / 2, wz1 - 0.13], C.madera.d, 4));
   out.push(linea([0.005, wv0 + 0.13, (wz0 + wz1) / 2], [0.005, wv1 - 0.13, (wz0 + wz1) / 2], C.madera.d, 4));
@@ -206,6 +214,7 @@ function cuarto() {
     out.push(`<path d="M${f(p.x)} ${f(p.y - 11)} q-10 -14 -4 -22 q6 8 4 22 q4 -16 12 -18 q2 10 -12 18z" fill="${C.hoja}" ${trazo(1.4)}/>`);
   }
 
+  parte("repisa_izq");
   // repisa con frascos (pared izquierda, entre la ventana y el refri)
   out.push(caja(0, 0.55, 4.4, 5.9, 4.0, 4.1, C.madera, 1.8));
   for (const [v, col, h] of [[4.65, C.mostaza, 22], [5.05, C.rojo, 17], [5.5, "#A9D3C2", 26]] as const) {
@@ -215,6 +224,7 @@ function cuarto() {
     out.push(cilindro(p.x, p.y - h, 7.8, 4, C.madera.i, C.madera.a, 1.5));
   }
 
+  parte("pared_der");
   // ---- pared derecha: repisas, utensilios colgados y cuadros ----
   out.push(caja(1.9, 4.9, 0, 0.6, 4.0, 4.1, C.madera, 1.8));
   out.push(caja(1.9, 4.9, 0, 0.6, 4.95, 5.05, C.madera, 1.8));
@@ -274,6 +284,7 @@ function cuarto() {
     out.push(`<path d="M${f(p.x)} ${f(p.y + 2)} q-1 -14 0 -20 M${f(p.x)} ${f(p.y - 6)} q-7 -3 -8 -9 q6 1 8 9 M${f(p.x)} ${f(p.y - 12)} q7 -3 8 -9 q-6 1 -8 9" fill="${C.hoja}" ${trazo(1.2)}/>`);
   }
 
+  parte("sombras");
   // ---- sombras en el piso ----
   const sombra = "rgba(110,70,35,0.14)";
   out.push(rectZ(0, 1.7, 2.05, 1.7, 5.5, sombra, 0));
@@ -281,6 +292,7 @@ function cuarto() {
   out.push(rectZ(0, 1.9, 2.25, 6.1, 8.5, sombra, 0));
   out.push(rectZ(0, 5.6, 9.8, 1.6, 1.95, "rgba(110,70,35,0.10)", 0));
 
+  parte("meson_izq");
   // ---- mesón izquierdo (lavaplatos) ----
   {
     const m = MUEBLES.mesonIzq;
@@ -324,6 +336,7 @@ function cuarto() {
     out.push(`<rect x="${f(pal.x - 2)}" y="${f(pal.y - 4)}" width="4" height="9" rx="2" fill="${C.negro}" ${trazo(1)}/>`);
   }
 
+  parte("meson_der");
   // ---- mesón derecho (cocina) ----
   {
     const m = MUEBLES.mesonDer;
@@ -364,6 +377,7 @@ function cuarto() {
     out.push(cilindro(p.x, p.y, 8, 16, C.terracota, C.terracotaOsc, 1.6));
   }
 
+  parte("mesa");
   // ---- mesa de comer y pisos ----
   {
     const m = MUEBLES.mesa;
@@ -387,6 +401,7 @@ function cuarto() {
     }
   }
 
+  parte("planta");
   // ---- planta alta en el rincón delantero izquierdo ----
   {
     const p = proyectar(0.45, 9.45, 0);
@@ -400,6 +415,16 @@ function cuarto() {
   }
 
   archivo("cuarto_cocina", [0, 0, 1000, 1000], 2000, defs, out.join(""));
+
+  // las mismas piezas, cada parte en su archivo (no las usa el juego: son las capas de Krita)
+  mkdirSync(PARTES, { recursive: true });
+  partes.forEach(([nombre, desde], i) => {
+    const hasta = i + 1 < partes.length ? partes[i + 1][1] : out.length;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="2000" viewBox="0 0 1000 1000"><defs>${defs.join("")}</defs>${out.slice(desde, hasta).join("")}</svg>
+`;
+    writeFileSync(join(PARTES, `cuarto_cocina__${String(i + 1).padStart(2, "0")}_${nombre}.svg`), svg);
+  });
+  console.log("✓", `${partes.length} partes del cuarto en arte-krita/fuentes/`);
 }
 
 // =====================================================================================
@@ -521,7 +546,7 @@ function refri() {
   const enCara = (vv: number, z: number) => proyectar(uI, vv, z);
   const bot = (vv: number, color: string) => {
     const p = enCara(vv, repisas[2]);
-    return `<path d="M${f(p.x - 5)} ${f(p.y)} L${f(p.x - 5)} ${f(p.y - 26)} Q${f(p.x)} ${f(p.y - 36)} ${f(p.x + 5)} ${f(p.y - 26)} L${f(p.x + 5)} ${f(p.y)} Z" fill="${color}" ${trazo(1.4)} transform="skewY(-26.57)" transform-origin="${f(p.x)} ${f(p.y)}"/>`;
+    return `<path d="M${f(p.x - 5)} ${f(p.y)} L${f(p.x - 5)} ${f(p.y - 26)} Q${f(p.x)} ${f(p.y - 36)} ${f(p.x + 5)} ${f(p.y - 26)} L${f(p.x + 5)} ${f(p.y)} Z" fill="${color}" ${trazo(1.4)} transform="translate(${f(p.x)} ${f(p.y)}) skewY(-26.57) translate(${f(-(p.x))} ${f(-(p.y))})"/>`;
   };
   cosas.push(bot(6.65, "#8FC1DE"), bot(6.95, "#E7A25C"), bot(7.25, "#F4F0E2"));
   {

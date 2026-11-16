@@ -468,6 +468,7 @@ export function CasaVista({
       className={styles.casa}
       data-casa
       onPointerDownCapture={entrar}
+      onClickCapture={entrar} // teclado y switch: Enter/Espacio dan click sin pointerdown
       data-vertical={vertical || undefined}
       data-ocupado={ocupado || undefined}
       data-primer-plano={casa.primerPlano ? `${casa.primerPlano.objeto}:${casa.primerPlano.accion.anim}` : undefined}

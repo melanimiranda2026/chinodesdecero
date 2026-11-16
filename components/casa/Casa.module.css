@@ -431,8 +431,6 @@
 .tarjeta h2 { margin: 0.1em 0 0.2em; font-weight: 900; font-size: clamp(26px, 6cqw, 38px); }
 .tarjeta p { font-size: clamp(15px, 3.4cqmin, 17px); line-height: 1.45; margin: 0.6em 0; }
 .grande { font-family: var(--f-hanzi), sans-serif; font-size: clamp(56px, 15cqmin, 84px); line-height: 1; color: #3a6fd6; }
-.chica { display: block; opacity: 0.6; margin: 0 0 6px; }
-.tonoLinea { display: block; margin: 0 auto; }
 .principal {
   font: 900 18px var(--f-texto), system-ui, sans-serif;
   min-height: 44px;

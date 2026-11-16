@@ -49,6 +49,9 @@ afterEach(() => {
 describe("Casa", () => {
   it("tocar 杯子 dice su nombre y el globo muestra 杯 y bēi", async () => {
     render(<Casa />);
+    entrarCasa();
+    await avanzar(4000); // pasa el saludo
+    decirMock.mockClear();
     fireEvent.click(screen.getByRole("button", { name: "杯子" }));
     await avanzar(10);
     expect(decirMock).not.toHaveBeenCalled(); // primero el pop, después el mandarín
@@ -310,6 +313,16 @@ describe("Casa: quiz, guardas y tarjetas", () => {
     fireEvent.click(objeto);
     await avanzar(3000);
     expect(decirMock.mock.calls.some((c) => c[0] === OBJETOS.beizi.nombre)).toBe(true);
+  });
+
+  it("con teclado (click sin pointerdown) también entra: audio y saludo", async () => {
+    decirMock.mockClear();
+    vi.mocked(desbloquearAudio).mockClear();
+    montar();
+    fireEvent.click(screen.getByRole("button", { name: "杯子" }));
+    expect(desbloquearAudio).toHaveBeenCalledTimes(1);
+    await avanzar(3000);
+    expect(decirMock.mock.calls.length).toBeGreaterThan(0);
   });
 
   it("el primer toque desbloquea el audio y la vaca saluda, una sola vez", async () => {

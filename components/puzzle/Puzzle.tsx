@@ -35,7 +35,7 @@ function useAhora(): number {
   return ahora;
 }
 
-export function Puzzle() {
+export function Puzzle({ ventana = false }: { ventana?: boolean } = {}) {
   const [avance, setAvance] = useState<AvancePuzzle | null>(null);
   const [pantalla, setPantalla] = useState<Pantalla>({ tipo: "mapa" });
   const [correoGuardado, setCorreoGuardado] = useState(false);
@@ -45,7 +45,11 @@ export function Puzzle() {
 
   // El avance vive en el navegador: se lee al montar (no en el render del servidor).
   useEffect(() => {
-    setAvance(cargarAvancePuzzle());
+    const a = cargarAvancePuzzle();
+    setAvance(a);
+    // Abre listo para jugar: directo a la ronda que toca (sin la Nota); si ya ganó todo, el mapa.
+    const sig = siguienteNivel(new Set(a.ganados));
+    setPantalla(sig ? { tipo: "ronda", tema: sig.tema, etapa: sig.etapa, frase: 0, errores: 0, gratis: false } : { tipo: "mapa" });
     setCorreoGuardado(!!cargarAvance().correo);
   }, []);
 
@@ -76,8 +80,8 @@ export function Puzzle() {
 
   useEffect(() => () => {
     callar();
-    musica.parar();
-  }, []);
+    if (!ventana) musica.parar();
+  }, [ventana]);
 
   if (!avance) return <div className={styles.cargando} aria-busy="true" />;
 
@@ -98,7 +102,7 @@ export function Puzzle() {
     registrar("puzzle_nivel_inicio", { nivel: idNivel(TEMAS[tema].id, etapa), repaso: gratis });
     if (etapa === 1 && !gratis) setPantalla({ tipo: "nota", tema });
     else setPantalla({ tipo: "ronda", tema, etapa, frase: 0, errores: 0, gratis });
-    window.scrollTo?.({ top: 0 });
+    if (!ventana) window.scrollTo?.({ top: 0 });
   };
 
   const llenarConCorreo = () => {
@@ -109,18 +113,22 @@ export function Puzzle() {
   const sigue = siguienteNivel(ganados);
 
   return (
-    <div className={styles.juego}>
+    <div className={styles.juego} onPointerDown={entrarAudio}>
       <header className={styles.barra}>
-        <Link href="/" className={styles.volver} aria-label="Volver al inicio">
-          <Flecha atras className={styles.icono} />
-        </Link>
-        <h1 className={styles.titulo}>
-          <PiezaIcono className={styles.tituloIcono} />
-          <span>El puzzle</span>
-          <span className={styles.tituloZh} lang="zh">
-            拼图 <span className={styles.tituloPy}>pīn tú</span>
-          </span>
-        </h1>
+        {!ventana && (
+          <>
+            <Link href="/" className={styles.volver} aria-label="Volver al inicio">
+              <Flecha atras className={styles.icono} />
+            </Link>
+            <h1 className={styles.titulo}>
+              <PiezaIcono className={styles.tituloIcono} />
+              <span>El puzzle</span>
+              <span className={styles.tituloZh} lang="zh">
+                拼图 <span className={styles.tituloPy}>pīn tú</span>
+              </span>
+            </h1>
+          </>
+        )}
         <Vasos vasos={vasos.vasos} espera={espera} gratis={pantalla.tipo === "ronda" && pantalla.gratis} gasto={gasto} />
       </header>
 

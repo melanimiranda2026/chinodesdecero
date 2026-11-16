@@ -45,11 +45,39 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe("Puzzle listo para jugar", () => {
+  it("abre directo en la primera ronda", async () => {
+    render(<Puzzle />);
+    await avanzar(0);
+    expect(screen.getByLabelText("Piezas")).toBeTruthy();
+    for (let p = 0; p < TEMAS[0].frases[0].piezas.length; p++) {
+      expect(document.querySelector(`button[data-pieza="${p}"]`)).toBeTruthy();
+    }
+    expect(screen.queryByText(TEMAS[0].regla)).toBeNull();
+  });
+
+  it("con los 18 niveles ganados abre el mapa", async () => {
+    const ganados = TEMAS.flatMap((t) => [1, 2, 3].map((e) => `${t.id}-${e}`));
+    localStorage.setItem(CLAVE_PUZZLE, JSON.stringify({ ganados, perfectos: [], vasos: { vasos: 5, desde: Date.now() }, correoLleno: false }));
+    render(<Puzzle />);
+    await avanzar(0);
+    expect(screen.getByText(/Armaste todos los niveles/)).toBeTruthy();
+  });
+
+  it("en modo ventana no hay enlace Volver al inicio", async () => {
+    render(<Puzzle ventana />);
+    await avanzar(0);
+    expect(screen.queryByRole("link", { name: "Volver al inicio" })).toBeNull();
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+  });
+});
+
 describe("Puzzle", () => {
   it("parte en el mapa con un solo nivel abierto y 5 vasos", async () => {
     render(<Puzzle />);
     await avanzar(0);
     expect(vasos()).toBe(5);
+    fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
     const piedras = screen.getAllByRole("button", { name: /El orden|Preguntas|Sí o no|Ya pasó|No lo hice|Mañana/ });
     expect(piedras.filter((b) => !(b as HTMLButtonElement).disabled)).toHaveLength(1);
   });
@@ -57,6 +85,7 @@ describe("Puzzle", () => {
   it("en la etapa 1 muestra la regla, después la frase en español, y armarla hace hablar a la vaca", async () => {
     render(<Puzzle />);
     await avanzar(0);
+    fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
     fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
     expect(screen.getByText(TEMAS[0].regla)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /A armar/ }));
@@ -72,6 +101,7 @@ describe("Puzzle", () => {
   it("una pieza mal puesta rebota y vacía un vaso", async () => {
     render(<Puzzle />);
     await avanzar(0);
+    fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
     fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
     fireEvent.click(screen.getByRole("button", { name: /A armar/ }));
     // 苹果 (pieza 2) no puede ir en el primer hueco
@@ -86,6 +116,7 @@ describe("Puzzle", () => {
     localStorage.setItem(CLAVE_PUZZLE, JSON.stringify({ ganados: [], perfectos: [], vasos: { vasos: 1, desde: Date.now() }, correoLleno: false }));
     render(<Puzzle />);
     await avanzar(0);
+    fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
     fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
     fireEvent.click(screen.getByRole("button", { name: /A armar/ }));
     fireEvent.click(document.querySelector<HTMLButtonElement>('button[data-pieza="2"]')!);
@@ -105,6 +136,7 @@ describe("Puzzle", () => {
     localStorage.setItem(CLAVE_PUZZLE, JSON.stringify({ ganados: ["orden-1"], perfectos: [], vasos: { vasos: 5, desde: Date.now() }, correoLleno: false }));
     render(<Puzzle />);
     await avanzar(0);
+    fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
     fireEvent.click(screen.getByRole("button", { name: "El orden, Con ayuda, ganado" }));
     fireEvent.click(document.querySelector<HTMLButtonElement>('button[data-pieza="2"]')!);
     await avanzar(10);
@@ -118,6 +150,7 @@ describe("Puzzle", () => {
     );
     render(<Puzzle />);
     await avanzar(0);
+    fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
     fireEvent.click(screen.getByRole("button", { name: "El orden, Solo chino" }));
     await avanzar(600);
     expect(screen.getByTestId("escena")).toBeTruthy();
@@ -137,6 +170,7 @@ describe("Puzzle sin ResizeObserver", () => {
     try {
       render(<Puzzle />);
       await avanzar(0);
+      fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
       fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
       fireEvent.click(screen.getByRole("button", { name: /A armar/ }));
       const frase = TEMAS[0].frases[0];

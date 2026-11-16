@@ -287,6 +287,8 @@ export function CasaVista({
     if (!el) return;
     const medir = () => {
       const r = el.getBoundingClientRect();
+      // oculta (pestaña del puzzle: display none) mide 0×0: se ignora, así al volver no se repite el encuadre
+      if (!r.width || !r.height) return;
       setTam((t) => (t.w === r.width && t.h === r.height ? t : { w: r.width, h: r.height }));
     };
     medir();

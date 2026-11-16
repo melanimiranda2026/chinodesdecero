@@ -32,7 +32,11 @@ El enlace del correo tiene que abrir en cualquier dispositivo (la persona deja e
 <p><a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email">Entrar</a></p>
 ```
 
-Si se deja la plantilla por defecto (`{{ .ConfirmationURL }}`), el enlace no funciona en otro dispositivo.
+Si se deja la plantilla por defecto (`{{ .ConfirmationURL }}`), el enlace falla: llega a `/auth/callback` sin `token_hash` (los datos vienen en el `#` de la URL, que el servidor no ve) y la casa muestra "este enlace ya no funciona".
+
+**Lo mismo en "Confirm signup".** La primera vez que un correo se suscribe, Supabase crea la cuenta y manda esa plantilla, no la de Magic Link. Tiene que llevar el mismo enlace (`type=email` sirve para las dos).
+
+Editar plantillas exige SMTP propio (ver "Correo en producción"): hoy es Resend, remitente `niu@chinoconlavaca.com`. En Resend, dejar apagado el seguimiento de clics y aperturas: reescribe los enlaces y empuja los correos a spam.
 
 ## URLs de Auth
 

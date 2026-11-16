@@ -8,6 +8,7 @@ import type { Etapa, Frase } from "./datos";
 import { Escena, type CaraVaca } from "./Escena";
 import { Flecha, Parlante } from "./Dibujos";
 import { cabe, completa, desordenar, primerLibre, type Fila } from "./logica";
+import { FormaPieza } from "./FormaPieza";
 import { CaraPieza, estiloPieza, nombrePieza } from "./Pieza";
 import styles from "./Puzzle.module.css";
 
@@ -270,6 +271,7 @@ export function Ronda({ frase, etapa, pausada, onError, onCompleta, onSiguiente,
             data-hueco={i}
             style={{ animationDelay: armada ? `${i * 60}ms` : undefined }}
           >
+            {p === null && <FormaPieza hueco />}
             {p !== null && (
               <div className={cx(styles.pieza, styles.encajada, frase.piezas[p].pregunta && styles.esPregunta)} style={estiloPieza(frase.piezas[p])}>
                 <CaraPieza pieza={frase.piezas[p]} etapa={etapa} />

@@ -17,6 +17,7 @@ import { decir } from "@/components/casa/audio/voz";
 import { Puzzle } from "@/components/puzzle/Puzzle";
 import { CLAVE_PUZZLE } from "@/components/puzzle/avance";
 import { TEMAS } from "@/components/puzzle/datos";
+import { nombrePieza } from "@/components/puzzle/Pieza";
 import { EVENTO_AVANCE } from "@/components/casa/avance";
 
 const avanzar = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
@@ -123,5 +124,27 @@ describe("Puzzle", () => {
     await armar();
     await avanzar(1500);
     expect(screen.queryByText(TEMAS[0].frases[0].espanol)).toBeNull();
+  });
+});
+
+describe("Puzzle sin ResizeObserver", () => {
+  it("sin ResizeObserver las piezas se ven y se pueden tocar", async () => {
+    const original = globalThis.ResizeObserver;
+    // @ts-expect-error simula un navegador sin ResizeObserver
+    delete globalThis.ResizeObserver;
+    try {
+      render(<Puzzle />);
+      await avanzar(0);
+      fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
+      fireEvent.click(screen.getByRole("button", { name: /A armar/ }));
+      const frase = TEMAS[0].frases[0];
+      for (let p = 0; p < frase.piezas.length; p++) {
+        const boton = document.querySelector<HTMLButtonElement>(`button[data-pieza="${p}"]`)!;
+        expect(boton.getAttribute("aria-label")).toBe(nombrePieza(frase.piezas[p]));
+        expect(boton.hasAttribute("data-forma")).toBe(false);
+      }
+    } finally {
+      globalThis.ResizeObserver = original;
+    }
   });
 });

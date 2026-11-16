@@ -279,6 +279,17 @@
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
+/* Con forma de puzzle (el SVG ya midió): relleno y borde pasan a la silueta. */
+.forma { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.formaPieza { fill: var(--fondo, #fff); stroke: var(--tinta); stroke-width: 3; stroke-linejoin: round; }
+.formaHueco { fill: rgba(255, 255, 255, 0.6); stroke: rgba(74, 42, 28, 0.35); stroke-width: 3; stroke-dasharray: 7 5; stroke-linejoin: round; transition: fill 160ms ease, stroke 160ms ease; }
+.pieza[data-forma] { background: transparent; border-color: transparent; box-shadow: none; }
+.pieza[data-forma] .forma { filter: drop-shadow(0 4px 0 rgba(74, 42, 28, 0.35)); }
+.pieza[data-forma].esPregunta .formaPieza { stroke: #e0473c; }
+.pieza[data-forma].esPregunta .forma { filter: drop-shadow(0 4px 0 rgba(224, 71, 60, 0.45)); }
+.pieza > :not(.forma) { position: relative; }
+.suelta[data-forma]:not(:disabled):hover { box-shadow: none; }
+.suelta.levantada[data-forma] .forma { filter: drop-shadow(0 14px 14px rgba(74, 42, 28, 0.3)); }
 .esPregunta { border-color: #e0473c; box-shadow: 0 4px 0 rgba(224, 71, 60, 0.45); }
 .silabas { display: flex; gap: 3px; }
 .sil { display: inline-flex; flex-direction: column; align-items: center; gap: 1px; }
@@ -323,6 +334,7 @@
   background: rgba(74, 42, 28, 0.07);
 }
 .hueco {
+  position: relative;
   display: grid;
   place-items: center;
   min-width: 50px;
@@ -332,7 +344,13 @@
   background: rgba(255, 255, 255, 0.6);
   transition: transform 160ms var(--ease-out), border-color 160ms ease, background-color 160ms ease;
 }
+.hueco[data-forma] { background: transparent; border-color: transparent; }
 .huecoSobre { border-color: var(--t4); background: #e4edff; transform: scale(1.05); }
+.huecoSobre .formaHueco { fill: #e4edff; stroke: var(--t4); }
+/* Piezas con forma: los huecos se juntan para que la pestaña encaje en el hueco del vecino. */
+.fila:has([data-forma]) { gap: 0; padding-inline: 14px; }
+.fila:has([data-forma]) .hueco { margin-inline: -3px; }
+.fila:has([data-forma]) .huecoLleno { border-width: 0; }
 .huecoLleno { border-color: transparent; background: transparent; min-width: 0; }
 .encajada { animation: encaja 320ms var(--ease-rebote); }
 @keyframes encaja {

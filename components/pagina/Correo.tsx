@@ -20,7 +20,7 @@ function avanceParaEnviar() {
 }
 
 /** Formulario de correo con consentimiento aparte (la casilla empieza sin marcar). */
-export function Correo({ origen }: { origen: string }) {
+export function Correo({ origen, boton = "Avísame", listo: textoListo }: { origen: string; boton?: string; listo?: string }) {
   const [correo, setCorreo] = useState("");
   const [acepta, setAcepta] = useState(false);
   const [sitio, setSitio] = useState(""); // trampa para bots: nadie la ve ni la llena
@@ -73,7 +73,9 @@ export function Correo({ origen }: { origen: string }) {
   const listo = resultado && (
     <div role="status" className={styles.listo}>
       <p>
-        {resultado === "aviso"
+        {textoListo
+          ? textoListo
+          : resultado === "aviso"
           ? "¡Listo! Ya estás anotada/o. Te avisamos cuando abra."
           : "¡Listo! Guardamos tu correo para tu avance. Si quieres que te avisemos cuando abra, marca la casilla."}
       </p>
@@ -118,7 +120,7 @@ export function Correo({ origen }: { origen: string }) {
         </span>
       </label>
       <button type="submit" className={styles.boton} disabled={estado === "enviando"}>
-        Avísame
+        {boton}
       </button>
       {error && (
         <p role="alert" className={styles.error}>

@@ -67,7 +67,7 @@ export function Portada() {
         <p className={styles.confianza}>{PORTADA.confianza}</p>
       </div>
 
-      <div ref={ventana} className={cx(styles.ventana, grande && styles.grande)} data-ventana data-grande={grande || undefined}>
+      <div ref={ventana} id="cocina" className={cx(styles.ventana, grande && styles.grande)} data-ventana data-grande={grande || undefined}>
         <div className={styles.barra} data-barra>
           <span className={styles.puntos} aria-hidden="true">
             <i />

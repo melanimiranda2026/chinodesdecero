@@ -12,8 +12,11 @@
     "test": "vitest run",
     "e2e": "next build && playwright test",
     "audios": "tsx scripts/lista-audios.ts",
+    "fuente": "tsx scripts/fuente-hanzi.ts",
     "arte": "tsx scripts/arte-manifiesto.ts",
-    "arte:generar": "tsx scripts/arte-iso.ts && tsx scripts/arte-manifiesto.ts"
+    "arte:generar": "tsx scripts/arte-iso.ts && tsx scripts/arte-manifiesto.ts",
+    "arte:krita": "tsx scripts/arte-iso.ts && tsx scripts/arte-krita.ts",
+    "arte:krita-importar": "tsx scripts/arte-krita.ts importar && tsx scripts/arte-manifiesto.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -38,6 +41,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.29",
     "jsdom": "^31.0.0",
+    "subset-font": "^2.4.0",
     "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^5.1.0"

@@ -6,6 +6,8 @@ export { desbloquearAudio } from "./motor";
 
 export interface OpcionesDecir {
   alBoca?: (abierta: number) => void;
+  /** Archivo a tocar en vez de `/audio/cocina/<idAudio>.mp3` (el puzzle usa los nombres del banco). */
+  src?: string;
 }
 
 let cortarActual: (() => void) | null = null;
@@ -24,7 +26,7 @@ export function callar(): void {
 export function decir(s: Silaba[], opciones: OpcionesDecir = {}): Promise<boolean> {
   cortarActual?.();
   const { alBoca } = opciones;
-  const src = `/audio/cocina/${idAudio(s)}.mp3`;
+  const src = opciones.src ?? `/audio/cocina/${idAudio(s)}.mp3`;
 
   return new Promise<boolean>((resolver) => {
     let terminado = false;

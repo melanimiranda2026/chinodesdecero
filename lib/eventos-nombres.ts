@@ -10,6 +10,11 @@ export const NOMBRES_EVENTO = [
   "dejar_correo",
   "clic_tiktok",
   "descargar_material",
+  "abrir_minijuego",
+  "puzzle_nivel_inicio",
+  "puzzle_nivel_completo",
+  "puzzle_sin_vasos",
+  "puzzle_vasos_correo",
 ] as const;
 
 export type NombreEvento = (typeof NOMBRES_EVENTO)[number];

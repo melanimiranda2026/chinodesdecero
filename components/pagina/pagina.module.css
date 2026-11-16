@@ -38,8 +38,8 @@
 
 /* ---- método ---- */
 .sello { display: flex; flex-direction: column; align-items: center; color: var(--t4); }
-.hz { font-family: var(--f-hanzi), serif; font-size: 64px; line-height: 1; }
-.hzChico { font-family: var(--f-hanzi), serif; font-size: 1.2em; }
+.hz { font-family: var(--f-hanzi), sans-serif; font-size: 64px; line-height: 1; }
+.hzChico { font-family: var(--f-hanzi), sans-serif; font-size: 1.2em; }
 .ideas { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 18px; }
 .idea { display: flex; gap: 14px; align-items: center; }
 .ideaTitulo {
@@ -134,4 +134,46 @@
 @media (min-width: 720px) {
   .tarjeta { padding: 32px 36px; }
   .pagina { gap: 56px; padding-top: 72px; }
+}
+
+/* ---- minijuegos ---- */
+.juegos { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+.juego {
+  display: flex;
+  flex-direction: column;
+  background: var(--papel);
+  border: 4px solid var(--tinta);
+  border-radius: 26px;
+  padding: 18px 20px 20px;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.3);
+  min-width: 0;
+}
+.juego .texto { flex: 1; font-size: 16px; }
+.juego .boton { margin: 8px 0 0; width: 100%; }
+.juegoVista {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+  min-height: 112px;
+  margin-bottom: 8px;
+  padding: 10px;
+  border-radius: 18px;
+  background: rgba(74, 42, 28, 0.07);
+}
+.juegoHueco {
+  display: grid;
+  place-items: center;
+  min-width: 52px;
+  min-height: 72px;
+  border: 3px dashed rgba(74, 42, 28, 0.35);
+  border-radius: 14px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .juegoPiezaCae { animation: piezaCae 2.8s cubic-bezier(0.23, 1, 0.32, 1) infinite; }
+}
+@keyframes piezaCae {
+  0%, 12% { transform: translateY(-34px) rotate(-6deg); opacity: 0; }
+  30%, 82% { transform: none; opacity: 1; }
+  100% { transform: none; opacity: 0; }
 }

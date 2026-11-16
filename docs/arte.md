@@ -2,10 +2,39 @@
 
 La cocina es isométrica. Todo el dibujo lo genera el código (`scripts/arte-iso.ts`) como archivos SVG en `public/arte/cocina/`: uno por cuarto y uno por capa de cada objeto. Puedes repintar cualquiera en Krita: si guardas un PNG o WebP con **el mismo nombre** al lado del SVG, el juego usa tu dibujo en vez del generado. No hay que tocar código.
 
-## Paso a paso en Krita
+## Pintar en Krita con capas (lo recomendado)
+
+Si abres un SVG directo en Krita, todo queda en **una sola capa vectorial**: no se separa y los pinceles no pintan ahí. Por eso hay archivos listos para Krita en `arte-krita/`:
+
+- Un `.ora` por objeto (`guo.ora`, `bingxiang.ora`, …), con sus capas ya separadas y con nombre (`olla`, `arroz`, `mugre`), alineadas y de 1024 × 1024 px.
+- `cuarto_cocina.ora` (2000 × 2000 px), con el cuarto partido en capas: `piso`, `paredes`, `ventana`, `repisa_izq`, `pared_der`, `sombras`, `meson_izq`, `meson_der`, `mesa` y `planta`.
+
+Algunas capas vienen ocultas porque no se ven a la vez en el juego (las mitades de la manzana, el té del vaso). Préndelas con el ojito del panel Capas.
+
+### Paso a paso
+
+1. Si no está la carpeta `arte-krita/`, o quieres los archivos nuevos: `npm run arte:krita`. No pisa un `.ora` que ya exista. Para rehacerlo desde cero, `npm run arte:krita -- --forzar` (se pierde lo que pintaste en ese archivo).
+2. En Krita: Archivo → Abrir → `arte-krita/guo.ora`. En el panel Capas ves `olla`, `arroz`, `mugre`.
+3. Pinta con la tableta **dentro de la capa** que quieres cambiar. Si prefieres pintar en capas nuevas, mételas en un **grupo con el nombre de la capa**: crea un grupo, ponle `arroz` y deja adentro la capa original y tus capas nuevas.
+4. Guarda con **Ctrl + S**, en el mismo `.ora`. Si Krita avisa que el formato puede perder cosas, acepta. No guardes como `.kra`: ese no se puede leer.
+5. Corre `npm run arte:krita-importar`. Deja en `public/arte/cocina/` un PNG por cada capa que cambiaste (las demás no las toca) y actualiza el manifiesto.
+6. Reinicia `npm run dev` y recarga.
+
+Cómo se lee lo que guardas:
+
+- **Objetos:** cada capa (o grupo) de arriba se exporta por su nombre, **aunque esté oculta**: el juego decide cuándo se ve. Dentro de un grupo, lo oculto no entra. Una capa con otro nombre (por ejemplo "Capa 3") se ignora con un aviso.
+- **Cuarto:** se exporta **todo lo visible junto** como `cuarto_cocina.png`. Si ocultas una capa, desaparece del juego.
+- Solo se usa la mezcla normal: los modos de fusión (multiplicar, etc.) no se aplican en los objetos. En el cuarto sí, porque se usa la imagen final que guarda Krita.
+- No cambies el tamaño del lienzo: si no es 1024 (objetos) o 2000 (cuarto), el archivo no se importa.
+
+Los `.ora` son tu trabajo: súbelos a GitHub cuando quieras guardarlos. La carpeta `arte-krita/fuentes/` se rehace sola y no se sube.
+
+## Paso a paso en Krita, con el SVG suelto
+
+Sirve para retocar un solo archivo sin el `.ora`.
 
 1. Abre el SVG en Krita (Archivo → Abrir), por ejemplo `public/arte/cocina/guo_olla.svg`. Revisa que el lienzo quede del tamaño del archivo (Imagen → Propiedades): 1024 × 1024 px los objetos, 2000 × 2000 px el cuarto. Si Krita pregunta la resolución al importar, deja la que propone y corrige el tamaño a esos px.
-2. Pinta encima con la tableta, en capas nuevas. Puedes ocultar o borrar la capa del SVG si lo redibujas entero.
+2. El SVG queda como capa vectorial, donde no se puede pintar. Crea una capa de pintura nueva (tecla `Insert`) y pinta ahí, o convierte la del SVG: clic derecho → Convertir → Convertir en capa de pintura.
 3. **No cambies el tamaño del lienzo ni muevas el dibujo**: cada archivo está encuadrado para caer justo en su lugar del cuarto.
 4. Exporta como PNG con fondo transparente (Archivo → Exportar), con el mismo nombre: `guo_olla.png`, en la misma carpeta.
 5. En tu computador: reinicia `npm run dev` y recarga. El manifiesto (`npm run arte`) corre solo al partir y elige tu PNG.

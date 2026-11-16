@@ -50,3 +50,6 @@ next-env.d.ts
 
 # config MCP local (trae la API key de ElevenLabs)
 .mcp.json
+
+# arte-krita: piezas sueltas del cuarto, se regeneran con npm run arte:krita
+/arte-krita/fuentes/

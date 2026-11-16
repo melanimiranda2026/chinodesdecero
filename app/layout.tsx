@@ -3,7 +3,8 @@ import { Nunito, Silkscreen } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Filtros } from "@/components/casa/arte/placeholders/Filtros";
-import { Analytics } from "@vercel/analytics/react";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 // Xiaolai SC (小赖, OFL): solo los hanzi que usa la web. Regenerar con `npm run fuente`.
 // Tiene un solo peso; se declara para 400-900 y así el navegador nunca la engorda a la fuerza.
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Filtros />
         {children}
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

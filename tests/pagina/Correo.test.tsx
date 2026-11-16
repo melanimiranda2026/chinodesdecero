@@ -51,6 +51,15 @@ describe("Correo", () => {
     await waitFor(() => expect((screen.getByRole("button", { name: "Avísame" }) as HTMLButtonElement).disabled).toBe(false));
     expect(cargarAvance().correo).toBeUndefined();
   });
+  it("si el enlace no se pudo enviar (502), lo dice y no muestra ¡Listo!", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(respuesta(502));
+    render(<Correo origen="pronto" />);
+    fireEvent.change(screen.getByLabelText("Tu correo"), { target: { value: "a@b.cl" } });
+    fireEvent.click(screen.getByRole("button", { name: "Avísame" }));
+    expect((await screen.findByRole("alert")).textContent).toMatch(/no pudimos enviarte el enlace/);
+    expect(screen.queryByRole("status")).toBeNull();
+    await waitFor(() => expect((screen.getByRole("button", { name: "Avísame" }) as HTMLButtonElement).disabled).toBe(false));
+  });
   it("dos submit seguidos hacen un solo fetch", () => {
     const f = vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise(() => {}));
     const { container } = render(<Correo origen="pie" />);

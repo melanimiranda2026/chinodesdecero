@@ -117,6 +117,27 @@
   line-height: 1;
   white-space: nowrap;
 }
+.pestanas { flex: 1; min-width: 0; display: flex; align-items: stretch; justify-content: center; gap: 4px; height: 100%; }
+.pestana {
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 0 10px;
+  border: 0;
+  border-bottom: 4px solid transparent;
+  background: transparent;
+  color: var(--tinta);
+  font-family: var(--f-hanzi), sans-serif;
+  font-size: 18px;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: 0.65;
+}
+.pestana.activa { opacity: 1; border-bottom-color: var(--t4); }
+.pestana:focus-visible { outline: 3px dashed var(--t4); outline-offset: -3px; }
+.panel { position: absolute; inset: 0; }
+.panel[hidden] { display: none; }
+.panelPuzzle { overflow-y: auto; background: var(--papel); }
 .py { font-family: var(--f-texto), system-ui, sans-serif; font-weight: 900; font-size: 12px; opacity: 0.7; }
 .pantalla {
   flex: none;

@@ -15,7 +15,8 @@ vi.mock("@/components/casa/audio/sonido", () => ({
 const registrar = vi.fn();
 vi.mock("@/components/casa/eventos", () => ({ registrar: (...a: unknown[]) => registrar(...a) }));
 
-import { decir, desbloquearAudio } from "@/components/casa/audio/voz";
+import { decir, desbloquearAudio, callar } from "@/components/casa/audio/voz";
+import { EVENTO_JUEGO } from "@/components/pagina/juego";
 import { musica } from "@/components/casa/audio/sonido";
 import { NI_HAO } from "@/components/casa/cocina/frases";
 import { Portada } from "@/components/pagina/Portada";
@@ -99,6 +100,52 @@ describe("Portada: hero", () => {
     expect(copia.textContent).toContain("厨房");
     expect(copia.textContent ?? "").not.toMatch(/[a-záéíóúñ]{2,}/i);
     for (const el of barra.querySelectorAll("[aria-label]")) expect(el.getAttribute("aria-label")).not.toMatch(/[a-z]{2,}/i);
+  });
+});
+
+describe("Portada: pestañas", () => {
+  afterEach(() => window.history.replaceState(null, "", "/"));
+
+  it("hay un tablist con dos pestañas y 厨房 seleccionada", () => {
+    render(<Portada />);
+    const lista = screen.getByRole("tablist");
+    const tabs = within(lista).getAllByRole("tab");
+    expect(tabs).toHaveLength(2);
+    expect(within(lista).getByRole("tab", { name: /厨房/ }).getAttribute("aria-selected")).toBe("true");
+    expect(within(lista).getByRole("tab", { name: /拼图/ }).getAttribute("aria-selected")).toBe("false");
+    expect(document.getElementById("juegos")).toBeTruthy();
+  });
+
+  it("clic en 拼图 muestra el puzzle, deja la casa oculta y calla la voz", () => {
+    const { container } = render(<Portada />);
+    expect(container.querySelector('[data-juego="puzzle"]')).toBeNull();
+    vi.mocked(callar).mockClear();
+    fireEvent.click(screen.getByRole("tab", { name: /拼图/ }));
+    expect(callar).toHaveBeenCalled();
+    expect(screen.getByRole("tab", { name: /拼图/ }).getAttribute("aria-selected")).toBe("true");
+    expect(container.querySelector<HTMLElement>('[data-juego="cocina"]')!.hidden).toBe(true);
+    const panel = container.querySelector<HTMLElement>('[data-juego="puzzle"]')!;
+    expect(panel.hidden).toBe(false);
+    expect(panel.querySelector('[aria-label="Piezas"]')).toBeTruthy();
+    // volver: el puzzle sigue montado pero oculto
+    fireEvent.click(screen.getByRole("tab", { name: /厨房/ }));
+    expect(container.querySelector<HTMLElement>('[data-juego="cocina"]')!.hidden).toBe(false);
+    expect(container.querySelector<HTMLElement>('[data-juego="puzzle"]')!.hidden).toBe(true);
+  });
+
+  it("con ?juego=puzzle arranca en el puzzle", () => {
+    window.history.replaceState(null, "", "/?juego=puzzle");
+    const { container } = render(<Portada />);
+    expect(screen.getByRole("tab", { name: /拼图/ }).getAttribute("aria-selected")).toBe("true");
+    expect(container.querySelector<HTMLElement>('[data-juego="cocina"]')!.hidden).toBe(true);
+  });
+
+  it("un CustomEvent EVENTO_JUEGO cambia la pestaña", () => {
+    render(<Portada />);
+    act(() => {
+      window.dispatchEvent(new CustomEvent(EVENTO_JUEGO, { detail: "puzzle" }));
+    });
+    expect(screen.getByRole("tab", { name: /拼图/ }).getAttribute("aria-selected")).toBe("true");
   });
 });
 

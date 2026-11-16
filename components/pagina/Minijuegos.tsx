@@ -6,6 +6,7 @@ import { TEMAS } from "@/components/puzzle/datos";
 import puzzle from "@/components/puzzle/Puzzle.module.css";
 import { Adorno } from "./Adorno";
 import { MINIJUEGOS } from "./contenido";
+import { elegirJuego } from "./juego";
 import styles from "./pagina.module.css";
 
 const MUESTRA = TEMAS[0].frases[0]; // 我 吃 苹果
@@ -29,7 +30,15 @@ export function Minijuegos() {
           </div>
           <h3 className={styles.subtitulo}>{MINIJUEGOS.cocina.titulo}</h3>
           <p className={styles.texto}>{MINIJUEGOS.cocina.texto}</p>
-          <a href="#cocina" className={styles.boton} onClick={() => registrar("abrir_minijuego", { juego: "cocina" })}>
+          <a
+            href="#juegos"
+            className={styles.boton}
+            onClick={(e) => {
+              e.preventDefault();
+              registrar("abrir_minijuego", { juego: "cocina" });
+              elegirJuego("cocina");
+            }}
+          >
             {MINIJUEGOS.cocina.boton}
           </a>
         </li>
@@ -51,7 +60,15 @@ export function Minijuegos() {
           </div>
           <h3 className={styles.subtitulo}>{MINIJUEGOS.puzzle.titulo}</h3>
           <p className={styles.texto}>{MINIJUEGOS.puzzle.texto}</p>
-          <Link href="/puzzle" className={styles.boton} onClick={() => registrar("abrir_minijuego", { juego: "puzzle" })}>
+          <Link
+            href="/puzzle"
+            className={styles.boton}
+            onClick={(e) => {
+              e.preventDefault();
+              registrar("abrir_minijuego", { juego: "puzzle" });
+              elegirJuego("puzzle");
+            }}
+          >
             {MINIJUEGOS.puzzle.boton}
           </Link>
         </li>

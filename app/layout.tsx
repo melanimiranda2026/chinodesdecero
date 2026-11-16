@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Nunito, Silkscreen } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
+import { Menu } from "@/components/pagina/Menu";
 import { Filtros } from "@/components/casa/arte/placeholders/Filtros";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="es" className={`${hanzi.variable} ${texto.variable} ${pixel.variable}`}>
       <body>
         <Filtros />
+        <Menu />
         {children}
         <Analytics />
         <SpeedInsights />

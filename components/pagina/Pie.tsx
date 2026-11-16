@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Correo } from "./Correo";
 import { Adorno } from "./Adorno";
 import styles from "./pagina.module.css";
@@ -21,7 +22,7 @@ export function Pie() {
         <Correo origen="pie" />
       </div>
       <p className={styles.firma}>
-        chino desde cero · Método Jìn <span className={styles.hzChico}>浸</span>
+        chino desde cero · Método Jìn <span className={styles.hzChico}>浸</span> · <Link href="/sobre">Sobre nosotros</Link>
       </p>
     </footer>
   );

@@ -70,3 +70,27 @@ export const MINIJUEGOS = {
     boton: "Jugar al puzzle",
   },
 } as const;
+
+/** Menú de arriba, en todas las páginas. En celular, "corto" reemplaza al texto largo. */
+export const MENU = {
+  etiqueta: "Principal",
+  enlaces: [
+    { clave: "cocina", icono: "🍳", texto: "Cocina", corto: "Cocina", href: "/?juego=cocina#juegos" },
+    { clave: "puzzle", icono: "🧩", texto: "Puzzle", corto: "Puzzle", href: "/?juego=puzzle#juegos" },
+    { clave: "metodo", icono: "浸", texto: "Método", corto: "Método", href: "/#metodo" },
+    { clave: "sobre", icono: "🐄", texto: "Sobre nosotros", corto: "Nosotros", href: "/sobre" },
+  ],
+} as const;
+
+/** Página /sobre (la dueña corrige el texto después). */
+export const SOBRE = {
+  titulo: "Sobre nosotros",
+  p1: "Somos un canal de TikTok que enseña chino mandarín a hispanohablantes. La profe es una vaca dibujada a crayón que solo habla chino.",
+  p2antes: "Aprender chino es fácil si eres estratégico. Por eso usamos el ",
+  p2metodo: "Método Jìn 浸",
+  p2despues: " («sumergirse»): escuchas primero, la imagen te dice qué significa y repasas en días distintos. Aquí hacemos los repasos por ti.",
+  p3: "Nuestra promesa es honesta: ser tus primeras 50 horas de chino y llevarte a practicar fuera de TikTok.",
+  contactoAntes: "¿Ideas o preguntas? Escríbenos a ",
+  jugar: "Jugar ahora",
+  tiktok: "Síguenos en TikTok",
+} as const;

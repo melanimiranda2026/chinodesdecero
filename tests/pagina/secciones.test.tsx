@@ -71,3 +71,17 @@ describe("secciones de la página", () => {
     expect(texto).not.toMatch(/síguenos|siguenos/);
   });
 });
+
+import { Sobre } from "@/components/pagina/Sobre";
+
+describe("Sobre nosotros", () => {
+  it("muestra título, correo mailto y enlace a TikTok, sin prometer aprender en TikTok", () => {
+    const { container } = render(<Sobre />);
+    expect(screen.getByRole("heading", { name: "Sobre nosotros" })).toBeTruthy();
+    const mail = screen.getByRole("link", { name: "niu@chinoconlavaca.com" });
+    expect(mail.getAttribute("href")).toBe("mailto:niu@chinoconlavaca.com");
+    expect(screen.getByRole("link", { name: "Síguenos en TikTok" }).getAttribute("href")).toBe(TIKTOK.url);
+    expect(screen.getByRole("link", { name: "Jugar ahora" }).getAttribute("href")).toBe("/#juegos");
+    expect(container.textContent?.toLowerCase()).not.toContain("aprende chino en tiktok");
+  });
+});

@@ -216,6 +216,10 @@ describe("Portada: CSS del marco", () => {
     expect(casa).not.toMatch(/@media \(orientation/);
   });
 
+  it("los saltos a #juegos, #metodo y las secciones quedan debajo del menú fijo", () => {
+    expect(regla(css("app/globals.css"), "html")).toMatch(/scroll-padding-top:\s*var\(--alto-menu\)/);
+  });
+
   it("ya no está la flecha ↓ Bajar", () => {
     expect(css("components/pagina/pagina.module.css")).not.toMatch(/\.baja\b/);
     expect(css("app/page.tsx")).not.toMatch(/Bajar/);

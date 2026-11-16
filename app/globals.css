@@ -19,6 +19,9 @@ body {
   padding: 0;
 }
 
+/* El menú es fijo arriba: los saltos (#juegos, #metodo, secciones) quedan justo debajo de él. */
+html { scroll-padding-top: var(--alto-menu); }
+
 @media (prefers-reduced-motion: no-preference) {
   html { scroll-behavior: smooth; }
 }

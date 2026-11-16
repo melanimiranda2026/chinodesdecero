@@ -9,8 +9,8 @@ type Estado = "libre" | "enviando";
 /** Lo que quedó tras un envío bueno: con aviso (marcó la casilla) o solo el correo para el avance. */
 type Resultado = null | "aviso" | "correo";
 
-/** Contacto para pedir que borremos un correo. CONFIRMAR con la dueña antes de publicar. */
-export const CONTACTO_PRIVACIDAD = "CONFIRMAR@correo";
+/** Contacto para pedir que borremos un correo. */
+export const CONTACTO_PRIVACIDAD = "niu@chinoconlavaca.com";
 
 /** El avance de este navegador, sin el correo, para traerlo al abrir el enlace en otro dispositivo. */
 function avanceParaEnviar() {

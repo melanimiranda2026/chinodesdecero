@@ -99,6 +99,8 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
   /** null = ✕ (salir sin aplicar la acción). */
   const resolverPP = useRef<((m: Medalla | null) => void) | null>(null);
   const turnoVoz = useRef(0);
+  // cuenta los toques a objetos: el saludo del primer toque cede ante lo que se tocó
+  const toques = useRef(0);
   /** Frases en curso (para no tocar efectos encima del mandarín). */
   const hablando = useRef(0);
 
@@ -214,6 +216,7 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
   const tocar = useCallback(
     async (id: ObjetoId) => {
       if (ocupadoRef.current || quizRef.current || estadoRef.current[id] === "nada") return;
+      toques.current++;
       brillos(id);
       clase(id, "tiembla", true);
       luego(() => clase(id, "tiembla", false), 1000);
@@ -258,11 +261,15 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
   );
 
   const saludar = useCallback(() => {
+    const turno = turnoVoz.current;
+    const toque = toques.current;
     luego(() => {
+      // lo tocado gana: si algo más habló o empezó, el saludo se salta
+      if (turno !== turnoVoz.current || toque !== toques.current || ocupadoRef.current || quizRef.current) return;
       festejo();
       void hablar(NI_HAO);
     }, 400);
-  }, [luego, festejo, hablar]);
+  }, [luego, festejo, hablar, ocupadoRef, quizRef]);
 
   const soltarObjetoEnVaca = useCallback(
     (id: ObjetoId) => (quizRef.current ? responderQuiz(id) : abrirAcciones(id)),

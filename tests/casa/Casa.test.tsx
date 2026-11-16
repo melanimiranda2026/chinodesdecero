@@ -19,6 +19,7 @@ import { useCasa, type AlEvento, type CasaApi } from "@/components/casa/useCasa"
 import { ANCLAS, FREGADERO, OBJETOS, junto } from "@/components/casa/cocina/datos";
 import { acciones } from "@/components/casa/cocina/acciones";
 import { ESTADO_INICIAL } from "@/components/casa/cocina/datos";
+import { NI_HAO } from "@/components/casa/cocina/frases";
 import { textoHanzi } from "@/lib/silabas";
 
 const decirMock = vi.mocked(decir);
@@ -313,6 +314,39 @@ describe("Casa: quiz, guardas y tarjetas", () => {
     fireEvent.click(objeto);
     await avanzar(3000);
     expect(decirMock.mock.calls.some((c) => c[0] === OBJETOS.beizi.nombre)).toBe(true);
+  });
+
+  it("primer click (teclado) en 杯子: gana el objeto, el saludo se salta", async () => {
+    render(<Casa />);
+    fireEvent.click(screen.getByRole("button", { name: "杯子" }));
+    await avanzar(1000);
+    const llamadas = decirMock.mock.calls.map((c) => c[0]);
+    expect(llamadas[llamadas.length - 1]).toEqual(OBJETOS.beizi.nombre);
+    expect(llamadas).not.toContainEqual(NI_HAO);
+    const globo = screen.getByTestId("globo");
+    expect(within(globo).getByText("杯")).toBeTruthy();
+    expect(within(globo).getByText("bēi")).toBeTruthy();
+    await avanzar(3000);
+    expect(decirMock.mock.calls.map((c) => c[0])).not.toContainEqual(NI_HAO);
+  });
+
+  it("primer toque (pointerdown + click en el mismo instante) en 杯子: gana el objeto", async () => {
+    render(<Casa />);
+    const o = screen.getByRole("button", { name: "杯子" });
+    fireEvent.pointerDown(o);
+    fireEvent.click(o);
+    await avanzar(1000);
+    const llamadas = decirMock.mock.calls.map((c) => c[0]);
+    expect(llamadas[llamadas.length - 1]).toEqual(OBJETOS.beizi.nombre);
+    expect(llamadas).not.toContainEqual(NI_HAO);
+    expect(within(screen.getByTestId("globo")).getByText("杯")).toBeTruthy();
+  });
+
+  it("primer toque en el piso vacío: la vaca saluda 你好", async () => {
+    render(<Casa />);
+    entrarCasa();
+    await avanzar(1000);
+    expect(decirMock.mock.calls[0][0]).toEqual(NI_HAO);
   });
 
   it("con teclado (click sin pointerdown) también entra: audio y saludo", async () => {

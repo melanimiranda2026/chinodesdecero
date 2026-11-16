@@ -52,7 +52,9 @@ export function Correo({ origen }: { origen: string }) {
             ? "Ese correo no parece correcto. Revísalo e inténtalo otra vez."
             : r.status === 429
               ? "Recibimos muchos intentos seguidos. Espera un rato e inténtalo otra vez."
-              : "No pudimos guardar tu correo ahora. Inténtalo otra vez en un rato.",
+              : r.status === 502
+                ? "Guardamos tu correo, pero no pudimos enviarte el enlace. Inténtalo otra vez en un rato."
+                : "No pudimos guardar tu correo ahora. Inténtalo otra vez en un rato.",
         );
       }
     } catch {

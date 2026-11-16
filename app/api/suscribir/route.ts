@@ -16,6 +16,14 @@ const sinConfiguracion = () => NextResponse.json({ error: "configuracion" }, { s
 const ok = () => NextResponse.json({ ok: true });
 // Mismo cuerpo para el límite por IP y por correo: no dice cuál fue ni si el correo existe.
 const muchos = () => NextResponse.json({ error: "limite" }, { status: 429 });
+// El correo se guardó, pero el enlace no salió (SMTP, Supabase caído…).
+const sinEnvio = () => NextResponse.json({ error: "envio" }, { status: 502 });
+
+/** Supabase frena los envíos seguidos al mismo correo o por hora. */
+function esLimiteDeEnvio(e: unknown): boolean {
+  const o = (e ?? {}) as { code?: unknown; status?: unknown };
+  return o.status === 429 || (typeof o.code === "string" && o.code.includes("rate_limit"));
+}
 
 export async function POST(req: Request) {
   if (cuerpoGrande(req)) return NextResponse.json({ error: "correo" }, { status: 413 });
@@ -65,14 +73,23 @@ export async function POST(req: Request) {
       if (sube?.error) console.error("suscribir: cambios", codigoError(sube.error));
     }
 
+    // El correo ya quedó guardado; si el enlace no sale, se avisa (no se responde ok).
     try {
       const r = await crearClienteOtp().auth.signInWithOtp({
         email,
         options: { emailRedirectTo: `${sitio}/auth/callback` },
       });
-      if (r?.error) console.error("suscribir: enlace", codigoError(r.error));
+      if (r?.error) {
+        console.error("suscribir: enlace", codigoError(r.error));
+        return esLimiteDeEnvio(r.error) ? muchos() : sinEnvio();
+      }
     } catch (e) {
+      if (esConfiguracionFaltante(e)) {
+        console.error("suscribir: enlace", codigoError(e));
+        return sinConfiguracion();
+      }
       console.error("suscribir: enlace", codigoError(e));
+      return sinEnvio();
     }
   } catch (e) {
     if (esConfiguracionFaltante(e)) return sinConfiguracion();

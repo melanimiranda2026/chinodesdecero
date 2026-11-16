@@ -146,9 +146,39 @@ describe("POST /api/suscribir", () => {
     expect((await pedir({ email: "a@b.cl", consentimiento: false })).status).toBe(200);
   });
 
-  it("si signInWithOtp lanza → 200", async () => {
+  it("si signInWithOtp lanza → 502 envio, pero el correo queda guardado", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
     signInWithOtp.mockRejectedValue(new Error("smtp"));
-    expect((await pedir({ email: "a@b.cl", consentimiento: false })).status).toBe(200);
+    const r = await pedir({ email: "a@b.cl", consentimiento: true });
+    expect(r.status).toBe(502);
+    expect(await r.json()).toEqual({ error: "envio" });
+    expect(fila("a@b.cl")).toMatchObject({ consentimiento: true });
+  });
+
+  it("si signInWithOtp devuelve error → 502 envio", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    signInWithOtp.mockResolvedValue({ error: { code: "unexpected_failure", status: 500 } });
+    const r = await pedir({ email: "a@b.cl", consentimiento: false });
+    expect(r.status).toBe(502);
+    expect(await r.json()).toEqual({ error: "envio" });
+  });
+
+  it("si Supabase frena el envío por límite → 429 genérico", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    signInWithOtp.mockResolvedValue({ error: { code: "over_email_send_rate_limit", status: 429 } });
+    const r = await pedir({ email: "a@b.cl", consentimiento: false });
+    expect(r.status).toBe(429);
+    expect(await r.json()).toEqual({ error: "limite" });
+  });
+
+  it("si falta la clave del enlace (anon) → 503 configuracion", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const e = new Error("configuracion");
+    e.name = "ConfiguracionFaltante";
+    signInWithOtp.mockRejectedValue(e);
+    const r = await pedir({ email: "a@b.cl", consentimiento: false });
+    expect(r.status).toBe(503);
+    expect(await r.json()).toEqual({ error: "configuracion" });
   });
 
   it("correo de más de 254 caracteres → 400", async () => {

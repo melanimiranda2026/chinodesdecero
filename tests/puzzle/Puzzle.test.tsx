@@ -18,6 +18,8 @@ import { Puzzle } from "@/components/puzzle/Puzzle";
 import { CLAVE_PUZZLE } from "@/components/puzzle/avance";
 import { TEMAS } from "@/components/puzzle/datos";
 import { nombrePieza } from "@/components/puzzle/Pieza";
+import { FormaPieza } from "@/components/puzzle/FormaPieza";
+import { renderToString } from "react-dom/server";
 import { EVENTO_AVANCE } from "@/components/casa/avance";
 
 const avanzar = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
@@ -143,6 +145,22 @@ describe("Puzzle sin ResizeObserver", () => {
         expect(boton.getAttribute("aria-label")).toBe(nombrePieza(frase.piezas[p]));
         expect(boton.hasAttribute("data-forma")).toBe(false);
       }
+    } finally {
+      globalThis.ResizeObserver = original;
+    }
+  });
+});
+
+describe("FormaPieza e hidratación", () => {
+  it("renderiza el mismo svg en servidor y sin ResizeObserver, y no marca data-forma", () => {
+    const original = globalThis.ResizeObserver;
+    // @ts-expect-error simula un navegador sin ResizeObserver
+    delete globalThis.ResizeObserver;
+    try {
+      expect(renderToString(<FormaPieza />)).toContain("<svg");
+      const { container } = render(<div data-padre><FormaPieza /></div>);
+      expect(container.querySelector("svg")).toBeTruthy();
+      expect(container.querySelector("[data-padre]")!.hasAttribute("data-forma")).toBe(false);
     } finally {
       globalThis.ResizeObserver = original;
     }

@@ -36,7 +36,6 @@ export function FormaPieza({ hueco = false }: { hueco?: boolean }) {
     return () => padre.removeAttribute("data-forma");
   }, [medida]);
 
-  if (typeof ResizeObserver === "undefined") return null;
   return (
     <svg ref={ref} className={styles.forma} aria-hidden="true" focusable="false">
       {medida && <path className={hueco ? styles.formaHueco : styles.formaPieza} d={caminoPieza(medida.w, medida.h)} />}

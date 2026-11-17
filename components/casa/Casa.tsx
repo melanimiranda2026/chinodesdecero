@@ -10,6 +10,7 @@ import { Vaca } from "./Vaca";
 import { Globo } from "./Globo";
 import { Opciones } from "./Opciones";
 import { PrimerPlano } from "./primer-plano/PrimerPlano";
+import { Refri } from "./refri/Refri";
 import { Minimapa } from "./Minimapa";
 import { Tarjetas, type CapaTarjeta } from "./Tarjetas";
 import { desbloquearAudio } from "./audio/voz";
@@ -341,6 +342,12 @@ export function CasaVista({
   useImperativeHandle(ref, () => ({ entrar }));
   const capa: CapaTarjeta | null = !activo ? null : quiz?.fase === "fin" ? "metodo" : pronto ? "pronto" : null;
 
+  // Pestaña oculta con el refri abierto: se sale sin aplicar nada (y la casa no queda trabada).
+  const { refri, cerrarRefri } = casa;
+  useEffect(() => {
+    if (!activo && refri) cerrarRefri();
+  }, [activo, refri, cerrarRefri]);
+
   // La tarjeta del método aparece una vez al terminar el 玩.
   useEffect(() => {
     if (capa === "metodo") registrar("ver_metodo");
@@ -656,6 +663,17 @@ export function CasaVista({
             estado={estado}
             alTerminar={casa.terminarPrimerPlano}
             alCancelar={casa.cancelarPrimerPlano}
+          />
+        )}
+        {/* el refri por dentro: también fuera de .mundo, a luz normal aunque la lámpara esté apagada */}
+        {casa.refri && (
+          <Refri
+            estado={estado}
+            cara={cara}
+            globo={globo}
+            alTocar={(id) => casa.tocarComida(id).catch(registrarFallo)}
+            alElegir={casa.elegirRefri}
+            alCerrar={() => casa.elegirRefri(null)}
           />
         )}
       </div>

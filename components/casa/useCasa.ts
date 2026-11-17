@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { idAudio, type Silaba } from "@/lib/silabas";
-import { ANCLAS, ESTADO_INICIAL, FREGADERO, OBJETOS, junto, type EstadoCocina, type ObjetoId } from "./cocina/datos";
+import { ANCLAS, ESTADO_INICIAL, FREGADERO, OBJETOS, junto, type ComidaId, type EstadoCocina, type ObjetoId } from "./cocina/datos";
 import { acciones, aplicar, type Accion } from "./cocina/acciones";
 import { animar, fraseDespues, type ClaseObjeto, type Punto } from "./cocina/animar";
 import { HEN_RE, NI_HAO, ZHE_SHI } from "./cocina/frases";
@@ -15,6 +15,7 @@ import { sfx } from "./audio/sonido";
 import { efectoYLuegoVoz } from "./audio/turnos";
 import { useTiempos } from "./useTiempos";
 import { useParticulas, type Particula } from "./useParticulas";
+import { useRefri } from "./refri/useRefri";
 import type { Hocico, Ojos, Orejas } from "./Vaca";
 
 export type { ClaseObjeto, Punto } from "./cocina/animar";
@@ -56,6 +57,14 @@ export interface CasaApi {
   empezarQuiz(): void;
   /** El botón 🔊: repite 给我 + nombre. */
   repetirQuiz(): void;
+  /** El refri por dentro, en primer plano (después de 打开). La casa sigue `ocupado` mientras tanto. */
+  refri: boolean;
+  /** Desde el primer plano del refri: 拿… / 关上 (la acción de siempre) o `null` (✕: cierra la puerta). */
+  elegirRefri(a: Accion | null): void;
+  /** La pestaña se ocultó: sale del refri sin aplicar nada, callada, y la casa queda libre. */
+  cerrarRefri(): void;
+  /** Tocar una comida del refri: dice su nombre (y cada tercer toque, 很冷). */
+  tocarComida(id: ComidaId): Promise<void>;
   /** Cierra el quiz terminado (después de la tarjeta del método). */
   cerrarQuiz(): void;
   /** La vaca festeja y dice 你好 (al entrar a la casa). */
@@ -200,6 +209,10 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
     [luego],
   );
 
+  const { refri, esperarRefri, elegirRefri, cerrarRefri, tocarComida } = useRefri({ hablar, hablando });
+  /** Para encadenar la acción elegida dentro del refri (elegir se llama a sí misma). */
+  const elegirRef = useRef<CasaApi["elegir"]>(async () => {});
+
   const aplicarAccion = useCallback(
     (a: Accion) => setEstado(aplicar(estadoRef.current, a)),
     [estadoRef, setEstado],
@@ -332,6 +345,8 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
       setOcupado(true);
       /** Lo que la vaca tiene en la mano hasta el final (el teléfono, hasta el 喂). */
       let enMano: ObjetoId | null = null;
+      /** Lo elegido dentro del refri: corre después, como una acción más. */
+      let luegoRefri: Accion | null = null;
       try {
         const objId = a.objeto ?? id; // a veces la acción mueve otro objeto (盛饭 llena el 碗)
         const donde: ObjetoId | "fregadero" =
@@ -386,6 +401,19 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
           festejo(900);
         }
 
+        if (id === "bingxiang" && a.anim === "abrir") {
+          // el refri por dentro: la casa espera lo que se elija ahí
+          const s = await esperarRefri();
+          if (s === "salir") return callarVaca(); // pestaña oculta: nada más
+          if (s === null) {
+            const cerrar = acciones("bingxiang", estadoRef.current).find((x) => x.anim === "cerrar");
+            if (cerrar) aplicarAccion(cerrar); // ✕: la puerta se cierra sin fanfarria
+            return;
+          }
+          luegoRefri = s;
+          return;
+        }
+
         // después de la acción, el objeto ofrece lo que tiene sentido ahora (comer → lavar → …)
         await espera(500);
         const sig: ObjetoId = a.anim === "servirTe" ? "beizi" : a.anim === "servirArroz" ? "wan" : id;
@@ -402,12 +430,17 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
         if (enMano) volverASuLugar(enMano); // también si algo lanzó antes del 喂
         setSentada(false);
         setOcupado(false);
+        // lo elegido en el refri (拿…, 关上) corre como siempre, ya con la casa libre
+        if (luegoRefri) await elegirRef.current(id, luegoRefri);
       }
     },
     [ocupadoRef, estadoRef, vacaRef, cerrarOpciones, setOcupado, setVaca, setCamara, llevarA, espera, luego,
       aplicarAccion, volverASuLugar, festejo, hablar, particula, miga, brillos, rafaga, clase, mostrarOpciones,
-      mostrarGato],
+      mostrarGato, esperarRefri, callarVaca],
   );
+  useEffect(() => {
+    elegirRef.current = elegir;
+  }, [elegir]);
 
   const terminarPrimerPlano = useCallback((m: Medalla) => {
     const r = resolverPP.current;
@@ -440,6 +473,6 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
     quiz, posiciones, clases, particulas,
     empezarQuiz, repetirQuiz, cerrarQuiz, saludar, restaurar,
     tocar, tocarVaca, soltarObjetoEnVaca, soltarVaca, elegir, empezarArrastre, verTodo, terminarPrimerPlano,
-    cancelarPrimerPlano,
+    cancelarPrimerPlano, refri, elegirRefri, cerrarRefri, tocarComida,
   };
 }

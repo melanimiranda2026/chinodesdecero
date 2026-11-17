@@ -97,9 +97,13 @@ describe("Casa", () => {
     act(() => { fin = api().elegir("bingxiang", abrir); });
     expect(api().ocupado).toBe(true);
     await avanzar(6000);
+    // 打开 deja el refri abierto y su primer plano esperando (la casa sigue ocupada); ✕ lo cierra
+    expect(api().estado.bingxiang).toBe("abierto");
+    expect(api().refri).toBe(true);
+    act(() => api().elegirRefri(null));
     await act(async () => { await fin.catch(() => {}); });
     expect(api().ocupado).toBe(false);
-    expect(api().estado.bingxiang).toBe("abierto");
+    expect(api().estado.bingxiang).toBe("cerrado");
   });
 
   it("abrir las acciones con decir que rechaza también libera ocupado", async () => {

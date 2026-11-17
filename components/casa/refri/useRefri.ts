@@ -3,7 +3,7 @@ import { useCallback, useRef } from "react";
 import type { Silaba } from "@/lib/silabas";
 import type { Accion } from "../cocina/acciones";
 import { NOMBRES_COMIDA, type ComidaId } from "../cocina/datos";
-import { HEN_LENG } from "../cocina/frases";
+import { HEN_LENG, SHUI_GUO } from "../cocina/frases";
 import { efectoYLuegoVoz } from "../audio/turnos";
 import { useVivo } from "../useVivo";
 
@@ -45,16 +45,16 @@ export function useRefri({ hablar, hablando }: {
   /** La pestaña se ocultó: sale sin aplicar nada. */
   const cerrarRefri = useCallback(() => salir("salir"), [salir]);
 
-  /** Tocar una comida: la vaca dice su nombre y, cada tercer toque, 很冷. */
+  /** Tocar una comida (o el rótulo 水果 del cajón): la vaca dice su nombre y, cada tercer toque, 很冷. */
   const tocarComida = useCallback(
-    async (id: ComidaId) => {
+    async (id: ComidaId | "cajon") => {
       if (!refriRef.current) return;
       const n = ++toques.current;
-      const nombre = () => hablar(NOMBRES_COMIDA[id]);
+      const nombre = () => hablar(id === "cajon" ? SHUI_GUO : NOMBRES_COMIDA[id]);
       if (hablando.current === 0) await efectoYLuegoVoz("pop", nombre, { juego: "cocina" });
       else await nombre();
       // solo si nada más se tocó entretanto y el refri sigue abierto
-      if (n % CADA_HEN_LENG === 0 && n === toques.current && refriRef.current) await hablar(HEN_LENG);
+      if (id !== "cajon" && n % CADA_HEN_LENG === 0 && n === toques.current && refriRef.current) await hablar(HEN_LENG);
     },
     [hablar, hablando, refriRef],
   );

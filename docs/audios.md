@@ -1,6 +1,6 @@
 # Audios de la casa y del puzzle
 
-145 de 145 existen. Generado con `npm run audios`; no se edita a mano.
+146 de 146 existen. Generado con `npm run audios`; no se edita a mano.
 
 | Archivo | Hanzi | Pinyin | ¿Existe? |
 |---|---|---|---|
@@ -119,6 +119,7 @@
 | public/audio/cocina/wei2.mp3 | 喂 | wéi (? nativo: nueva (17 nov. 2026)) | sí |
 | public/audio/cocina/wo3_zuo4_hao3_fan4_le5.mp3 | 我做好饭了 | wǒ zuò hǎo fàn le (? nativo: nueva (17 nov. 2026)) | sí |
 | public/audio/cocina/shui3.mp3 | 水 | shuǐ (? nativo: nueva (17 nov. 2026)) | sí |
+| public/audio/cocina/shui3_guo3.mp3 | 水果 | shuǐ guǒ (? nativo: nueva (17 nov. 2026)) | sí |
 | public/audio/cocina/dui4.mp3 | 对 | duì | sí |
 | public/audio/cocina/bu2_dui4.mp3 | 不对 | bú duì | sí |
 | public/audio/cocina/tai4_bang4_le5.mp3 | 太棒了 | tài bàng le | sí |

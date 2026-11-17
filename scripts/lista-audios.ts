@@ -52,6 +52,7 @@ const REVISAR_COCINA: Record<string, string> = {
   wo3_zuo4_hao3_fan4_le5: "nueva (17 nov. 2026)",
   zuo4: "nueva (17 nov. 2026)",
   shui3: "nueva (17 nov. 2026)",
+  shui3_guo3: "nueva (17 nov. 2026)",
   mi3: "nueva (17 nov. 2026)",
   deng1: "nueva: 灯 sale plano (stability 0.7)",
   zhe4_shi4_deng1: "nueva: 灯 sube un poco (302→333 Hz)",

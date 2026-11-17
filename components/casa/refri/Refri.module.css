@@ -49,6 +49,30 @@
   100% { scale: 1 1; translate: 0 0; }
 }
 
+/* el cajón 水果: el rótulo está en el dibujo; el botón lo cubre y el pinyin va debajo */
+.cajon {
+  position: absolute;
+  left: 39%;
+  top: 81.2%;
+  width: 22%;
+  height: 11.4%;
+  min-width: 44px;
+  min-height: 44px;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 0 1%;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: 900 12px/1 var(--f-texto), sans-serif;
+  color: var(--tinta);
+  -webkit-tap-highlight-color: transparent;
+}
+.cajon:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 2px; border-radius: 12px; }
+.cajon:active { translate: 0 2px; }
+
 /* escarcha: copos lentos que caen del estante de arriba (solo CSS) */
 .escarcha { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .escarcha i {

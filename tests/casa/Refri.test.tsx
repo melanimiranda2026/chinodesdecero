@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
@@ -79,6 +81,29 @@ describe("Refri en primer plano", () => {
     await avanzar(2000);
     expect(dichos()).toEqual(["香蕉", "牛奶", "香蕉", textoHanzi(HEN_LENG)]);
     expect(banana.getAttribute("data-rebota")).not.toBeNull();
+  });
+
+  it("el rótulo 水果 del cajón es un botón (>= 44 px) con pinyin que dice 水果", async () => {
+    const { api } = montar();
+    const refri = await abrirRefri(api);
+    decirMock.mockClear();
+    const cajon = within(refri).getByRole("button", { name: "水果" });
+    expect(cajon.textContent).toContain("shuǐ guǒ");
+    expect(cajon.querySelector("[data-pinyin]")).toBeTruthy();
+    fireEvent.click(cajon);
+    await avanzar(1000);
+    expect(dichos()).toEqual(["水果"]);
+    // no cuenta para el 很冷 de las comidas
+    for (let i = 0; i < 3; i++) fireEvent.click(cajon);
+    await avanzar(3000);
+    expect(dichos()).not.toContain(textoHanzi(HEN_LENG));
+  });
+
+  it("el cajón mide al menos 44 px en el CSS", () => {
+    const css = readFileSync(join(process.cwd(), "components/casa/refri/Refri.module.css"), "utf8");
+    const regla = css.match(/\.cajon\s*\{([^}]*)\}/)?.[1] ?? "";
+    expect(regla).toMatch(/min-width:\s*44px/);
+    expect(regla).toMatch(/min-height:\s*44px/);
   });
 
   it("✋ 拿 苹果 solo con la manzana afuera del cuarto (pingguo: nada); al tocarlo sale y la manzana vuelve sucia", async () => {

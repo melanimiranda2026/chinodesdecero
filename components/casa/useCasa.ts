@@ -64,7 +64,7 @@ export interface CasaApi {
   /** La pestaña se ocultó: sale del refri sin aplicar nada, callada, y la casa queda libre. */
   cerrarRefri(): void;
   /** Tocar una comida del refri: dice su nombre (y cada tercer toque, 很冷). */
-  tocarComida(id: ComidaId): Promise<void>;
+  tocarComida(id: ComidaId | "cajon"): Promise<void>;
   /** Cuenta como escuchada una frase que sonó fuera de `hablar` (la receta). Nunca lanza. */
   escuchar(idAudio: string): void;
   /** Cierra el quiz terminado (después de la tarjeta del método). */

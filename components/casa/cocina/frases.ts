@@ -16,4 +16,5 @@ export const MAO = S("猫", "māo", "1");
 export const WO_ZUO_HAO_FAN_LE = S("我做好饭了", "wǒ zuò hǎo fàn le", "34345");
 export const MI = S("米", "mǐ", "3");
 export const SHUI = S("水", "shuǐ", "3");
+export const SHUI_GUO = S("水果", "shuǐ guǒ", "33");
 export const HU_LUO_BO = S("胡萝卜", "hú luó bo", "225");

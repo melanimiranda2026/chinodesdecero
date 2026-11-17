@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { textoHanzi, type Silaba } from "@/lib/silabas";
 import { COLOR_TONO } from "@/lib/tonos";
+import { SHUI_GUO } from "../cocina/frases";
 import { acciones, type Accion } from "../cocina/acciones";
 import { COMIDAS, NOMBRES_COMIDA, OBJETOS, type ComidaId, type EstadoCocina } from "../cocina/datos";
 import { ARTE_REFRI, ARTE_REFRI_FONDO } from "../arte/registro";
@@ -41,7 +42,7 @@ export function Refri({
   cara: { ojos: Ojos; hocico: Hocico; orejas: Orejas; salta: boolean };
   /** Lo que la vaca está diciendo (para el cartel). */
   globo: Silaba[] | null;
-  alTocar: (id: ComidaId) => void;
+  alTocar: (id: ComidaId | "cajon") => void;
   alElegir: (a: Accion) => void;
   /** ✕: cierra el refri. */
   alCerrar: () => void;
@@ -68,6 +69,10 @@ export function Refri({
 
       <div className={styles.caja}>
         <Capa capa={ARTE_REFRI_FONDO} vista="0 0 1000 1000" nombre="refri_interior" />
+        {/* el rótulo 水果 del cajón (dibujado en refri_interior): un botón encima */}
+        <button type="button" data-cajon aria-label={textoHanzi(SHUI_GUO)} className={styles.cajon} onClick={() => alTocar("cajon")}>
+          <Pinyin s={SHUI_GUO} />
+        </button>
         {ESTANTES.map((fila, f) => (
           <div key={f} className={styles.estante} data-estante={f}>
             {fila.map((id) => {

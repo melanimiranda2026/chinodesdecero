@@ -9,7 +9,7 @@ import { lugarGato, siguienteEscondite } from "./cocina/gato";
 import { useQuiz, type EstadoQuiz } from "./useQuiz";
 import { useVivo } from "./useVivo";
 import { apuntar, limitarVaca, objetoBajo, puntoJunto, type Camara } from "./camara";
-import { GESTO_DE, type Medalla } from "./gestos/medalla";
+import { GESTO_DE, esReceta, type Medalla } from "./gestos/medalla";
 import { callar, decir } from "./audio/voz";
 import { sfx } from "./audio/sonido";
 import { efectoYLuegoVoz } from "./audio/turnos";
@@ -362,8 +362,8 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
         await espera(750);
         const antes = estadoRef.current;
 
-        if (GESTO_DE[a.anim] && !a.sinGesto) {
-          // primer plano: el verbo se hace con el dedo (lo dibuja la Task 9)
+        if ((GESTO_DE[a.anim] || esReceta(a.anim)) && !a.sinGesto) {
+          // primer plano: el verbo se hace con el dedo (做饭: la receta, que Casa dibuja en vez del gesto)
           const m = await new Promise<Medalla | null>((res) => {
             resolverPP.current = res;
             setPrimerPlano({ accion: a, objeto: objId });

@@ -956,6 +956,21 @@ function comidaRefri() {
       [[150, 190], [230, 172], [184, 240], [258, 236], [150, 286], [220, 292], [268, 286]].map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="6" ry="4" fill="#E3C58E"/>`).join("") +
       `<path d="${MIGA}" fill="none" stroke="#C88A45" stroke-width="3"/>`,
   });
+  // 水: jarro de vidrio con agua (para la receta: 米 + 水 + 胡萝卜)
+  const ASA = "M290 150 C 366 146, 372 280, 300 292";
+  comida("jarro", {
+    cuerpo: "M92 96 L 126 120 C 112 196, 104 272, 114 340 Q 205 366 296 340 C 306 272, 300 196, 288 116 L 304 98 Q 198 108 92 96 Z",
+    color: C.vidrio, sombra: C.vidrioOsc,
+    rayas: ["M282 140 C 292 210, 294 280, 286 334"], brillo: ["M136 150 C 128 200, 126 250, 132 300"],
+    piezas: [{
+      d: "M112 196 Q 160 210 205 198 Q 250 186 298 198 C 302 256, 302 304, 294 338 Q 205 362 116 338 C 108 304, 106 256, 112 196 Z",
+      color: "#7FC3E8", sombra: "#5AA7D4", rayas: ["M286 214 C 294 260, 292 304, 282 334", "M126 330 C 180 346, 240 346, 286 330"], contorno: 4,
+    }],
+    atras: `<path d="${ASA}" fill="none" stroke="${T}" stroke-width="36" stroke-linecap="round"/><path d="${ASA}" fill="none" stroke="${C.vidrio}" stroke-width="20" stroke-linecap="round"/>`,
+    extras:
+      `<path d="M120 200 Q 160 214 205 202 Q 250 190 292 202" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" opacity="0.8"/>` +
+      [[160, 270, 7], [196, 300, 5], [240, 250, 6], [258, 310, 4]].map(([x, y, r]) => `<path d="${circ(x, y, r)}" fill="none" stroke="#FFFFFF" stroke-width="3" opacity="0.85"/>`).join(""),
+  });
   // 米: saco abierto con arroz crudo
   const GRANOS = [[170, 136, -20], [196, 124, 10], [222, 130, 30], [244, 146, -10], [186, 150, 40], [212, 148, -30], [160, 156, 15], [234, 160, 20], [204, 112, 0]];
   comida("mi", {

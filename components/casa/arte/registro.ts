@@ -91,6 +91,8 @@ export const ARTE_PRIMER_PLANO: Record<string, Capa> = {
 
 /** Comida del refri en primer plano: de frente (no isométrica), cada una en su cuadro cuadrado (`refri_<id>`). */
 export const ARTE_REFRI = Object.fromEntries(COMIDAS.map((id) => [id, arte(`cocina/refri_${id}`)])) as Record<ComidaId, Capa>;
+/** Lo que la receta agrega a la comida del refri (米 y 胡萝卜 salen de `ARTE_REFRI`): el jarro de 水. */
+export const ARTE_RECETA = { jarro: arte("cocina/refri_jarro") };
 /** Fondo del primer plano del refri: estantes de frente y el cajón rotulado 水果. */
 export const ARTE_REFRI_FONDO: Capa = arte("cocina/refri_interior");
 

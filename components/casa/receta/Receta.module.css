@@ -1,0 +1,144 @@
+/* ====== la receta del 米饭 (contenedor, iris, ✕, vaca y mano: PrimerPlano.module.css) ====== */
+.receta { --agua: #7fc3e8; }
+
+/* tarjeta de receta arriba: 米 + 水 + 胡萝卜 (dibujo, hanzi, pinyin por tono y ✓) */
+.tarjeta {
+  position: absolute;
+  left: 50%;
+  top: 3%;
+  transform: translateX(-50%);
+  z-index: 6;
+  max-width: 72%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 5px solid var(--tinta);
+  border-radius: 20px;
+  box-shadow: 0 6px 0 var(--tinta);
+  padding: 0.4em 0.5em;
+  pointer-events: none;
+}
+.paso { display: flex; align-items: center; flex: 0 1 auto; min-width: 0; }
+.mas { font: 900 clamp(16px, 4cqmin, 30px)/1 var(--f-texto), sans-serif; color: var(--tinta); padding: 0 0.3em; }
+.item { position: relative; flex: 0 0 auto; min-width: 2.6em; display: flex; flex-direction: column; align-items: center; gap: 0.1em; }
+.mini { position: relative; width: clamp(28px, 9cqmin, 64px); aspect-ratio: 1; }
+.hz { display: block; font-family: var(--f-hanzi), sans-serif; font-size: clamp(18px, 5cqmin, 40px); line-height: 1; white-space: nowrap; }
+.py { display: block; font-weight: 900; font-size: clamp(11px, 2.6cqmin, 20px); white-space: nowrap; }
+.check {
+  position: absolute;
+  right: -0.4em;
+  top: -6%;
+  width: 1.4em;
+  height: 1.4em;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #2e9b57;
+  color: #fff;
+  border: 3px solid var(--tinta);
+  font: 900 clamp(12px, 3cqmin, 22px)/1 var(--f-texto), sans-serif;
+  animation: marca 0.35s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+@keyframes marca { from { scale: 0.3; opacity: 0; } }
+
+/* el fogón y la olla, al centro */
+.fogon,
+.olla {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+}
+.fogon {
+  width: min(78%, 50cqh);
+  border-radius: 50%;
+  background: #3b3b3b;
+  border: 6px solid var(--tinta);
+  box-shadow: inset 0 0 0 18px #555, 0 10px 0 rgba(74, 42, 28, 0.25);
+  pointer-events: none;
+}
+.olla { width: min(64%, 41cqh); pointer-events: none; }
+.borde { position: absolute; inset: 0; border-radius: 50%; background: #7d8a91; border: 5px solid var(--tinta); }
+.fondo { position: absolute; inset: 7%; border-radius: 50%; background: #f2e3b0; border: 4px solid var(--tinta); overflow: hidden; }
+.agua { position: absolute; inset: 0; background: var(--agua); opacity: 0.75; animation: cae 0.45s ease-out; }
+.contenido { position: absolute; inset: 0; transform-origin: 50% 50%; }
+.arroz {
+  position: absolute;
+  inset: 14%;
+  border-radius: 50%;
+  background-color: #fffdf6;
+  background-image: radial-gradient(ellipse 5px 3px, #d9cdb4 60%, transparent 70%);
+  background-size: 18px 14px;
+  border: 3px solid #d9cdb4;
+  animation: cae 0.45s ease-out;
+}
+.zanahoria { position: absolute; inset: 0; animation: cae 0.45s ease-out; }
+.zanahoria i { position: absolute; border-radius: 50%; background: #f08a2e; border: 3px solid var(--tinta); box-shadow: inset 0 0 0 3px #c9651e; }
+@keyframes cae { from { translate: 0 -40%; scale: 1.25; opacity: 0; } 70% { opacity: 1; } }
+.chapoteo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 40%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  border: 5px solid rgba(255, 255, 255, 0.9);
+  pointer-events: none;
+  animation: chapoteo 0.5s ease-out forwards;
+}
+@keyframes chapoteo { from { scale: 0.3; opacity: 1; } to { scale: 2.2; opacity: 0; } }
+
+/* la mano guía sobre la olla (la de girar del primer plano, centrada en la olla) */
+.guia { top: 52%; }
+
+/* la barra de revolver, donde estaban los ingredientes */
+.barra { top: auto; bottom: 9%; left: 62%; width: 60%; }
+
+/* los ingredientes abajo, a la derecha de la vaca (que queda libre) */
+.ingredientes {
+  position: absolute;
+  left: 29%;
+  right: 3%;
+  bottom: 3%;
+  height: 16%;
+  z-index: 6;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: flex-end;
+  gap: 2%;
+}
+.ingrediente {
+  position: relative;
+  flex: 0 1 30%;
+  max-height: 100%;
+  min-width: 44px;
+  min-height: 44px;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: grab;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.ingrediente:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 2px; border-radius: 12px; }
+.ingrediente[data-usado] { opacity: 0.3; cursor: default; }
+
+/* lo que se arrastra sigue al dedo */
+.fantasma {
+  position: absolute;
+  z-index: 9;
+  width: min(22%, 14cqh);
+  aspect-ratio: 1;
+  translate: -50% -60%;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.2));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .check, .agua, .arroz, .zanahoria, .chapoteo { animation: none; }
+  .chapoteo { display: none; }
+}

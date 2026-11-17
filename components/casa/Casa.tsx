@@ -11,6 +11,8 @@ import { Globo } from "./Globo";
 import { Opciones } from "./Opciones";
 import { PrimerPlano } from "./primer-plano/PrimerPlano";
 import { Refri } from "./refri/Refri";
+import { Receta } from "./receta/Receta";
+import { esReceta } from "./gestos/medalla";
 import { Minimapa } from "./Minimapa";
 import { Tarjetas, type CapaTarjeta } from "./Tarjetas";
 import { desbloquearAudio } from "./audio/voz";
@@ -347,6 +349,12 @@ export function CasaVista({
   useEffect(() => {
     if (!activo && refri) cerrarRefri();
   }, [activo, refri, cerrarRefri]);
+  // 做饭 se hace en la receta (no en el primer plano de girar); con la pestaña oculta se sale sin cocinar.
+  const receta = casa.primerPlano && esReceta(casa.primerPlano.accion.anim) ? casa.primerPlano : null;
+  const { cancelarPrimerPlano } = casa;
+  useEffect(() => {
+    if (!activo && receta) cancelarPrimerPlano();
+  }, [activo, receta, cancelarPrimerPlano]);
 
   // La tarjeta del método aparece una vez al terminar el 玩.
   useEffect(() => {
@@ -655,12 +663,21 @@ export function CasaVista({
         )}
 
         {/* El primer plano va encima de todo el escenario y avisa con la medalla al terminar. */}
-        {casa.primerPlano && (
+        {casa.primerPlano && !receta && (
           <PrimerPlano
             key={`${casa.primerPlano.objeto}:${casa.primerPlano.accion.anim}`}
             accion={casa.primerPlano.accion}
             objeto={casa.primerPlano.objeto}
             estado={estado}
+            alTerminar={casa.terminarPrimerPlano}
+            alCancelar={casa.cancelarPrimerPlano}
+          />
+        )}
+        {/* la receta: fuera de .mundo, a luz normal aunque la lámpara esté apagada */}
+        {receta && (
+          <Receta
+            key={`${receta.objeto}:${receta.accion.anim}`}
+            accion={receta.accion}
             alTerminar={casa.terminarPrimerPlano}
             alCancelar={casa.cancelarPrimerPlano}
           />

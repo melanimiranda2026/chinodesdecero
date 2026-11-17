@@ -4,7 +4,7 @@ import { crearLlenar } from "@/components/casa/gestos/llenar";
 import { crearBeber } from "@/components/casa/gestos/beber";
 import { crearGirar } from "@/components/casa/gestos/girar";
 import { crearMorder } from "@/components/casa/gestos/morder";
-import { medalla, GESTO_DE } from "@/components/casa/gestos/medalla";
+import { medalla, GESTO_DE, esReceta } from "@/components/casa/gestos/medalla";
 
 describe("cortar", () => {
   it("3 cortes largos que cruzan la franja central", () => {
@@ -158,7 +158,11 @@ describe("medalla y GESTO_DE", () => {
   });
   it("mapa de gestos", () => {
     expect(GESTO_DE.servirTe).toBe("llenar");
-    expect(GESTO_DE.cocinar).toBe("girar");
     expect(GESTO_DE.tomar).toBeUndefined();
+  });
+  it("做饭 no es un gesto suelto: lo hace la receta", () => {
+    expect(GESTO_DE.cocinar).toBeUndefined();
+    expect(esReceta("cocinar")).toBe(true);
+    expect(esReceta("comer")).toBe(false);
   });
 });

@@ -14,6 +14,23 @@ export const COMIDAS: readonly ComidaId[] = [
   "xilanhua", "mogu", "niunai", "jidan", "mianbao", "mi",
 ];
 
+/** Nombre de cada comida del refri. */
+export const NOMBRES_COMIDA: Record<ComidaId, Silaba[]> = {
+  pingguo: S("苹果", "píng guǒ", "23"),
+  xiangjiao: S("香蕉", "xiāng jiāo", "11"),
+  xigua: S("西瓜", "xī guā", "11"),
+  caomei: S("草莓", "cǎo méi", "32"),
+  huluobo: S("胡萝卜", "hú luó bo", "225"),
+  xihongshi: S("西红柿", "xī hóng shì", "124"),
+  tudou: S("土豆", "tǔ dòu", "34"),
+  xilanhua: S("西兰花", "xī lán huā", "121"),
+  mogu: S("蘑菇", "mó gu", "25"),
+  niunai: S("牛奶", "niú nǎi", "23"),
+  jidan: S("鸡蛋", "jī dàn", "14"),
+  mianbao: S("面包", "miàn bāo", "41"),
+  mi: S("米", "mǐ", "3"),
+};
+
 export type EstadoCocina = Record<ObjetoId, string>;
 
 export const ESTADO_INICIAL: EstadoCocina = {

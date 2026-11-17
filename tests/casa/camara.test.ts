@@ -37,6 +37,15 @@ describe("camara", () => {
     expect(objetoBajo(vaca, ESTADO_INICIAL)).toBe("pingguo");
     expect(objetoBajo(vaca, { ...ESTADO_INICIAL, pingguo: "nada" })).toBeNull();
   });
+  it("la vaca en el pie de 盘子 / 筷子 alcanza ese objeto, nunca la zona de la mesa", () => {
+    expect(objetoBajo(OBJETOS.panzi.pie, ESTADO_INICIAL)).toBe("panzi");
+    expect(objetoBajo(OBJETOS.kuaizi.pie, ESTADO_INICIAL)).toBe("kuaizi");
+    expect(objetoBajo(OBJETOS.wan.pie, ESTADO_INICIAL)).not.toBe("zhuozi");
+  });
+  it("la mesa tiene su propio punto de pie", () => {
+    const pies = Object.entries(OBJETOS).filter(([id]) => id !== "zhuozi").map(([, o]) => `${o.pie.x},${o.pie.y}`);
+    expect(pies).not.toContain(`${OBJETOS.zhuozi.pie.x},${OBJETOS.zhuozi.pie.y}`);
+  });
   it("ubicarOpciones del refri con zoom 1.9 queda dentro de limites", () => {
     const c = enfocar(OBJETOS.bingxiang.x, OBJETOS.bingxiang.y, 1.9);
     const p = ubicarOpciones(c, "bingxiang", 3);

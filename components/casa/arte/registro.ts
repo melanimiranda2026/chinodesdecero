@@ -74,6 +74,7 @@ export const ARTE: Record<ObjetoId, ArteObjeto> = {
   },
   lajitong: { capas: capasDe("lajitong", ["tarro", "tapa"]), visibles: () => ["tarro", "tapa"] },
   yizi: { capas: capasDe("yizi", ["silla"]), visibles: () => ["silla"] },
+  // zhuozi_zona es una zona de toque invisible (no se dibuja nada)
   zhuozi: { capas: capasDe("zhuozi", ["zona"]), visibles: () => ["zona"] },
   shouji: { capas: capasDe("shouji", ["telefono"]), visibles: () => ["telefono"] },
   mao: { capas: capasDe("mao", ["cola", "gato"]), visibles: () => ["cola", "gato"] },

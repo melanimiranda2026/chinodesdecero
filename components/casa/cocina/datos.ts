@@ -44,9 +44,9 @@ export const VALORES: Record<ObjetoId, readonly string[]> = {
  * se apoya (u, v, altura de la superficie), `pie` es donde se para la vaca para usarlo y `alzar` cuánto sube el
  * centro del cuadro de arte sobre el punto de apoyo (en fracción de `w`). x, y salen de ahí.
  */
-const LUGARES: Record<ObjetoId, { en: [number, number, number]; pie: [number, number]; w: number; alzar?: number; fijo?: boolean }> = {
+const LUGARES: Record<ObjetoId, { en: [number, number, number]; pie: [number, number]; w: number; alzar?: number; fijo?: boolean; zona?: boolean }> = {
   // la zona de la mesa va primero: se dibuja debajo de lo que hay sobre ella
-  zhuozi: { en: [7.7, 1.5, MUEBLES.mesa.alto], pie: [7.7, 2.7], w: 300, alzar: 0.05, fijo: true },
+  zhuozi: { en: [7.7, 1.5, MUEBLES.mesa.alto], pie: [8.45, 2.9], w: 300, alzar: 0.05, fijo: true, zona: true },
   pingguo: { en: [0.9, 4.7, MUEBLES.mesonIzq.alto], pie: [2.6, 4.7], w: 48 },
   guo: { en: [2.8, 0.85, MUEBLES.mesonDer.alto], pie: [2.8, 2.6], w: 84 },
   chahu: { en: [4.6, 0.85, MUEBLES.mesonDer.alto], pie: [4.6, 2.6], w: 64 },
@@ -91,7 +91,7 @@ const r1 = (n: number) => Math.round(n * 10) / 10;
 /** Centro del cuadro de arte de cada objeto (unidades del cuarto) y su ancho. */
 export const OBJETOS: Record<
   ObjetoId,
-  { nombre: Silaba[]; x: number; y: number; w: number; fijo?: boolean; apoyo: Punto; pie: Punto }
+  { nombre: Silaba[]; x: number; y: number; w: number; fijo?: boolean; zona?: boolean; apoyo: Punto; pie: Punto }
 > = Object.fromEntries(
   (Object.keys(LUGARES) as ObjetoId[]).map((id) => {
     const l = LUGARES[id];
@@ -101,6 +101,7 @@ export const OBJETOS: Record<
       nombre: NOMBRES[id], x: r1(apoyo.x), y: r1(apoyo.y - l.w * (l.alzar ?? 0.25)), w: l.w,
       apoyo: { x: r1(apoyo.x), y: r1(apoyo.y) }, pie: { x: r1(pie.x), y: r1(pie.y) },
       ...(l.fijo ? { fijo: true } : {}),
+      ...(l.zona ? { zona: true } : {}),
     };
     return [id, o];
   }),

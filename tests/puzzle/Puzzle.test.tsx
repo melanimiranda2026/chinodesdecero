@@ -153,6 +153,25 @@ describe("Puzzle", () => {
     expect(document.querySelector('button[data-pieza="2"]')).toBeTruthy(); // sigue en la bandeja
   });
 
+  it("sin vasos, en la ventana, 'Jugar en la cocina' cambia a la pestaña de la cocina", async () => {
+    localStorage.setItem(CLAVE_PUZZLE, JSON.stringify({ ganados: [], perfectos: [], vasos: { vasos: 1, desde: Date.now() }, correoLleno: false }));
+    const elegido = vi.fn();
+    window.addEventListener("cdc:juego", elegido);
+    render(<Puzzle ventana />);
+    await avanzar(0);
+    fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
+    fireEvent.click(screen.getByRole("button", { name: /A armar/ }));
+    fireEvent.click(document.querySelector<HTMLButtonElement>('button[data-pieza="2"]')!);
+    await avanzar(10);
+    const cocina = screen.getByRole("link", { name: "Jugar en la cocina" });
+    expect(cocina.getAttribute("href")).toBe("/?juego=cocina#juegos");
+    fireEvent.click(cocina);
+    expect(elegido).toHaveBeenCalledTimes(1);
+    expect((elegido.mock.calls[0][0] as CustomEvent).detail).toBe("cocina");
+    window.removeEventListener("cdc:juego", elegido);
+  });
+
   it("sin vasos aparece el panel, y dejar el correo los llena una sola vez", async () => {
     localStorage.setItem(CLAVE_PUZZLE, JSON.stringify({ ganados: [], perfectos: [], vasos: { vasos: 1, desde: Date.now() }, correoLleno: false }));
     render(<Puzzle />);

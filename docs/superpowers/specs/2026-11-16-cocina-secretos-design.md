@@ -23,7 +23,18 @@ Que la casa tenga más cosas que descubrir y que lo que encuentras ahí **sirva 
 
 **Taza de café.** Objeto nuevo 咖啡杯 en el mesón: 倒咖啡 → 喝咖啡 (我喝咖啡) → 洗 (sucia → limpia), igual que el vaso.
 
-**Objetos nuevos (mi propuesta, máx. 3 para no llenar la pantalla a 360 px):** 灯 dēng (lámpara: 开灯/关灯, la cocina se oscurece), 窗户 chuānghu (ventana: 打开, entra un pájaro), 垃圾桶 (basurero, donde van las cáscaras). La dueña elige o cambia.
+**Objetos nuevos (elegidos por la dueña):** 灯 dēng (lámpara: 开灯/关灯, la cocina se oscurece), 窗户 chuānghu (ventana: 打开, entra un pájaro), 垃圾桶 lājītǒng (basurero, donde van las cáscaras). Ninguno es del HSK 1; se quedan porque dan interacción.
+
+**Del HSK 1 nuevo (programa 2025, 300 palabras; lista de hanyuguide.com) que calzan en la cocina:**
+- En el refri: 牛奶, 鸡蛋, 面包, 水果 (la categoría, en el estante de las frutas).
+- 桌子 + 椅子 + 坐: tocar la silla y la vaca se sienta (我坐), palabra que ya está en los videos.
+- 猫 māo: un gato que aparece escondido en distintos lugares (encima del refri, debajo de la mesa). Es un "secreto" más: encontrarlo da la palabra.
+- 手机 shǒujī en el mesón: suena, 喂？ y 打电话.
+- 热 / 冷: tocar el té → 很热！; tocar algo del refri → 很冷！
+- 早饭 / 午饭 / 晚饭 según la hora real del visitante: 我吃早饭 en la mañana, 午饭 a mediodía, 晚饭 en la noche.
+- 好吃: después de comer, la vaca dice 很好吃！
+- 米饭 en la receta (en vez de 饭 solo).
+- Fuera por ahora: 面条 y 包子 (segunda receta, para más adelante), 电视 (va en el living).
 
 ## Entrega 3: secretos y conexión con el puzzle
 

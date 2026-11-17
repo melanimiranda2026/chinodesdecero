@@ -265,9 +265,9 @@ function cuarto() {
   out.push(utensilio(4.3, `<path d="M-4 22 Q-6 34 0 35 Q6 34 4 22" fill="none" ${trazo(1.4)}/><path d="M-1.5 22 Q-2 33 0 35 Q2 33 1.5 22" fill="none" stroke="${T}" stroke-width="1"/>`));
   out.push(utensilio(4.7, `<path d="M-6 26 a6 6 0 0 0 12 0 Z" fill="${C.acero}" ${trazo(1.4)}/>`));
 
-  // cuadros sobre la mesa: 福 y una planta
+  // cuadro sobre la mesa: 福
   {
-    const uc = 7.0, zc = 4.2, r = 0.62;
+    const uc = 6.65, zc = 4.2, r = 0.62; // corrido a la izquierda: la hoja abierta de la ventana no lo tapa
     out.push(cara([[uc, 0.006, zc + r * 1.1], [uc + r, 0.006, zc], [uc, 0.006, zc - r * 1.1], [uc - r, 0.006, zc]], C.rojo, 2));
     out.push(cara([[uc, 0.007, zc + r * 0.9], [uc + r * 0.82, 0.007, zc], [uc, 0.007, zc - r * 0.9], [uc - r * 0.82, 0.007, zc]], "none", 1.2, `stroke="${C.oro}"`));
     const p = proyectar(uc, 0.008, zc);
@@ -277,12 +277,7 @@ function cuarto() {
     const q = proyectar(uc, 0.006, zc - r * 1.1 - 0.45);
     out.push(`<path d="M${f(q.x - 4)} ${f(q.y + 12)} L${f(q.x)} ${f(q.y)} L${f(q.x + 4)} ${f(q.y + 12)} Z" fill="${C.rojo}" ${trazo(1.2)}/>`);
   }
-  for (const [u0, z0] of [[8.4, 3.75], [9.15, 4.25]] as const) {
-    out.push(rectV(0.006, u0, u0 + 0.6, z0, z0 + 0.8, C.madera.i, 1.8));
-    out.push(rectV(0.007, u0 + 0.08, u0 + 0.52, z0 + 0.08, z0 + 0.72, "#F4F8EE", 1.2));
-    const p = proyectar(u0 + 0.3, 0.008, z0 + 0.18);
-    out.push(`<path d="M${f(p.x)} ${f(p.y + 2)} q-1 -14 0 -20 M${f(p.x)} ${f(p.y - 6)} q-7 -3 -8 -9 q6 1 8 9 M${f(p.x)} ${f(p.y - 12)} q7 -3 8 -9 q-6 1 -8 9" fill="${C.hoja}" ${trazo(1.2)}/>`);
-  }
+  // (a la derecha del 福 iba un par de cuadros: ahora ahí está la ventana 窗户, que es un objeto aparte)
 
   parte("sombras");
   // ---- sombras en el piso ----
@@ -601,18 +596,409 @@ function refri() {
   console.log(`  bisagra de la puerta del refri: ${(((bisagra - vb[0]) / vb[2]) * 100).toFixed(1)}% del ancho del cuadro`);
 }
 
-/** DIBUJO PROVISIONAL de los objetos nuevos (una forma con el contorno café por capa); la Task 2 lo reemplaza. */
-function provisionales() {
-  const caja = (c: string, w = 14, h = 20) => `<rect x="${-w}" y="${-h}" width="${w * 2}" height="${h}" rx="3" fill="${c}" ${trazo(1.6)}/>`;
-  const elipse = (c: string, ry = 8) => `<ellipse cx="0" cy="${-ry}" rx="14" ry="${ry}" fill="${c}" ${trazo(1.6)}/>`;
-  capas("kafeibei", { taza: { cuerpo: caja("#F4F0E8", 10, 14) }, cafe: { cuerpo: `<ellipse cx="0" cy="-13" rx="8" ry="3" fill="#6B4226"/>` }, mugre: { cuerpo: `<ellipse cx="0" cy="-4" rx="6" ry="2" fill="#9C7A4E"/>` } });
-  capas("deng", { lampara: { cuerpo: caja("#E8C796", 12, 14) }, luz: { cuerpo: `<ellipse cx="0" cy="-8" rx="20" ry="14" fill="rgba(255,236,150,0.45)" stroke="none"/>` } });
-  capas("chuanghu", { marco: { cuerpo: caja("#D9AE73", 40, 60) }, vidrio: { cuerpo: caja("rgba(190,225,240,0.7)", 34, 54) }, abierta: { cuerpo: caja("rgba(120,160,190,0.5)", 34, 54) }, pajaro: { cuerpo: elipse("#6FA8DC", 6) } });
-  capas("lajitong", { tarro: { cuerpo: caja("#9AA5A8", 16, 28) }, tapa: { cuerpo: `<ellipse cx="0" cy="-28" rx="18" ry="5" fill="#7D888B" ${trazo(1.6)}/>` } });
-  capas("yizi", { silla: { cuerpo: caja("#C49660", 16, 30) } });
+// =====================================================================================
+// OBJETOS NUEVOS (Entrega 2)
+// =====================================================================================
+/** Punto relativo al apoyo del objeto, en unidades del cuarto (du, dv, dz) → px. */
+const iso = (du: number, dv: number, dz = 0) => ({ x: (du - dv) * ISO.A, y: ((du + dv) * ISO.A) / 2 - dz * ISO.Z });
+const caraR = (pts: P3[], fill: string, g = 1.6, extra = "") =>
+  `<path d="${camino(pts.map((p) => iso(...p)))}" fill="${fill}" ${conTrazo(g, extra)}/>`;
+/** Segmento relativo al apoyo. */
+const segR = (a: P3, b: P3, color: string, g: number, extra = "") => {
+  const p = iso(...a), q = iso(...b);
+  return `<path d="M${f(p.x)} ${f(p.y)} L${f(q.x)} ${f(q.y)}" stroke="${color}" stroke-width="${g}" stroke-linecap="round" fill="none" ${extra}/>`;
+};
+/** Caja relativa al apoyo (mismas tres caras que `caja`). */
+const cajaR = (u0: number, u1: number, v0: number, v1: number, z0: number, z1: number, c: Colores, g = 1.4) =>
+  caraR([[u0, v1, z0], [u1, v1, z0], [u1, v1, z1], [u0, v1, z1]], c.i, g) +
+  caraR([[u1, v0, z0], [u1, v1, z0], [u1, v1, z1], [u1, v0, z1]], c.d, g) +
+  caraR([[u0, v0, z1], [u1, v0, z1], [u1, v1, z1], [u0, v1, z1]], c.a, g);
+const NARANJA = { a: "#F7A24E", i: "#E07B2A", d: "#C9651E" };
+
+/** Trocitos de zanahoria (cubitos) sobre el arroz de la olla y del bol: se ven junto con la capa `arroz`. */
+function zanahorias() {
+  const cubito = ([x, y]: number[]) =>
+    `<g transform="translate(${x} ${y})"><path d="M-3 0 L-3 2.6 L0 4.1 L0 1.5 Z" fill="${NARANJA.i}" ${trazo(0.8)}/><path d="M3 0 L3 2.6 L0 4.1 L0 1.5 Z" fill="${NARANJA.d}" ${trazo(0.8)}/><path d="M-3 0 L0 -1.5 L3 0 L0 1.5 Z" fill="${NARANJA.a}" ${trazo(0.8)}/></g>`;
+  capas("guo", { zanahoria: { cuerpo: [[-13, -25], [-4, -30], [6, -27], [12, -23], [-4, -22], [10, -31]].map(cubito).join("") } });
+  capas("wan", { zanahoria: { cuerpo: [[-10, -25], [-2, -30], [7, -26], [11, -22], [-1, -21]].map(cubito).join("") } });
+}
+
+/** 咖啡杯: taza blanca con asa y franja terracota; el café humea. */
+function taza() {
+  const rx = 10, h = 18;
+  const [g, u] = degradado("#FFFFFF", "#E2DCCF");
+  const asaD = `M${rx - 1} -14 Q${rx + 9} -15 ${rx + 8} -9 Q${rx + 7} -4 ${rx - 1} -5`;
+  const asa = `<path d="${asaD}" fill="none" stroke="${T}" stroke-width="5" stroke-linecap="round"/><path d="${asaD}" fill="none" stroke="#F4F0E8" stroke-width="2.6" stroke-linecap="round"/>`;
+  const cuerpo = `M${-rx} ${-h} L${-rx + 1} -1 A${rx - 1} ${(rx - 1) / 2} 0 0 0 ${rx - 1} -1 L${rx} ${-h} Z`;
+  const tazaSvg =
+    `${sombraObj(13)}${asa}<path d="${cuerpo}" fill="${u}" ${trazo(1.8)}/>` +
+    `<path d="M${-rx + 0.6} -9 A${rx - 0.6} ${(rx - 0.6) / 2} 0 0 0 ${rx - 0.6} -9" fill="none" stroke="${C.terracota}" stroke-width="3"/>` +
+    `<ellipse cx="0" cy="${-h}" rx="${rx}" ry="${rx / 2}" fill="#F4F0E8" ${trazo(1.6)}/>` +
+    `<ellipse cx="0" cy="${-h + 0.8}" rx="${rx - 2}" ry="${(rx - 2) / 2}" fill="#DCD3C3" stroke="none"/>` +
+    `<path d="M-6 ${-h + 5} L-5.5 -5" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.8"/>`;
+  const humo = (x: number) => `<path d="M${x} -23 q-3 -3 0 -6 q3 -3 0 -6" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.85"/>`;
+  const cafe = `<ellipse cx="0" cy="${-h + 0.8}" rx="${rx - 2}" ry="${(rx - 2) / 2}" fill="#7A4A2A" stroke="none"/><ellipse cx="-2" cy="${-h + 0.2}" rx="3" ry="1.2" fill="#A0703F" opacity="0.8"/>${humo(-3)}${humo(3)}`;
+  const mugre = `<ellipse cx="0" cy="${-h + 1.4}" rx="${rx - 3.5}" ry="${(rx - 3.5) / 2.2}" fill="rgba(122,74,42,0.55)"/><path d="M-6 ${-h + 2.5} q0 4 0.5 7" fill="none" stroke="rgba(122,74,42,0.6)" stroke-width="2.2" stroke-linecap="round"/><g fill="#9C7A4E" opacity="0.8"><circle cx="4" cy="-12" r="1.2"/><circle cx="-2" cy="-6" r="1"/></g>`;
+  capas("kafeibei", { taza: { defs: [g], cuerpo: tazaSvg }, cafe: { cuerpo: cafe }, mugre: { cuerpo: mugre } });
+}
+
+/** 灯: lámpara colgante sobre la mesa (el cordón sube hasta el borde del cuadro). `luz` = halo amarillo, encendida. */
+function lampara() {
+  const [g, u] = degradado("#EFA184", C.terracotaOsc);
+  const lamparaSvg =
+    `<path d="M0 -60 L0 -31" stroke="${T}" stroke-width="1.8" stroke-linecap="round"/>` +
+    `<rect x="-3.5" y="-34" width="7" height="5" rx="1.5" fill="${C.oro}" ${trazo(1.2)}/>` +
+    `<path d="M-19 -14 Q-17 -29 0 -30 Q17 -29 19 -14 Z" fill="${u}" ${trazo(1.8)}/>` +
+    `<path d="M-16.5 -19 Q0 -16 16.5 -19" fill="none" stroke="${C.mostaza}" stroke-width="1.8"/>` +
+    `<ellipse cx="0" cy="-14" rx="19" ry="4.5" fill="${C.crema}" ${trazo(1.6)}/>` +
+    `<circle cx="0" cy="-12.5" r="4.2" fill="#E8E2D0" ${trazo(1.3)}/>` +
+    `<ellipse cx="-9" cy="-23" rx="2.2" ry="3.4" fill="#fff" opacity="0.5"/>`;
+  const halo = `<radialGradient id="luzDeng"><stop offset="0" stop-color="#FFEFA8" stop-opacity="0.9"/><stop offset="0.45" stop-color="#FFE38A" stop-opacity="0.4"/><stop offset="1" stop-color="#FFE38A" stop-opacity="0"/></radialGradient>`;
+  const luz = `<ellipse cx="0" cy="-11" rx="27" ry="16.5" fill="url(#luzDeng)"/><circle cx="0" cy="-12.5" r="4.2" fill="#FFF6C9" ${trazo(1.3)}/><circle cx="-1.2" cy="-13.6" r="1.4" fill="#fff"/>`;
+  capas("deng", { lampara: { defs: [g], cuerpo: lamparaSvg }, luz: { defs: [halo], cuerpo: luz } });
+}
+
+/**
+ * 窗户: ventana en la pared derecha (plano v = 0; el apoyo es el centro del borde de abajo).
+ * `marco` = madera, cielo y repisa; `vidrio` = las dos hojas cerradas; `abierta` = las hojas giradas 90° hacia la cocina.
+ */
+function ventana() {
+  const a = 0.64, m = 0.78, z0 = 0.14, z1 = 1.95, zt = 2.09, dv = 0.012;
+  const [gC, uC] = degradado("#E6F6FB", "#A9D6EA", true);
+  const enPared = (du: number, dz: number, s: string) => {
+    const p = iso(du, dv, dz);
+    return `<g transform="translate(${f(p.x)} ${f(p.y)}) skewY(26.57)">${s}</g>`;
+  };
+  const nube = (du: number, dz: number) =>
+    enPared(du, dz, `<g fill="#FFFFFF" opacity="0.9"><ellipse cx="0" cy="0" rx="9" ry="4"/><ellipse cx="6" cy="-2.5" rx="6" ry="4"/><ellipse cx="-5" cy="-1.5" rx="5" ry="3"/></g>`);
+  const arbusto = (du: number, r: number) => enPared(du, z0, `<ellipse cx="0" cy="${f(-r * 0.6)}" rx="${r}" ry="${f(r * 0.75)}" fill="#BFDDB0"/>`);
+  const vano = (fill: string, g: number, d = 0.008) => caraR([[-a, d, z0], [a, d, z0], [a, d, z1], [-a, d, z1]], fill, g);
+  const marco =
+    caraR([[-m, 0.004, 0], [m, 0.004, 0], [m, 0.004, zt], [-m, 0.004, zt]], C.madera.i, 2) +
+    vano(uC, 0) + nube(-0.25, 1.55) + nube(0.35, 1.2) + arbusto(-0.4, 7) + arbusto(0.1, 9) + arbusto(0.5, 6) + vano("none", 1.6, 0.009) +
+    cajaR(-m - 0.12, m + 0.12, 0, 0.22, -0.1, 0, C.madera, 1.6);
+  const hojaCerrada = (u0: number, u1: number) =>
+    caraR([[u0, dv, z0], [u1, dv, z0], [u1, dv, z1], [u0, dv, z1]], "rgba(210,236,244,0.55)", 1.4) +
+    caraR([[u0 + 0.06, dv, z0 + 0.08], [u1 - 0.06, dv, z0 + 0.08], [u1 - 0.06, dv, z1 - 0.08], [u0 + 0.06, dv, z1 - 0.08]], "none", 3, `stroke="${C.madera.d}"`);
+  const brillo = (du: number) => segR([du, dv, 1.55], [du + 0.18, dv, 1.15], "#fff", 2.2, 'opacity="0.9"');
+  const zm = (z0 + z1) / 2;
+  const vidrio =
+    hojaCerrada(-a, 0) + hojaCerrada(0, a) +
+    segR([0, dv, z0], [0, dv, z1], C.madera.d, 3.4) + segR([-a, dv, zm], [a, dv, zm], C.madera.d, 2.6) +
+    brillo(-0.5) + brillo(0.12);
+  // hojas abiertas: giran sobre las bisagras de los costados hacia la cocina (plano u = constante)
+  const hojaAbierta = (u: number) =>
+    caraR([[u, 0, z0], [u, a, z0], [u, a, z1], [u, 0, z1]], "rgba(210,236,244,0.6)", 1.6) +
+    caraR([[u, 0.06, z0 + 0.08], [u, a - 0.06, z0 + 0.08], [u, a - 0.06, z1 - 0.08], [u, 0.06, z1 - 0.08]], "none", 3, `stroke="${C.madera.d}"`);
+  const abierta = hojaAbierta(-a) + hojaAbierta(a);
+  // pájaro posado en la repisa (la animación lo hace entrar volando)
+  const p = iso(0.2, 0.11, 0);
+  const pajaro =
+    `<g transform="translate(${f(p.x)} ${f(p.y)})">` +
+    `<path d="M-7 -4 L-13 -7 L-12 -2 Z" fill="#5E94C2" ${trazo(1.1)}/>` +
+    `<ellipse cx="-1" cy="-5" rx="7" ry="5" fill="#7DB3D9" ${trazo(1.3)}/>` +
+    `<ellipse cx="0" cy="-3" rx="3.5" ry="2" fill="#F6E8CF" stroke="none"/>` +
+    `<path d="M-5 -6 Q-1 -9 3 -5 Q-1 -3 -5 -6 Z" fill="#5E94C2" ${trazo(0.9)}/>` +
+    `<circle cx="5" cy="-10" r="4" fill="#7DB3D9" ${trazo(1.3)}/>` +
+    `<path d="M8.6 -10.8 L12 -9.6 L8.6 -8.6 Z" fill="${C.mostaza}" ${trazo(0.8)}/>` +
+    `<circle cx="6" cy="-11" r="0.9" fill="${T}"/>` +
+    `<path d="M-1 0 L-1 2 M2 0 L2 2" stroke="${T}" stroke-width="1" stroke-linecap="round"/></g>`;
+  capas("chuanghu", { marco: { defs: [gC], cuerpo: marco }, vidrio: { cuerpo: vidrio }, abierta: { cuerpo: abierta }, pajaro: { cuerpo: pajaro } });
+}
+
+/** 垃圾桶: tarro con pedal; la `tapa` va aparte porque se levanta. */
+function basurero() {
+  const [g, u] = degradado(C.salvia.a, C.salvia.d);
+  const tarro =
+    `${sombraObj(17)}<path d="M-15 -34 L-13 -1 A13 6.5 0 0 0 13 -1 L15 -34 Z" fill="${u}" ${trazo(1.8)}/>` +
+    `<path d="M-14.6 -27 A14.6 7 0 0 0 14.6 -27" fill="none" stroke="${C.salvia.linea}" stroke-width="1.6"/>` +
+    `<path d="M-13.4 -8 A13.4 6.5 0 0 0 13.4 -8" fill="none" stroke="${C.salvia.linea}" stroke-width="1.6"/>` +
+    `<ellipse cx="0" cy="-34" rx="15" ry="7" fill="${C.salvia.linea}" ${trazo(1.6)}/>` +
+    `<rect x="-6" y="2" width="12" height="4" rx="2" fill="${C.aceroOsc}" ${trazo(1.2)}/>` +
+    `<ellipse cx="-8" cy="-20" rx="2.4" ry="6" fill="#fff" opacity="0.4"/>`;
+  const tapa =
+    `<path d="M-16.5 -34 Q-16 -43 0 -43 Q16 -43 16.5 -34 A16.5 7 0 0 1 -16.5 -34 Z" fill="${C.salvia.i}" ${trazo(1.8)}/>` +
+    `<path d="M-16.3 -34 A16.3 6.8 0 0 0 16.3 -34" fill="none" stroke="${C.salvia.linea}" stroke-width="1.4"/>` +
+    `<ellipse cx="0" cy="-43" rx="4.5" ry="2" fill="${C.oro}" ${trazo(1.2)}/>` +
+    `<path d="M-9 -39 Q-5 -41.5 0 -41.5" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity="0.7"/>`;
+  capas("lajitong", { tarro: { defs: [g], cuerpo: tarro }, tapa: { cuerpo: tapa } });
+}
+
+/** 椅子: silla de madera con cojín; el respaldo da a la derecha (u+), así se lee de perfil. */
+function silla() {
+  const s = 0.36, l = 0.09, zs = 0.66;
+  const pata = (u: number, v: number) => cajaR(u, u + l, v, v + l, 0, zs, C.madera, 1.3);
+  const respaldo =
+    cajaR(s - l, s, -s, -s + l, zs + 0.1, 1.25, C.madera, 1.3) +
+    cajaR(s - l, s, s - l, s, zs + 0.1, 1.25, C.madera, 1.3) +
+    cajaR(s - l, s, -s, s, 0.9, 0.98, C.madera, 1.3) +
+    cajaR(s - l, s, -s, s, 1.07, 1.25, C.madera, 1.4);
+  const sillaSvg =
+    sombraObj(24) +
+    pata(-s, -s) + pata(s - l, -s) + pata(-s, s - l) + pata(s - l, s - l) +
+    cajaR(-s, s, -s, s, zs, zs + 0.1, C.madera, 1.5) +
+    cajaR(-s + 0.05, s - 0.12, -s + 0.05, s - 0.05, zs + 0.1, zs + 0.17, C.salvia, 1.3) +
+    respaldo;
+  capas("yizi", { silla: { cuerpo: sillaSvg } });
+}
+
+/** 桌子: solo una zona de toque sobre la mesa (la mesa ya está dibujada en el cuarto). No se ve nada. */
+function zona() {
   capas("zhuozi", { zona: { cuerpo: `<ellipse cx="0" cy="0" rx="1" ry="1" fill="none" stroke="none"/>` } });
-  capas("shouji", { telefono: { cuerpo: caja("#33443E", 6, 12) } });
-  capas("mao", { cola: { cuerpo: elipse("#E5A93A", 5) }, gato: { cuerpo: elipse("#F28C5A", 12) } });
+}
+
+/** 手机: teléfono parado con la pantalla hacia la cocina (plano u = constante) y el botón verde de llamar. */
+function telefono() {
+  const tel =
+    `<ellipse cx="0" cy="3" rx="11" ry="3.5" fill="rgba(90,55,30,0.18)"/>` +
+    `<g transform="skewY(-26.57)">` +
+    `<rect x="-6" y="-22" width="16" height="25" rx="3.2" fill="${C.negroOsc}" ${trazo(1.4)}/>` +
+    `<rect x="-8" y="-21" width="16" height="25" rx="3.2" fill="${C.negro}" ${trazo(1.6)}/>` +
+    `<rect x="-6" y="-18" width="12" height="17.5" rx="1.4" fill="#BFE3F0" stroke="none"/>` +
+    `<path d="M-6 -18 L1 -18 L-6 -9 Z" fill="#fff" opacity="0.45"/>` +
+    `<circle cx="0" cy="-7" r="3.4" fill="${C.hoja}" ${trazo(1)}/>` +
+    `<path d="M-1.6 -8.4 q0 3 3.2 3.2" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>` +
+    `<circle cx="0" cy="-19.6" r="0.7" fill="#8A8480"/>` +
+    `<path d="M-2.5 1.8 L2.5 1.8" stroke="#8A8480" stroke-width="1" stroke-linecap="round"/>` +
+    `</g>`;
+  capas("shouji", { telefono: { cuerpo: tel } });
+}
+
+/**
+ * 猫: gato naranjo atigrado. `cola` = lo que asoma desde el escondite; `gato` = entero, sentado de frente.
+ * Los dos se dibujan alrededor del apoyo: la casa los lleva a cada escondite con `llevarA`.
+ */
+function gato() {
+  const N = { c: "#F2A65A", o: "#D9803A", l: "#FFE3C2", rosa: "#F4B6B0" };
+  const rayada = (d: string, g: number) =>
+    `<path d="${d}" fill="none" stroke="${T}" stroke-width="${g + 3}" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${N.c}" stroke-width="${g}" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${N.o}" stroke-width="${g}" stroke-dasharray="2 4.5"/>`;
+  const cola = rayada("M0 2 C-2 -8 8 -12 6 -20 C5 -26 -1 -27 -2 -23", 5);
+  const gatoSvg =
+    sombraObj(16) +
+    rayada("M11 -3 Q25 -2 23 -13 Q22 -19 17 -18", 4.4) +
+    `<path d="M-14 0 C-17 -10 -12 -20 0 -21 C12 -20 17 -10 14 0 Q0 3.5 -14 0 Z" fill="${N.c}" ${trazo(1.8)}/>` +
+    `<path d="M-13 -10 q3 1 5 0 M13 -10 q-3 1 -5 0 M-14 -5 q3 1 5 0 M14 -5 q-3 1 -5 0" fill="none" stroke="${N.o}" stroke-width="1.8" stroke-linecap="round"/>` +
+    `<ellipse cx="0" cy="-9" rx="6.5" ry="8" fill="${N.l}" stroke="none"/>` +
+    `<ellipse cx="-5" cy="-1" rx="4" ry="2.6" fill="${N.l}" ${trazo(1.2)}/><ellipse cx="5" cy="-1" rx="4" ry="2.6" fill="${N.l}" ${trazo(1.2)}/>` +
+    `<path d="M-11 -30 L-10 -41 L-2.5 -35.5 Z" fill="${N.c}" ${trazo(1.6)}/><path d="M11 -30 L10 -41 L2.5 -35.5 Z" fill="${N.c}" ${trazo(1.6)}/>` +
+    `<path d="M-9.5 -32 L-9.2 -38 L-5 -35 Z" fill="${N.rosa}" stroke="none"/><path d="M9.5 -32 L9.2 -38 L5 -35 Z" fill="${N.rosa}" stroke="none"/>` +
+    `<ellipse cx="0" cy="-27" rx="12.5" ry="10.5" fill="${N.c}" ${trazo(1.8)}/>` +
+    `<path d="M-3 -36.5 l0.6 3.5 M0 -37.2 l0 4 M3 -36.5 l-0.6 3.5" fill="none" stroke="${N.o}" stroke-width="1.6" stroke-linecap="round"/>` +
+    `<ellipse cx="0" cy="-22.5" rx="6.5" ry="4" fill="${N.l}" stroke="none"/>` +
+    `<ellipse cx="-5" cy="-27.5" rx="1.8" ry="2.4" fill="${T}"/><ellipse cx="5" cy="-27.5" rx="1.8" ry="2.4" fill="${T}"/>` +
+    `<circle cx="-4.4" cy="-28.4" r="0.7" fill="#fff"/><circle cx="5.6" cy="-28.4" r="0.7" fill="#fff"/>` +
+    `<ellipse cx="-8.5" cy="-23" rx="2.4" ry="1.4" fill="${N.rosa}" opacity="0.7"/><ellipse cx="8.5" cy="-23" rx="2.4" ry="1.4" fill="${N.rosa}" opacity="0.7"/>` +
+    `<path d="M-1.4 -24.6 L1.4 -24.6 L0 -23 Z" fill="${N.rosa}" ${trazo(0.8)}/>` +
+    `<path d="M-2.6 -21.6 q1.3 1.4 2.6 0 q1.3 1.4 2.6 0" fill="none" stroke="${T}" stroke-width="0.9" stroke-linecap="round"/>` +
+    `<path d="M-9 -23.5 L-16 -25 M-9 -22 L-16 -21 M9 -23.5 L16 -25 M9 -22 L16 -21" stroke="${T}" stroke-width="0.7" stroke-linecap="round"/>`;
+  capas("mao", { cola: { cuerpo: cola }, gato: { cuerpo: gatoSvg } });
+}
+
+// =====================================================================================
+// COMIDA DEL REFRI: de frente (no isométrica), en un cuadro cuadrado. Mismas formas y colores que las frutas
+// del video (../video/src/Frutas.tsx, solo como referencia), sin filtro de crayón, como el resto de la cocina.
+// =====================================================================================
+type Pieza = { d: string; color: string; sombra?: string; rayas?: string[]; contorno?: number };
+type Comida = {
+  cuerpo: string; color: string; sombra: string; rayas: string[]; brillo: string[];
+  trama?: string[]; piezas?: Pieza[]; sinContorno?: boolean; atras?: string; extras?: string;
+};
+const VISTA_COMIDA: [number, number, number, number] = [30, 25, 350, 350];
+const circ = (cx: number, cy: number, r: number) => `M ${cx - r} ${cy} a ${r} ${r} 0 1 0 ${2 * r} 0 a ${r} ${r} 0 1 0 ${-2 * r} 0 Z`;
+const elip = (cx: number, cy: number, rx: number, ry: number) => `M ${cx - rx} ${cy} a ${rx} ${ry} 0 1 0 ${2 * rx} 0 a ${rx} ${ry} 0 1 0 ${-2 * rx} 0 Z`;
+const huevo = (cx: number, cy: number, rx: number, ry: number) =>
+  `M ${cx} ${cy - ry} C ${cx + rx * 0.75} ${cy - ry}, ${cx + rx} ${cy - ry * 0.1}, ${cx + rx} ${cy + ry * 0.3} C ${cx + rx} ${cy + ry * 0.85}, ${cx + rx * 0.55} ${cy + ry}, ${cx} ${cy + ry} C ${cx - rx * 0.55} ${cy + ry}, ${cx - rx} ${cy + ry * 0.85}, ${cx - rx} ${cy + ry * 0.3} C ${cx - rx} ${cy - ry * 0.1}, ${cx - rx * 0.75} ${cy - ry}, ${cx} ${cy - ry} Z`;
+const raya = (d: string, color: string, g: number, op: number) =>
+  `<path d="${d}" stroke="${color}" stroke-width="${g}" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="${op}"/>`;
+
+function comida(id: string, c: Comida) {
+  const defs = [`<clipPath id="r"><path d="${c.cuerpo}"/></clipPath>`, ...(c.piezas ?? []).map((p, i) => `<clipPath id="r${i}"><path d="${p.d}"/></clipPath>`)];
+  const out = [
+    c.atras ?? "",
+    `<path d="${c.cuerpo}" fill="${c.color}"/>`,
+    `<g clip-path="url(#r)">${c.rayas.map((r) => raya(r, c.sombra, 22, 0.55)).join("")}${c.brillo.map((b) => raya(b, "#FFF6E6", 13, 0.75)).join("")}${(c.trama ?? []).map((t) => raya(t, c.sombra, 5, 0.8)).join("")}</g>`,
+    ...(c.piezas ?? []).map((p, i) =>
+      `<path d="${p.d}" fill="${p.color}"/>` +
+      (p.rayas && p.sombra ? `<g clip-path="url(#r${i})">${p.rayas.map((r) => raya(r, p.sombra!, 16, 0.55)).join("")}</g>` : "") +
+      (p.contorno ? `<path d="${p.d}" fill="none" stroke="${T}" stroke-width="${p.contorno}" stroke-linejoin="round"/>` : ""),
+    ),
+    c.extras ?? "",
+    c.sinContorno ? "" : `<path d="${c.cuerpo}" fill="none" stroke="${T}" stroke-width="9" stroke-linejoin="round"/>`,
+  ];
+  archivo(`refri_${id}`, VISTA_COMIDA, 512, defs, out.join(""));
+}
+
+function comidaRefri() {
+  const HOJA = { color: "#8DB561", sombra: "#5E8C3A" }, TALLO = "#7A4B2A";
+  const hojas = (ds: string[], color = "#6FA84A") =>
+    `<g fill="${color}" stroke="${T}" stroke-width="6" stroke-linejoin="round">${ds.map((d) => `<path d="${d}"/>`).join("")}</g>`;
+  comida("pingguo", {
+    cuerpo: "M200 122 C 168 94, 96 98, 76 162 C 56 228, 88 318, 142 344 C 166 356, 186 346, 200 338 C 214 346, 234 356, 258 344 C 312 318, 344 228, 324 162 C 304 98, 232 94, 200 122 Z",
+    color: "#D9574A", sombra: "#A8392F",
+    rayas: ["M300 170 C 322 230, 300 300, 250 332", "M280 150 C 305 215, 290 290, 240 325", "M160 330 C 190 338, 215 336, 240 328"],
+    brillo: ["M118 180 C 110 205, 112 230, 124 252", "M140 150 C 150 140, 162 136, 172 136"],
+    extras: `<path d="M200 128 C 198 100, 204 82, 216 62" stroke="${TALLO}" stroke-width="15" stroke-linecap="round" fill="none"/><path d="M212 92 C 230 60, 276 54, 298 68 C 282 96, 246 108, 212 92 Z" fill="${HOJA.color}" stroke="${T}" stroke-width="6" stroke-linejoin="round"/><path d="M218 90 C 245 80, 268 74, 290 70" stroke="${HOJA.sombra}" stroke-width="5" stroke-linecap="round" fill="none"/>`,
+  });
+  comida("xiangjiao", {
+    cuerpo: "M64 232 C 108 322, 264 334, 332 236 C 356 202, 362 166, 352 130 L 330 124 C 324 160, 298 192, 248 208 C 188 228, 122 218, 86 196 C 66 186, 54 212, 64 232 Z",
+    color: "#F0C04A", sombra: "#C9932E",
+    rayas: ["M84 250 C 160 306, 268 300, 330 222", "M120 282 C 180 306, 260 300, 312 260"],
+    brillo: ["M106 214 C 168 236, 240 228, 296 196"],
+    extras: `<path d="M330 128 L 334 100 L 356 104 L 352 134 Z" fill="${TALLO}" stroke="${T}" stroke-width="5" stroke-linejoin="round"/><circle cx="66" cy="222" r="10" fill="${TALLO}"/>`,
+  });
+  const PEPAS = [[118, 190, -40], [158, 182, -20], [216, 194, 6], [268, 185, 26], [288, 204, 38], [140, 228, -30], [186, 234, -8], [246, 222, 18], [210, 248, 2]];
+  comida("xigua", {
+    cuerpo: "M54 150 A 150 150 0 0 0 354 150 Z", color: "#6E9F4F", sombra: "#4D7A36",
+    rayas: ["M70 190 C 100 260, 160 296, 204 300", "M338 190 C 308 260, 248 296, 204 300"], brillo: [],
+    piezas: [
+      { d: "M72 150 A 132 132 0 0 0 336 150 Z", color: "#EDE6C2" },
+      { d: "M86 150 A 118 118 0 0 0 322 150 Z", color: "#E2574E", sombra: "#C23E37", rayas: ["M110 168 C 140 230, 200 262, 270 236"] },
+    ],
+    extras:
+      PEPAS.map(([x, y, g]) => `<ellipse cx="${x}" cy="${y}" rx="6" ry="10" fill="#3B2418" transform="rotate(${g} ${x} ${y})"/>`).join("") +
+      `<path d="M120 165 C 160 170, 230 170, 290 164" stroke="#FFF6E6" stroke-width="9" stroke-linecap="round" fill="none" opacity="0.6"/>`,
+  });
+  const PEPITAS = [[150, 170], [205, 160], [260, 170], [120, 215], [178, 215], [234, 215], [290, 215], [150, 262], [205, 262], [260, 262], [178, 308], [232, 308]];
+  comida("caomei", {
+    cuerpo: "M205 124 C 150 96, 84 124, 84 190 C 84 262, 150 340, 205 362 C 260 340, 326 262, 326 190 C 326 124, 260 96, 205 124 Z",
+    color: "#DE4A42", sombra: "#A62E28",
+    rayas: ["M304 178 C 312 240, 270 310, 226 344", "M284 160 C 296 230, 256 300, 214 340"],
+    brillo: ["M112 176 C 110 200, 118 226, 132 246"],
+    extras:
+      PEPITAS.map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="7" ry="10" fill="#F8DB7A" stroke="${T}" stroke-width="3"/>`).join("") +
+      hojas(["M205 128 C 170 92, 124 92, 92 112 C 112 142, 166 156, 205 128 Z", "M205 128 C 240 92, 286 92, 318 112 C 298 142, 244 156, 205 128 Z", "M205 128 C 188 96, 196 66, 205 52 C 214 66, 222 96, 205 128 Z"], HOJA.color),
+  });
+  const ESTRIAS = [0.18, 0.32, 0.46, 0.6, 0.74].map((t, i) => {
+    const cx = 290 - 180 * t, cy = 158 + 175 * t, L = 24 * (1 - t) + 8, lado = i % 2 ? 0.2 : -0.2;
+    return `M ${f(cx - 0.707 * L * (0.5 - lado))} ${f(cy - 0.707 * L * (0.5 - lado))} L ${f(cx + 0.707 * L * (0.5 + lado))} ${f(cy + 0.707 * L * (0.5 + lado))}`;
+  });
+  comida("huluobo", {
+    cuerpo: "M246 118 C 268 96, 318 110, 326 150 C 330 168, 322 178, 310 190 C 250 250, 160 320, 92 354 C 82 358, 76 350, 82 342 C 130 284, 200 182, 246 118 Z",
+    color: "#F08A2E", sombra: "#C9651E",
+    rayas: ["M312 182 C 260 236, 190 296, 120 338"], brillo: ["M246 136 C 220 170, 196 206, 172 240"], trama: ESTRIAS,
+    atras: hojas(["M282 124 C 270 90, 262 64, 270 34 C 290 62, 296 94, 292 122 Z", "M286 126 C 256 104, 238 82, 232 52 C 260 70, 280 96, 292 122 Z", "M294 128 C 306 92, 328 66, 356 52 C 346 86, 322 112, 300 132 Z", "M302 138 C 330 122, 354 118, 370 122 C 352 142, 326 148, 304 146 Z"]),
+  });
+  comida("xihongshi", {
+    cuerpo: "M205 135 C 245 118, 330 130, 342 210 C 352 290, 290 348, 205 348 C 120 348, 58 290, 68 210 C 80 130, 165 118, 205 135 Z",
+    color: "#E0473C", sombra: "#B0302A",
+    rayas: ["M322 200 C 334 260, 302 320, 252 340"], brillo: ["M108 200 C 106 228, 114 256, 128 276", "M140 162 C 152 152, 168 148, 180 148"],
+    extras:
+      `<path d="M206 140 C 206 120, 212 104, 222 92" stroke="${TALLO}" stroke-width="10" stroke-linecap="round" fill="none"/>` +
+      hojas(["M205 140 C 190 128, 165 122, 140 126 C 160 140, 182 148, 205 146 Z", "M205 140 C 220 128, 245 122, 270 126 C 250 140, 228 148, 205 146 Z", "M205 142 C 196 152, 182 168, 172 180 C 192 176, 206 162, 210 146 Z", "M205 142 C 214 152, 228 168, 238 180 C 218 176, 204 162, 200 146 Z"]),
+  });
+  const OJOS = [[150, 190], [250, 170], [290, 250], [190, 280], [120, 260], [230, 225]];
+  comida("tudou", {
+    cuerpo: "M110 190 C 120 130, 200 112, 260 128 C 330 146, 350 210, 330 266 C 312 318, 250 344, 186 336 C 116 328, 70 290, 82 240 C 88 218, 104 206, 110 190 Z",
+    color: "#D6AE6C", sombra: "#A87C40",
+    rayas: ["M318 220 C 324 270, 290 316, 230 330"], brillo: ["M122 200 C 130 172, 160 150, 196 142"],
+    trama: OJOS.map(([x, y]) => `M ${x - 8} ${y} C ${x - 3} ${y - 6}, ${x + 3} ${y - 6}, ${x + 8} ${y}`),
+    extras: OJOS.map(([x, y]) => `<circle cx="${x + 14}" cy="${y + 12}" r="3" fill="#A87C40" opacity="0.7"/>`).join(""),
+  });
+  const RAMILLETES = [[205, 118, 48], [150, 145, 48], [260, 145, 48], [104, 192, 44], [306, 192, 44], [160, 208, 52], [250, 208, 52], [205, 198, 56]];
+  const talloBrocoli = "M176 230 C 182 270, 178 310, 166 350 C 190 362, 222 362, 244 350 C 232 310, 228 270, 234 230 Z";
+  comida("xilanhua", {
+    cuerpo: talloBrocoli, color: "#A9CC6E", sombra: "#7FA34A", sinContorno: true, rayas: [], brillo: [],
+    piezas: [
+      { d: talloBrocoli, color: "#A9CC6E", sombra: "#7FA34A", rayas: ["M226 250 C 230 290, 232 320, 236 348"], contorno: 8 },
+      ...RAMILLETES.map(([x, y, r]) => ({
+        d: circ(x, y, r), color: "#5E9A3E", sombra: "#3F7428", contorno: 7,
+        rayas: [`M ${f(x + r * 0.2)} ${f(y + r * 0.8)} C ${f(x + r * 0.7)} ${f(y + r * 0.5)}, ${f(x + r * 0.85)} ${f(y + r * 0.1)}, ${f(x + r * 0.8)} ${f(y - r * 0.3)}`],
+      })),
+    ],
+    extras: RAMILLETES.map(([x, y, r]) =>
+      `<circle cx="${f(x - r * 0.35)}" cy="${f(y - r * 0.3)}" r="5" fill="#D3EAAE" opacity="0.85"/><circle cx="${f(x - r * 0.05)}" cy="${f(y - r * 0.45)}" r="4" fill="#D3EAAE" opacity="0.85"/><circle cx="${f(x - r * 0.5)}" cy="${f(y + r * 0.05)}" r="4" fill="#D3EAAE" opacity="0.85"/>`).join(""),
+  });
+  const SOMBRERO = "M62 208 C 62 112, 130 62, 205 62 C 280 62, 348 112, 348 208 A 143 32 0 0 1 62 208 Z";
+  const PIE = "M150 226 Q 205 206 260 226 C 262 262, 272 296, 284 318 C 296 346, 276 360, 250 360 L 160 360 C 134 360, 114 346, 126 318 C 138 296, 148 262, 150 226 Z";
+  const LAMINAS = Array.from({ length: 22 }, (_, i) => {
+    const a = (i / 22) * 2 * Math.PI;
+    return `M ${f(205 + 40 * Math.cos(a))} ${f(210 + 9 * Math.sin(a))} L ${f(205 + 140 * Math.cos(a))} ${f(208 + 31 * Math.sin(a))}`;
+  });
+  comida("mogu", {
+    cuerpo: SOMBRERO, color: "#E6C89E", sombra: "#B88E5E", sinContorno: true, rayas: [], brillo: [],
+    piezas: [
+      { d: SOMBRERO, color: "#E6C89E", sombra: "#B88E5E", rayas: ["M318 130 C 338 160, 344 186, 340 206", "M296 106 C 322 136, 330 170, 326 204", "M90 190 C 120 204, 160 212, 205 212"], contorno: 8 },
+      { d: elip(205, 208, 143, 32), color: "#E8BDA6", sombra: "#8E5E48", rayas: LAMINAS, contorno: 8 },
+      { d: PIE, color: "#F6EAD5", sombra: "#CDB89A", rayas: ["M250 244 C 252 280, 264 314, 272 336"], contorno: 8 },
+    ],
+    extras: `<path d="M100 150 C 112 118, 142 96, 176 88" stroke="#FFFDF6" stroke-width="13" stroke-linecap="round" fill="none" opacity="0.85"/>`,
+  });
+  // 牛奶: caja de leche con techo de dos aguas, franja azul con una gota y manchas de vaca
+  comida("niunai", {
+    cuerpo: "M120 352 L 120 150 L 160 104 L 250 104 L 290 150 L 290 352 Z", color: "#FFFFFF", sombra: "#D9E2EA",
+    rayas: ["M276 160 L 276 340", "M130 340 L 280 340"], brillo: [],
+    piezas: [
+      { d: "M120 236 L 290 236 L 290 300 L 120 300 Z", color: "#7DA5D8", sombra: "#5B86BE", rayas: ["M282 244 L 282 296"] },
+      { d: "M160 104 L 250 104 L 290 150 L 120 150 Z", color: "#EEF3F7", contorno: 6 },
+      { d: "M168 82 L 242 82 L 242 104 L 168 104 Z", color: "#FFFFFF", contorno: 6 },
+    ],
+    extras:
+      `<path d="M150 178 q12 -8 22 2 q4 12 -10 14 q-14 -2 -12 -16 Z" fill="${C.negro}"/><path d="M232 196 q14 -6 20 6 q-2 12 -14 10 q-10 -4 -6 -16 Z" fill="${C.negro}"/><circle cx="262" cy="172" r="6" fill="${C.negro}"/>` +
+      `<path d="M205 248 C 194 264, 190 272, 190 280 a 15 15 0 0 0 30 0 C 220 272, 216 264, 205 248 Z" fill="#FFFFFF" stroke="${T}" stroke-width="4" stroke-linejoin="round"/>`,
+  });
+  // 鸡蛋: dos huevos
+  const h1 = huevo(158, 236, 66, 92), h2 = huevo(266, 262, 60, 82);
+  comida("jidan", {
+    cuerpo: h1, color: "#F6E6C8", sombra: "#D9C29A", sinContorno: true, rayas: [], brillo: [],
+    piezas: [
+      { d: h1, color: "#F6E6C8", sombra: "#D9C29A", rayas: ["M206 220 C 214 270, 196 310, 160 324"], contorno: 9 },
+      { d: h2, color: "#E9C9A0", sombra: "#C9A06E", rayas: ["M310 250 C 316 296, 300 326, 268 338"], contorno: 9 },
+    ],
+    extras: `<path d="M118 190 C 120 168, 134 152, 150 146" stroke="#FFFDF6" stroke-width="12" stroke-linecap="round" fill="none" opacity="0.85"/><path d="M232 232 C 234 214, 246 200, 258 196" stroke="#FFF6E6" stroke-width="10" stroke-linecap="round" fill="none" opacity="0.75"/>`,
+  });
+  // 面包: rebanada de pan de molde (corteza y miga)
+  const MIGA = "M112 318 L 112 196 C 96 186, 98 138, 128 132 C 152 126, 178 136, 205 134 C 232 136, 258 126, 282 132 C 312 138, 314 186, 298 196 L 298 318 Q 205 330 112 318 Z";
+  comida("mianbao", {
+    cuerpo: "M90 332 L 90 192 C 66 180, 70 118, 120 110 C 150 102, 176 114, 205 112 C 234 114, 260 102, 290 110 C 340 118, 344 180, 320 192 L 320 332 Q 205 348 90 332 Z",
+    color: "#D9954A", sombra: "#A8692E", rayas: ["M330 150 C 336 200, 320 260, 318 330"], brillo: [],
+    piezas: [{ d: MIGA, color: "#FCEBC8", sombra: "#EBCB92", rayas: ["M290 200 C 292 250, 290 290, 286 312"] }],
+    extras:
+      [[150, 190], [230, 172], [184, 240], [258, 236], [150, 286], [220, 292], [268, 286]].map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="6" ry="4" fill="#E3C58E"/>`).join("") +
+      `<path d="${MIGA}" fill="none" stroke="#C88A45" stroke-width="3"/>`,
+  });
+  // 米: saco abierto con arroz crudo
+  const GRANOS = [[170, 136, -20], [196, 124, 10], [222, 130, 30], [244, 146, -10], [186, 150, 40], [212, 148, -30], [160, 156, 15], [234, 160, 20], [204, 112, 0]];
+  comida("mi", {
+    cuerpo: "M110 352 C 86 300, 92 214, 132 164 L 278 164 C 318 214, 324 300, 300 352 Q 205 370 110 352 Z",
+    color: "#E8D3A8", sombra: "#BFA06A",
+    rayas: ["M296 210 C 312 260, 308 310, 290 344", "M120 340 C 170 352, 240 352, 290 340"], brillo: ["M132 210 C 120 250, 120 290, 128 320"],
+    trama: ["M150 200 L 160 340", "M205 196 L 205 348", "M260 200 L 250 340"],
+    extras:
+      `<path d="M176 250 L 205 226 L 234 250 L 205 274 Z" fill="${C.rojo}" stroke="${T}" stroke-width="5" stroke-linejoin="round"/>` +
+      `<path d="${elip(205, 164, 84, 24)}" fill="#F3E4C2" stroke="${T}" stroke-width="7"/>` +
+      `<path d="M134 164 Q 148 108 205 102 Q 262 108 276 164 Q 205 182 134 164 Z" fill="#FFFDF6" stroke="${T}" stroke-width="7" stroke-linejoin="round"/>` +
+      GRANOS.map(([x, y, g]) => `<ellipse cx="${x}" cy="${y}" rx="7" ry="3.6" fill="none" stroke="#D9CDB4" stroke-width="2.4" transform="rotate(${g} ${x} ${y})"/>`).join(""),
+  });
+}
+
+/** Interior del refri de frente: estantes de vidrio y abajo el cajón de la fruta rotulado 水果 (único texto: hanzi). */
+function interiorRefri() {
+  const col = { a: "#D3E5C4", i: "#BBD5A8" };
+  const [gF, uF] = degradado("#FBFDF8", "#E3EDDB", true);
+  const out: string[] = [];
+  out.push(`<rect x="0" y="0" width="1000" height="1000" fill="${col.a}"/>`);
+  out.push(`<rect x="14" y="14" width="972" height="972" rx="40" fill="none" ${trazo(8)}/>`);
+  out.push(`<rect x="70" y="56" width="860" height="890" rx="26" fill="${uF}" ${trazo(7)}/>`);
+  // luz de arriba
+  out.push(`<rect x="300" y="70" width="400" height="26" rx="13" fill="#FFFBE6" ${trazo(4)}/>`);
+  // estantes de vidrio sobre sus rieles
+  for (const y of [280, 500, 700]) {
+    out.push(`<rect x="72" y="${y - 6}" width="20" height="34" fill="${col.i}" stroke="none"/><rect x="908" y="${y - 6}" width="20" height="34" fill="${col.i}" stroke="none"/>`);
+    out.push(`<rect x="76" y="${y}" width="848" height="22" rx="6" fill="rgba(206,232,240,0.9)" ${trazo(5)}/>`);
+    out.push(`<path d="M96 ${y + 7} L904 ${y + 7}" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity="0.9"/>`);
+  }
+  // cajón de la fruta: frente transparente, la fruta asoma detrás
+  out.push(`<rect x="110" y="726" width="780" height="200" rx="24" fill="#E7EFE2" ${trazo(6)}/>`);
+  for (const [x, r, c] of [[200, 46, "#D9574A"], [290, 40, "#F0C04A"], [700, 44, "#E2574E"], [790, 38, "#F08A2E"]] as const)
+    out.push(`<circle cx="${x}" cy="${760 + r}" r="${r}" fill="${c}" ${trazo(5)}/>`);
+  out.push(`<rect x="110" y="780" width="780" height="146" rx="24" fill="rgba(206,232,240,0.78)" ${trazo(6)}/>`);
+  out.push(`<path d="M140 800 L 860 800" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" opacity="0.8"/>`);
+  out.push(`<rect x="390" y="812" width="220" height="86" rx="16" fill="${C.crema}" ${trazo(5)}/>`);
+  out.push(`<text x="500" y="857" font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif" font-size="56" font-weight="700" fill="${T}" text-anchor="middle" dominant-baseline="central">水果</text>`);
+  // escarcha en las esquinas
+  for (const [x, y] of [[100, 120], [128, 150], [880, 130], [858, 168], [104, 640], [890, 610]])
+    out.push(`<path d="M${x - 9} ${y} L${x + 9} ${y} M${x} ${y - 9} L${x} ${y + 9} M${x - 6} ${y - 6} L${x + 6} ${y + 6} M${x + 6} ${y - 6} L${x - 6} ${y + 6}" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity="0.9"/>`);
+  archivo("refri_interior", [0, 0, 1000, 1000], 2000, [gF], out.join(""));
 }
 
 cuarto();
@@ -624,4 +1010,14 @@ palillos();
 tetera();
 olla();
 refri();
-provisionales();
+zanahorias();
+taza();
+lampara();
+ventana();
+basurero();
+silla();
+zona();
+telefono();
+gato();
+comidaRefri();
+interiorRefri();

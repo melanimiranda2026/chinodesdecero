@@ -5,6 +5,15 @@ export type ObjetoId =
   | "beizi" | "wan" | "panzi" | "kuaizi" | "pingguo" | "bingxiang" | "guo" | "chahu"
   | "kafeibei" | "deng" | "chuanghu" | "lajitong" | "yizi" | "zhuozi" | "shouji" | "mao";
 
+/** Comida que hay dentro del refri (primer plano del refri). */
+export type ComidaId =
+  | "pingguo" | "xiangjiao" | "xigua" | "caomei" | "huluobo" | "xihongshi" | "tudou"
+  | "xilanhua" | "mogu" | "niunai" | "jidan" | "mianbao" | "mi";
+export const COMIDAS: readonly ComidaId[] = [
+  "pingguo", "xiangjiao", "xigua", "caomei", "huluobo", "xihongshi", "tudou",
+  "xilanhua", "mogu", "niunai", "jidan", "mianbao", "mi",
+];
+
 export type EstadoCocina = Record<ObjetoId, string>;
 
 export const ESTADO_INICIAL: EstadoCocina = {

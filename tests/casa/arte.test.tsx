@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { ARTE, ARTE_PRIMER_PLANO, ARTE_VACA, FONDO_CUARTO } from "@/components/casa/arte/registro";
+import { ARTE, ARTE_PRIMER_PLANO, ARTE_REFRI, ARTE_REFRI_FONDO, ARTE_VACA, FONDO_CUARTO } from "@/components/casa/arte/registro";
 import { Capa, FondoCuarto } from "@/components/casa/arte/Capa";
 import { Vaca } from "@/components/casa/Vaca";
 import { estadosAlcanzables } from "@/components/casa/cocina/acciones";
-import { OBJETOS, type ObjetoId } from "@/components/casa/cocina/datos";
+import { COMIDAS, OBJETOS, VALORES, type ObjetoId } from "@/components/casa/cocina/datos";
 
 const ids = Object.keys(OBJETOS) as ObjetoId[];
 
@@ -34,6 +34,52 @@ describe("registro de arte", () => {
     for (const E of estadosAlcanzables())
       for (const id of ids)
         for (const nombre of ARTE[id].visibles(E[id])) expect(ARTE[id].capas[nombre]).toBeDefined();
+    // los objetos nuevos no están en el producto de estados: se recorren sus VALORES
+    for (const id of ids)
+      for (const e of VALORES[id])
+        for (const nombre of ARTE[id].visibles(e)) expect(ARTE[id].capas[nombre], `${id} ${e} ${nombre}`).toBeDefined();
+  });
+  it("capas de los objetos nuevos", () => {
+    expect(ARTE.kafeibei.visibles("cafe")).toEqual(["taza", "cafe"]);
+    expect(ARTE.kafeibei.visibles("sucio")).toEqual(["taza", "mugre"]);
+    expect(ARTE.deng.visibles("encendida")).toContain("luz");
+    expect(ARTE.deng.visibles("apagada")).not.toContain("luz");
+    expect(ARTE.chuanghu.visibles("abierta")).toContain("abierta");
+    expect(ARTE.chuanghu.visibles("cerrada")).toContain("vidrio");
+    expect(ARTE.chuanghu.capas.pajaro).toBeDefined();
+    expect(Object.keys(ARTE.lajitong.capas)).toEqual(expect.arrayContaining(["tarro", "tapa"]));
+    expect(Object.keys(ARTE.mao.capas)).toEqual(expect.arrayContaining(["cola", "gato"]));
+    expect(ARTE.yizi.capas.silla).toBeDefined();
+    expect(ARTE.shouji.capas.telefono).toBeDefined();
+    expect(ARTE.zhuozi.visibles("fijo")).toEqual(["zona"]);
+  });
+  it("guo cocido y wan lleno llevan zanahoria sobre el arroz", () => {
+    expect(ARTE.guo.visibles("cocido")).toEqual(["olla", "arroz", "zanahoria"]);
+    expect(ARTE.wan.visibles("lleno")).toEqual(["bol", "arroz", "zanahoria"]);
+    expect(ARTE.guo.capas.zanahoria).toBeDefined();
+    expect(ARTE.wan.capas.zanahoria).toBeDefined();
+    expect(ARTE.wan.visibles("vacio")).not.toContain("zanahoria");
+  });
+  it("cada comida del refri tiene su dibujo de frente (cuadrado) y el fondo del refri existe", () => {
+    expect([...COMIDAS].sort()).toEqual(
+      ["pingguo", "xiangjiao", "xigua", "caomei", "huluobo", "xihongshi", "tudou", "xilanhua", "mogu", "niunai", "jidan", "mianbao", "mi"].sort(),
+    );
+    expect(Object.keys(ARTE_REFRI).sort()).toEqual([...COMIDAS].sort());
+    const capas = [...COMIDAS.map((id) => [id, ARTE_REFRI[id]] as const), ["interior", ARTE_REFRI_FONDO] as const];
+    for (const [id, capa] of capas) {
+      expect(capa.tipo, id).toBe("img");
+      if (capa.tipo !== "img") continue;
+      expect(capa.src).toMatch(new RegExp(`^/arte/cocina/refri_${id}\.(svg|png|webp)$`));
+      const ruta = join(process.cwd(), "public", capa.src);
+      expect(existsSync(ruta), capa.src).toBe(true);
+      if (capa.src.endsWith(".svg")) {
+        const m = readFileSync(ruta, "utf8").match(/viewBox="([^"]+)"/)!;
+        const [, , w, h] = m[1].split(" ").map(Number);
+        expect(w, id).toBe(h);
+      }
+    }
+    if (ARTE_REFRI_FONDO.tipo === "img" && ARTE_REFRI_FONDO.src.endsWith(".svg"))
+      expect(readFileSync(join(process.cwd(), "public", ARTE_REFRI_FONDO.src), "utf8")).toContain("水果");
   });
   it("todo objeto con estado sucio tiene la capa mugre", () => {
     const sucios = new Set<ObjetoId>();

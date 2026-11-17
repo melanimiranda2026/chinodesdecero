@@ -2,13 +2,41 @@ import { S, type Silaba } from "@/lib/silabas";
 import { MUEBLES, proyectar, type Punto } from "./iso";
 
 export type ObjetoId =
-  | "beizi" | "wan" | "panzi" | "kuaizi" | "pingguo" | "bingxiang" | "guo" | "chahu";
+  | "beizi" | "wan" | "panzi" | "kuaizi" | "pingguo" | "bingxiang" | "guo" | "chahu"
+  | "kafeibei" | "deng" | "chuanghu" | "lajitong" | "yizi" | "zhuozi" | "shouji" | "mao";
 
 export type EstadoCocina = Record<ObjetoId, string>;
 
 export const ESTADO_INICIAL: EstadoCocina = {
   beizi: "vacio", wan: "vacio", panzi: "lleno", kuaizi: "limpio",
   pingguo: "sucio", bingxiang: "cerrado", guo: "vacio", chahu: "lleno",
+  kafeibei: "vacio", deng: "encendida", chuanghu: "cerrada", lajitong: "cerrado",
+  yizi: "libre", zhuozi: "fijo", shouji: "fijo", mao: "refri",
+};
+
+/** Los 8 de siempre: sus estados se validan juntos (el espacio alcanzable es su producto, 864). */
+export const ACOPLADOS: readonly ObjetoId[] = [
+  "beizi", "wan", "panzi", "kuaizi", "pingguo", "bingxiang", "guo", "chahu",
+];
+
+/** Estados posibles de cada objeto (un test los compara con `estadosAlcanzables()` para los acoplados). */
+export const VALORES: Record<ObjetoId, readonly string[]> = {
+  beizi: ["vacio", "agua", "te", "sucio"],
+  wan: ["vacio", "lleno", "sucio"],
+  panzi: ["lleno", "sucio", "limpio"],
+  kuaizi: ["limpio"],
+  pingguo: ["sucio", "limpio", "cortado", "nada"],
+  bingxiang: ["cerrado", "abierto"],
+  guo: ["vacio", "cocido", "sucio"],
+  chahu: ["lleno"],
+  kafeibei: ["vacio", "cafe", "sucio"],
+  deng: ["encendida", "apagada"],
+  chuanghu: ["cerrada", "abierta"],
+  lajitong: ["cerrado"],
+  yizi: ["libre"],
+  zhuozi: ["fijo"],
+  shouji: ["fijo"],
+  mao: ["refri", "mesa", "lajitong", "chuanghu"],
 };
 
 /**
@@ -17,6 +45,8 @@ export const ESTADO_INICIAL: EstadoCocina = {
  * centro del cuadro de arte sobre el punto de apoyo (en fracción de `w`). x, y salen de ahí.
  */
 const LUGARES: Record<ObjetoId, { en: [number, number, number]; pie: [number, number]; w: number; alzar?: number; fijo?: boolean }> = {
+  // la zona de la mesa va primero: se dibuja debajo de lo que hay sobre ella
+  zhuozi: { en: [7.7, 1.5, MUEBLES.mesa.alto], pie: [7.7, 2.7], w: 300, alzar: 0.05, fijo: true },
   pingguo: { en: [0.9, 4.7, MUEBLES.mesonIzq.alto], pie: [2.6, 4.7], w: 48 },
   guo: { en: [2.8, 0.85, MUEBLES.mesonDer.alto], pie: [2.8, 2.6], w: 84 },
   chahu: { en: [4.6, 0.85, MUEBLES.mesonDer.alto], pie: [4.6, 2.6], w: 64 },
@@ -26,6 +56,15 @@ const LUGARES: Record<ObjetoId, { en: [number, number, number]; pie: [number, nu
   panzi: { en: [7.7, 0.95, MUEBLES.mesa.alto], pie: [7.7, 2.7], w: 72 },
   kuaizi: { en: [9.2, 0.85, MUEBLES.mesa.alto], pie: [9.2, 2.7], w: 60 },
   bingxiang: { en: [0.95, 7.3, 0], pie: [2.7, 7.3], w: 300, alzar: 0.327, fijo: true },
+  // objetos nuevos: a mano, centros a más de ~70 unidades entre sí y cada `pie` en piso libre
+  kafeibei: { en: [0.9, 0.45, MUEBLES.mesonIzq.alto], pie: [2.6, 2.4], w: 48 },
+  // el teléfono, sobre el refri (no hay otro hueco libre en los mesones sin pisar el alcance de la manzana)
+  shouji: { en: [0.9, 6.9, MUEBLES.refri.alto + 0.35], pie: [2.7, 6.9], w: 36 },
+  deng: { en: [6.4, 1.2, 5.0], pie: [6.4, 2.7], w: 56, alzar: 0.4, fijo: true },
+  chuanghu: { en: [8.6, 0, 3.6], pie: [8.6, 2.7], w: 150, alzar: 0.3, fijo: true },
+  lajitong: { en: [9.5, 2.8, 0], pie: [8.5, 3.6], w: 64, fijo: true },
+  yizi: { en: [7.0, 3.0, 0], pie: [7.0, 4.0], w: 70, fijo: true },
+  mao: { en: [1.0, 8.2, MUEBLES.refri.alto], pie: [2.7, 8.2], w: 56, fijo: true },
 };
 
 const NOMBRES: Record<ObjetoId, Silaba[]> = {
@@ -37,6 +76,14 @@ const NOMBRES: Record<ObjetoId, Silaba[]> = {
   bingxiang: S("冰箱", "bīng xiāng", "11"),
   guo: S("锅", "guō", "1"),
   chahu: S("茶壶", "chá hú", "22"),
+  kafeibei: S("咖啡杯", "kā fēi bēi", "111"),
+  deng: S("灯", "dēng", "1"),
+  chuanghu: S("窗户", "chuāng hu", "15"),
+  lajitong: S("垃圾桶", "lā jī tǒng", "113"),
+  yizi: S("椅子", "yǐ zi", "35"),
+  zhuozi: S("桌子", "zhuō zi", "15"),
+  shouji: S("手机", "shǒu jī", "31"),
+  mao: S("猫", "māo", "1"),
 };
 
 const r1 = (n: number) => Math.round(n * 10) / 10;

@@ -59,6 +59,24 @@ export const ARTE: Record<ObjetoId, ArteObjeto> = {
   },
   chahu: { capas: capasDe("chahu", ["tetera"]), visibles: () => ["tetera"] },
   kuaizi: { capas: capasDe("kuaizi", ["palillos"]), visibles: () => ["palillos"] },
+  // objetos nuevos: el dibujo es provisional hasta la Task 2 (mismos nombres de capa)
+  kafeibei: {
+    capas: capasDe("kafeibei", ["taza", "cafe", "mugre"]),
+    visibles: (e) => (e === "cafe" ? ["taza", "cafe"] : e === "sucio" ? ["taza", "mugre"] : ["taza"]),
+  },
+  deng: {
+    capas: capasDe("deng", ["lampara", "luz"]),
+    visibles: (e) => (e === "apagada" ? ["lampara"] : ["lampara", "luz"]),
+  },
+  chuanghu: {
+    capas: capasDe("chuanghu", ["marco", "vidrio", "abierta", "pajaro"]),
+    visibles: (e) => (e === "abierta" ? ["marco", "abierta"] : ["marco", "vidrio"]),
+  },
+  lajitong: { capas: capasDe("lajitong", ["tarro", "tapa"]), visibles: () => ["tarro", "tapa"] },
+  yizi: { capas: capasDe("yizi", ["silla"]), visibles: () => ["silla"] },
+  zhuozi: { capas: capasDe("zhuozi", ["zona"]), visibles: () => ["zona"] },
+  shouji: { capas: capasDe("shouji", ["telefono"]), visibles: () => ["telefono"] },
+  mao: { capas: capasDe("mao", ["cola", "gato"]), visibles: () => ["cola", "gato"] },
 };
 
 /** Piezas de los minijuegos (mismo encuadre que los objetos). */

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cargarAvance, guardarAvance, CLAVE_AVANCE, validarAvance, avanceInicial } from "@/components/casa/avance";
 import { registrar, enviarEventos, reiniciarEventos } from "@/components/casa/eventos";
-import { ESTADO_INICIAL } from "@/components/casa/cocina/datos";
+import { ESTADO_INICIAL, ACOPLADOS, VALORES, type ObjetoId } from "@/components/casa/cocina/datos";
 
 beforeEach(() => {
   localStorage.clear();
@@ -67,6 +67,31 @@ describe("eventos", () => {
 
 import { estadoValido } from "@/components/casa/avance";
 import { estadosAlcanzables } from "@/components/casa/cocina/acciones";
+
+describe("estadoValido: objetos nuevos", () => {
+  it("un avance de antes (8 llaves) conserva esos 8 y los nuevos toman el inicial", () => {
+    const viejo = { beizi: "agua", wan: "vacio", panzi: "lleno", kuaizi: "limpio", pingguo: "limpio", bingxiang: "cerrado", guo: "vacio", chahu: "lleno" };
+    expect(estadoValido(viejo)).toEqual({ ...ESTADO_INICIAL, beizi: "agua", pingguo: "limpio" });
+  });
+  it("un valor desconocido en un objeto nuevo vuelve a su inicial sin tocar el resto", () => {
+    const e = { ...ESTADO_INICIAL, beizi: "agua", deng: "rota" };
+    expect(estadoValido(e)).toEqual({ ...ESTADO_INICIAL, beizi: "agua" });
+  });
+  it("los 8 de siempre se validan juntos: un valor imposible los devuelve al inicial y el nuevo se conserva", () => {
+    const e = { ...ESTADO_INICIAL, beizi: "agua", pingguo: "xyz", deng: "apagada", mao: "mesa" };
+    expect(estadoValido(e)).toEqual({ ...ESTADO_INICIAL, deng: "apagada", mao: "mesa" });
+  });
+  it("llaves desconocidas se descartan", () => {
+    expect(estadoValido({ ...ESTADO_INICIAL, fantasma: "x" })).toEqual(ESTADO_INICIAL);
+  });
+  it("VALORES: el inicial siempre es un valor posible y los acoplados coinciden con lo alcanzable", () => {
+    for (const id of Object.keys(ESTADO_INICIAL) as ObjetoId[]) expect(VALORES[id]).toContain(ESTADO_INICIAL[id]);
+    for (const id of ACOPLADOS) {
+      const vistos = [...new Set(estadosAlcanzables().map((e) => e[id]))].sort();
+      expect([...VALORES[id]].sort()).toEqual(vistos);
+    }
+  });
+});
 
 describe("estadoValido: valores y combinaciones", () => {
   it("acepta un estado alcanzable", () => {

@@ -108,3 +108,12 @@ test("toda acción tiene frase que empieza con 我 y verbo sin español", () => 
   }
   expect(total).toBeGreaterThan(0);
 });
+
+test("estadosAlcanzables no crece con los objetos nuevos", () => {
+  expect(estadosAlcanzables().length).toBe(864);
+});
+
+test("los objetos nuevos todavía no ofrecen acciones", () => {
+  for (const id of ["kafeibei", "deng", "chuanghu", "lajitong", "yizi", "zhuozi", "shouji", "mao"] as ObjetoId[])
+    expect(acciones(id, ESTADO_INICIAL)).toEqual([]);
+});

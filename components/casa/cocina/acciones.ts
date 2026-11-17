@@ -1,5 +1,5 @@
 import { S, type Silaba } from "@/lib/silabas";
-import { ESTADO_INICIAL, type EstadoCocina, type ObjetoId } from "./datos";
+import { ACOPLADOS, ESTADO_INICIAL, type EstadoCocina, type ObjetoId } from "./datos";
 
 export type Anim =
   | "llenar" | "servirTe" | "beber" | "tomar" | "comer" | "lavar"
@@ -98,10 +98,10 @@ export function aplicar(e: EstadoCocina, a: Accion): EstadoCocina {
   return { ...e, ...a.cambia };
 }
 
-const OBJETO_IDS = Object.keys(ESTADO_INICIAL) as ObjetoId[];
+const OBJETO_IDS = ACOPLADOS;
 const clave = (e: EstadoCocina) => OBJETO_IDS.map((k) => e[k]).join("|");
 
-/** BFS desde ESTADO_INICIAL aplicando toda acción de todo objeto; sin repetidos. */
+/** BFS desde ESTADO_INICIAL aplicando toda acción de los 8 acoplados (los nuevos quedan en su inicial); sin repetidos. */
 export function estadosAlcanzables(): EstadoCocina[] {
   const vistos = new Map<string, EstadoCocina>([[clave(ESTADO_INICIAL), ESTADO_INICIAL]]);
   const cola: EstadoCocina[] = [ESTADO_INICIAL];

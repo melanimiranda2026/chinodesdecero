@@ -601,6 +601,20 @@ function refri() {
   console.log(`  bisagra de la puerta del refri: ${(((bisagra - vb[0]) / vb[2]) * 100).toFixed(1)}% del ancho del cuadro`);
 }
 
+/** DIBUJO PROVISIONAL de los objetos nuevos (una forma con el contorno café por capa); la Task 2 lo reemplaza. */
+function provisionales() {
+  const caja = (c: string, w = 14, h = 20) => `<rect x="${-w}" y="${-h}" width="${w * 2}" height="${h}" rx="3" fill="${c}" ${trazo(1.6)}/>`;
+  const elipse = (c: string, ry = 8) => `<ellipse cx="0" cy="${-ry}" rx="14" ry="${ry}" fill="${c}" ${trazo(1.6)}/>`;
+  capas("kafeibei", { taza: { cuerpo: caja("#F4F0E8", 10, 14) }, cafe: { cuerpo: `<ellipse cx="0" cy="-13" rx="8" ry="3" fill="#6B4226"/>` }, mugre: { cuerpo: `<ellipse cx="0" cy="-4" rx="6" ry="2" fill="#9C7A4E"/>` } });
+  capas("deng", { lampara: { cuerpo: caja("#E8C796", 12, 14) }, luz: { cuerpo: `<ellipse cx="0" cy="-8" rx="20" ry="14" fill="rgba(255,236,150,0.45)" stroke="none"/>` } });
+  capas("chuanghu", { marco: { cuerpo: caja("#D9AE73", 40, 60) }, vidrio: { cuerpo: caja("rgba(190,225,240,0.7)", 34, 54) }, abierta: { cuerpo: caja("rgba(120,160,190,0.5)", 34, 54) }, pajaro: { cuerpo: elipse("#6FA8DC", 6) } });
+  capas("lajitong", { tarro: { cuerpo: caja("#9AA5A8", 16, 28) }, tapa: { cuerpo: `<ellipse cx="0" cy="-28" rx="18" ry="5" fill="#7D888B" ${trazo(1.6)}/>` } });
+  capas("yizi", { silla: { cuerpo: caja("#C49660", 16, 30) } });
+  capas("zhuozi", { zona: { cuerpo: `<ellipse cx="0" cy="0" rx="1" ry="1" fill="none" stroke="none"/>` } });
+  capas("shouji", { telefono: { cuerpo: caja("#33443E", 6, 12) } });
+  capas("mao", { cola: { cuerpo: elipse("#E5A93A", 5) }, gato: { cuerpo: elipse("#F28C5A", 12) } });
+}
+
 cuarto();
 manzana();
 vaso();
@@ -610,3 +624,4 @@ palillos();
 tetera();
 olla();
 refri();
+provisionales();

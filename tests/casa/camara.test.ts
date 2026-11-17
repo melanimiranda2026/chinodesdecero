@@ -1,6 +1,6 @@
 import { enfocar, transformCSS, enPantalla, puntoJunto, limitarVaca, objetoBajo, ubicarOpciones, encuadreInicial, encuadrar, centroBase, X_VERTICAL, ZOOM_VERTICAL, apuntar } from "@/components/casa/camara";
-import { PISO_LIBRE, proyectar } from "@/components/casa/cocina/iso";
-import { ESTADO_INICIAL, FREGADERO, OBJETOS } from "@/components/casa/cocina/datos";
+import { PISO_LIBRE, alPiso, proyectar } from "@/components/casa/cocina/iso";
+import { ESTADO_INICIAL, FREGADERO, OBJETOS, type ObjetoId } from "@/components/casa/cocina/datos";
 
 describe("camara", () => {
   it("enfocar limita el centro al cuarto", () => {
@@ -131,5 +131,43 @@ describe("camara", () => {
     const v = encuadrar(apuntar(100, 405, 1.9), 360, 740); // enfoque en el refri mismo
     expect(v.x).toBeCloseTo(500 / v.s);
     expect(enPantalla(v, 0, 0, 740 / 360).x).toBeCloseTo(0);
+  });
+});
+
+/** Review Focus: a 360 × 640 en vertical el cuarto mide 640 px de ancho, y 44 px son ~69 unidades. */
+describe("los objetos nuevos en la cocina (360 × 640)", () => {
+  const ZONA = 69;
+  const NUEVOS: ObjetoId[] = ["kafeibei", "deng", "chuanghu", "lajitong", "yizi", "shouji", "mao"];
+  const TODOS = Object.keys(OBJETOS) as ObjetoId[];
+  const VACA_INICIAL = { x: 434, y: 613 };
+
+  it("sus zonas de toque no pisan las de ningún otro objeto (salvo la zona de la mesa, que está debajo)", () => {
+    for (const a of NUEVOS) {
+      for (const b of TODOS) {
+        if (a === b || OBJETOS[b].zona) continue;
+        const d = Math.hypot(OBJETOS[a].x - OBJETOS[b].x, OBJETOS[a].y - OBJETOS[b].y);
+        expect(d, `${a} / ${b}`).toBeGreaterThanOrEqual(ZONA);
+      }
+    }
+  });
+
+  it("su pie está en el piso libre y la vaca llevada encima alcanza cada uno", () => {
+    for (const id of NUEVOS) {
+      const { u, v } = alPiso(OBJETOS[id].pie.x, OBJETOS[id].pie.y);
+      expect(u, id).toBeGreaterThanOrEqual(PISO_LIBRE.min - 1e-9);
+      expect(u, id).toBeLessThanOrEqual(PISO_LIBRE.max + 1e-9);
+      expect(v, id).toBeGreaterThanOrEqual(PISO_LIBRE.min - 1e-9);
+      expect(v, id).toBeLessThanOrEqual(PISO_LIBRE.max + 1e-9);
+      if (id === "mao") continue; // el gato se encuentra tocándolo, no llevándole la vaca
+      expect(objetoBajo({ x: OBJETOS[id].x, y: OBJETOS[id].y + 90 }, ESTADO_INICIAL), id).toBe(id);
+    }
+  });
+
+  it("nada nuevo tapa la vaca en su posición inicial", () => {
+    for (const id of NUEVOS) {
+      const o = OBJETOS[id];
+      const tapa = Math.abs(o.x - VACA_INICIAL.x) < 85 + o.w / 2 && o.y > VACA_INICIAL.y - 156 && o.y < VACA_INICIAL.y + 14;
+      expect(tapa, id).toBe(false);
+    }
   });
 });

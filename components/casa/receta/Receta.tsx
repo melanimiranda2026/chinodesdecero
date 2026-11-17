@@ -111,9 +111,9 @@ export function Receta({
   const voz = (s: Silaba[]) => {
     const sesion = sesionRef.current;
     if (!sesion.vivo) return Promise.resolve();
-    return decir(s, { alBoca: (a) => sesion.vivo && setHocico(bocaDe(a)), juego: "cocina" }).then(() => {
-      if (sesion.vivo) setHocico("sonrisa");
-    });
+    return decir(s, { alBoca: (a) => sesion.vivo && setHocico(bocaDe(a)), juego: "cocina" }).finally(() => {
+      if (sesion.vivo) setHocico("sonrisa"); // también si decir rechaza: la boca no queda abierta
+    }).then(() => {});
   };
 
   // ---- entrada: iris, música de revolver y 我做饭; al salir vuelve la música de la cocina ----

@@ -11,7 +11,7 @@ vi.mock("@/components/casa/audio/sonido", () => ({
   musica: { tocar: vi.fn(), parar: vi.fn(), bajar: vi.fn() },
 }));
 
-import { decir } from "@/components/casa/audio/voz";
+import { callar, decir } from "@/components/casa/audio/voz";
 import { sfx } from "@/components/casa/audio/sonido";
 import { CasaVista } from "@/components/casa/Casa";
 import { useCasa, type CasaApi } from "@/components/casa/useCasa";
@@ -26,7 +26,7 @@ const dichos = () => decirMock.mock.calls.map((c) => textoHanzi(c[0]));
 /** Todo mide 100 x 100 px desde (0, 0): clientX 50 = u 0,5 en la olla. */
 const en = (u: number, v: number) => ({ clientX: u * 100, clientY: v * 100, pointerId: 1 });
 
-function montar() {
+function montar(inicial = ESTADO_INICIAL) {
   let api!: CasaApi;
   const alEvento = vi.fn();
   function Prueba({ activo = true }: { activo?: boolean }) {
@@ -34,7 +34,7 @@ function montar() {
     return <CasaVista casa={api} activo={activo} />;
   }
   const r = render(<Prueba />);
-  act(() => api.restaurar(ESTADO_INICIAL));
+  act(() => api.restaurar(inicial));
   return { ...r, api: () => api, alEvento, Prueba };
 }
 
@@ -77,6 +77,15 @@ afterEach(() => {
 });
 
 describe("La receta (做饭)", () => {
+  it("con la lámpara apagada la receta va a luz normal (no queda bajo la capa oscura)", async () => {
+    const { api } = montar({ ...ESTADO_INICIAL, deng: "apagada" });
+    const receta = await abrirReceta(api);
+    const oscuro = document.querySelector("div[class*=oscuro]");
+    expect(oscuro).toBeTruthy();
+    expect(oscuro!.parentElement!.contains(receta)).toBe(false);
+    expect(receta.closest("[class*=mundo]")).toBeNull();
+  });
+
   it("做饭 abre la receta (no el primer plano de girar) con 米 + 水 + 胡萝卜 y sin español", async () => {
     const { api } = montar();
     const receta = await abrirReceta(api);
@@ -191,6 +200,20 @@ describe("La receta (做饭)", () => {
     await avanzar(1000);
     expect(screen.queryByTestId("receta")).toBeNull();
     expect(api().estado.guo).toBe("vacio");
+    expect(api().ocupado).toBe(false);
+  });
+
+  it("pestaña oculta a mitad de una frase de la receta: la vaca se calla y la casa queda libre", async () => {
+    const { api, rerender, Prueba } = montar();
+    const receta = await abrirReceta(api);
+    decirMock.mockImplementation(() => new Promise(() => {})); // la frase nunca termina
+    fireEvent.click(within(receta).getByRole("button", { name: "米" }));
+    await avanzar(500);
+    vi.mocked(callar).mockClear();
+    rerender(<Prueba activo={false} />);
+    await avanzar(1000);
+    expect(callar).toHaveBeenCalled();
+    expect(screen.queryByTestId("receta")).toBeNull();
     expect(api().ocupado).toBe(false);
   });
 });

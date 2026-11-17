@@ -236,6 +236,21 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
     setHocico("sonrisa");
   }, []);
 
+  /**
+   * El refri por dentro (después de 打开 o al llegar a un refri ya abierto): espera lo que se elija ahí.
+   * Devuelve la acción de siempre a correr luego, con la casa libre (拿…, 关上), o null (✕ o pestaña oculta).
+   */
+  const verRefri = useCallback(async (): Promise<Accion | null> => {
+    const s = await esperarRefri();
+    if (s !== null && s !== "salir") return s;
+    callarVaca(); // ✕ o pestaña oculta: el nombre de la comida en curso se corta
+    if (s === null) {
+      const cerrar = acciones("bingxiang", estadoRef.current).find((x) => x.anim === "cerrar");
+      if (cerrar) aplicarAccion(cerrar); // ✕: la puerta se cierra sin fanfarria
+    }
+    return null;
+  }, [esperarRefri, callarVaca, estadoRef, aplicarAccion]);
+
   // ---- el gato: sale entero con brillos y a los 3 s se va al siguiente escondite ----
   const mostrarGato = useCallback(() => {
     if (gatoVistoRef.current) return;
@@ -288,6 +303,8 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
       if (ocupadoRef.current) return;
       cerrarOpciones();
       setOcupado(true);
+      /** El refri ya abierto: se ve por dentro; lo elegido ahí corre después, con la casa libre. */
+      let luegoRefri: Accion | null = null;
       try {
         eventoRef.current?.("abrir_acciones", { id });
         const o = OBJETOS[id];
@@ -297,6 +314,10 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
         await espera(400);
         mirar("sorpresa", 700);
         await hablar([...ZHE_SHI, ...o.nombre]);
+        if (id === "bingxiang" && estadoRef.current.bingxiang === "abierto") {
+          luegoRefri = await verRefri();
+          return;
+        }
         const lista = acciones(id, estadoRef.current, horaRef.current());
         if (!lista.length) {
           mirar("izquierda", 900);
@@ -305,9 +326,10 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
         mostrarOpciones(id, lista);
       } finally {
         setOcupado(false);
+        if (luegoRefri) await elegirRef.current(id, luegoRefri);
       }
     },
-    [ocupadoRef, estadoRef, cerrarOpciones, setOcupado, setVaca, setCamara, espera, mirar, hablar, mostrarOpciones],
+    [ocupadoRef, estadoRef, cerrarOpciones, setOcupado, setVaca, setCamara, espera, mirar, hablar, mostrarOpciones, verRefri],
   );
 
   const saludar = useCallback(() => {
@@ -403,14 +425,7 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
 
         if (id === "bingxiang" && a.anim === "abrir") {
           // el refri por dentro: la casa espera lo que se elija ahí
-          const s = await esperarRefri();
-          if (s === "salir") return callarVaca(); // pestaña oculta: nada más
-          if (s === null) {
-            const cerrar = acciones("bingxiang", estadoRef.current).find((x) => x.anim === "cerrar");
-            if (cerrar) aplicarAccion(cerrar); // ✕: la puerta se cierra sin fanfarria
-            return;
-          }
-          luegoRefri = s;
+          luegoRefri = await verRefri();
           return;
         }
 
@@ -436,7 +451,7 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
     },
     [ocupadoRef, estadoRef, vacaRef, cerrarOpciones, setOcupado, setVaca, setCamara, llevarA, espera, luego,
       aplicarAccion, volverASuLugar, festejo, hablar, particula, miga, brillos, rafaga, clase, mostrarOpciones,
-      mostrarGato, esperarRefri, callarVaca],
+      mostrarGato, verRefri],
   );
   useEffect(() => {
     elegirRef.current = elegir;

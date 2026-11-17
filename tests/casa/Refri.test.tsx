@@ -138,6 +138,61 @@ describe("Refri en primer plano", () => {
     expect(callar).toHaveBeenCalled();
   });
 
+  it("llegar al refri ya abierto (avance guardado) lo muestra por dentro, sin globos de opciones", async () => {
+    const { api } = montar({ ...ESTADO_INICIAL, bingxiang: "abierto" });
+    act(() => { void api().soltarObjetoEnVaca("bingxiang"); });
+    await avanzar(3000);
+    const refri = screen.getByTestId("refri");
+    expect(api().opciones).toBeNull();
+    expect(api().ocupado).toBe(true);
+    expect(dichos()).toContain("这是冰箱");
+    fireEvent.click(within(refri).getByRole("button", { name: "关上" }));
+    await avanzar(6000);
+    expect(screen.queryByTestId("refri")).toBeNull();
+    expect(api().estado.bingxiang).toBe("cerrado");
+    expect(api().ocupado).toBe(false);
+  });
+
+  it("después de 拿 (refri abierto), volver a llegar al refri lo muestra por dentro otra vez", async () => {
+    const { api } = montar({ ...ESTADO_INICIAL, pingguo: "nada" });
+    const r1 = await abrirRefri(api);
+    fireEvent.click(within(r1).getByRole("button", { name: "拿苹果" }));
+    await avanzar(8000);
+    expect(api().estado.bingxiang).toBe("abierto");
+    expect(api().ocupado).toBe(false);
+    act(() => { void api().soltarObjetoEnVaca("bingxiang"); });
+    await avanzar(3000);
+    expect(screen.getByTestId("refri")).toBeTruthy();
+    expect(api().opciones).toBeNull();
+  });
+
+  it("✕ calla a la vaca aunque esté diciendo el nombre de una comida", async () => {
+    const { api } = montar();
+    const refri = await abrirRefri(api);
+    decirMock.mockImplementation(() => new Promise(() => {})); // el nombre nunca termina
+    fireEvent.click(within(refri).getByRole("button", { name: "香蕉" }));
+    await avanzar(500);
+    expect(dichos()).toContain("香蕉");
+    vi.mocked(callar).mockClear();
+    fireEvent.click(within(refri).getByRole("button", { name: "关" }));
+    await avanzar(100);
+    expect(callar).toHaveBeenCalled();
+    expect(api().globo).toBeNull();
+    expect(screen.queryByTestId("refri")).toBeNull();
+    expect(api().ocupado).toBe(false);
+  });
+
+  it("con la lámpara apagada el refri por dentro va a luz normal (no queda bajo la capa oscura)", async () => {
+    const { api } = montar({ ...ESTADO_INICIAL, deng: "apagada" });
+    const refri = await abrirRefri(api);
+    const oscuro = document.querySelector("div[class*=oscuro]");
+    expect(oscuro).toBeTruthy();
+    // la capa oscura vive dentro del cuarto (.mundo); el primer plano, fuera
+    expect(oscuro!.parentElement!.contains(refri)).toBe(false);
+    expect(refri.closest("[class*=mundo]")).toBeNull();
+    expect(oscuro!.contains(refri)).toBe(false);
+  });
+
   it("sin español visible: fuera del pinyin, solo hanzi y emoji", async () => {
     const { api } = montar({ ...ESTADO_INICIAL, pingguo: "nada", panzi: "limpio" });
     const refri = await abrirRefri(api);

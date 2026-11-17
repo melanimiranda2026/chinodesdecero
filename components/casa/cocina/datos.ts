@@ -85,7 +85,7 @@ const LUGARES: Record<ObjetoId, { en: [number, number, number]; pie: [number, nu
   // objetos nuevos: a mano, centros a más de ~70 unidades entre sí y cada `pie` en piso libre
   kafeibei: { en: [0.9, 0.45, MUEBLES.mesonIzq.alto], pie: [2.6, 2.4], w: 48 },
   // el teléfono, sobre el refri (no hay otro hueco libre en los mesones sin pisar el alcance de la manzana)
-  shouji: { en: [0.9, 6.9, MUEBLES.refri.alto + 0.35], pie: [2.7, 6.9], w: 36 },
+  shouji: { en: [0.9, 6.75, MUEBLES.refri.alto + 0.35], pie: [2.7, 6.75], w: 36 },
   deng: { en: [6.4, 1.2, 5.0], pie: [6.4, 2.7], w: 56, alzar: 0.4, fijo: true },
   chuanghu: { en: [8.6, 0, 3.6], pie: [8.6, 2.7], w: 150, alzar: 0.3, fijo: true },
   lajitong: { en: [9.5, 2.8, 0], pie: [8.5, 3.6], w: 64, fijo: true },

@@ -991,8 +991,8 @@ function interiorRefri() {
   const col = { a: "#D3E5C4", i: "#BBD5A8" };
   const [gF, uF] = degradado("#FBFDF8", "#E3EDDB", true);
   const out: string[] = [];
-  out.push(`<rect x="0" y="0" width="1000" height="1000" fill="${col.a}"/>`);
-  out.push(`<rect x="14" y="14" width="972" height="972" rx="40" fill="none" ${trazo(8)}/>`);
+  // el cuerpo con sus esquinas redondas (sin cuadro de fondo: si no, las esquinas asoman detrás)
+  out.push(`<rect x="14" y="14" width="972" height="972" rx="40" fill="${col.a}" ${trazo(8)}/>`);
   out.push(`<rect x="70" y="56" width="860" height="890" rx="26" fill="${uF}" ${trazo(7)}/>`);
   // luz de arriba
   out.push(`<rect x="300" y="70" width="400" height="26" rx="13" fill="#FFFBE6" ${trazo(4)}/>`);

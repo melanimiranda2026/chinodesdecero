@@ -69,7 +69,7 @@ describe("registro de arte", () => {
     for (const [id, capa] of capas) {
       expect(capa.tipo, id).toBe("img");
       if (capa.tipo !== "img") continue;
-      expect(capa.src).toMatch(new RegExp(`^/arte/cocina/refri_${id}\.(svg|png|webp)$`));
+      expect(capa.src).toMatch(new RegExp(`^/arte/cocina/refri_${id}\\.(svg|png|webp)$`));
       const ruta = join(process.cwd(), "public", capa.src);
       expect(existsSync(ruta), capa.src).toBe(true);
       if (capa.src.endsWith(".svg")) {

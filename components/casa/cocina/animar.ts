@@ -186,10 +186,9 @@ export async function animar(a: Accion, objId: ObjetoId, s: Escena): Promise<voi
       s.ojos("abiertos");
       break;
     case "abrirVentana":
-      // entra un pájaro volando, da una vuelta y se posa en el marco (la animación CSS dura ~4.5 s)
+      // entra un pájaro volando, da una vuelta y se queda posado en el marco hasta que se cierre la ventana
       s.aplicar();
       s.clase("chuanghu", "pajaro", true);
-      s.luego(() => s.clase("chuanghu", "pajaro", false), 4500);
       s.ojos("sorpresa");
       await espera(1200);
       s.ojos("felices");

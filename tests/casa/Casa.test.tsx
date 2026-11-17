@@ -396,6 +396,37 @@ describe("Casa: objetos nuevos", () => {
     expect(document.querySelector("[data-oscura]")).toBeNull();
   });
 
+  it("durante el 玩 la cocina no está oscura aunque la lámpara esté apagada", async () => {
+    const { api } = montar();
+    act(() => api().restaurar({ ...ESTADO_INICIAL, deng: "apagada" }));
+    expect(document.querySelector("[data-oscura]")).toBeTruthy();
+    expect(document.querySelector("div[class*=oscuro]")).toBeTruthy();
+    act(() => api().empezarQuiz());
+    await avanzar(800);
+    expect(api().quiz).not.toBeNull();
+    expect(document.querySelector("[data-oscura]")).toBeNull();
+    expect(document.querySelector("div[class*=oscuro]")).toBeNull();
+  });
+
+  it("el pájaro se queda posado mientras la ventana está abierta y vuelve a entrar al reabrirla", async () => {
+    const { api } = montar();
+    const pajaro = () => document.querySelector("[data-objeto='chuanghu'] [data-capa='pajaro']");
+    act(() => { void api().elegir("chuanghu", acciones("chuanghu", api().estado)[0]); });
+    await avanzar(10000);
+    expect(api().estado.chuanghu).toBe("abierta");
+    expect(pajaro()).toBeTruthy();
+    act(() => { void api().elegir("chuanghu", acciones("chuanghu", api().estado)[0]); });
+    await avanzar(4000);
+    expect(api().estado.chuanghu).toBe("cerrada");
+    expect(pajaro()).toBeNull();
+    act(() => { void api().elegir("chuanghu", acciones("chuanghu", api().estado)[0]); });
+    await avanzar(1500);
+    const nuevo = pajaro();
+    expect(nuevo).toBeTruthy();
+    await avanzar(8000);
+    expect(pajaro()).toBe(nuevo); // ningún temporizador viejo lo saca
+  });
+
   it("tocar la cola del gato (en el refri): 猫, encontrar_gato y a los 3 s se va a la mesa", async () => {
     const eventos: string[] = [];
     const { api } = montar((n) => { eventos.push(n); });

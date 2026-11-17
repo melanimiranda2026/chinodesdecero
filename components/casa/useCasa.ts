@@ -330,6 +330,8 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
       if (ocupadoRef.current) return;
       cerrarOpciones();
       setOcupado(true);
+      /** Lo que la vaca tiene en la mano hasta el final (el teléfono, hasta el 喂). */
+      let enMano: ObjetoId | null = null;
       try {
         const objId = a.objeto ?? id; // a veces la acción mueve otro objeto (盛饭 llena el 碗)
         const donde: ObjetoId | "fregadero" =
@@ -374,12 +376,13 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
             gatoSale: () => { if (estadoRef.current.mao === "lajitong") mostrarGato(); },
           });
           // el teléfono se queda en la mano hasta el 喂
-          const sostiene = a.anim === "llamar";
-          if (a.anim !== "sacar" && !sostiene) volverASuLugar(objId);
+          if (a.anim === "llamar") enMano = objId;
+          else if (a.anim !== "sacar") volverASuLugar(objId);
           await voz;
           const extra = fraseDespues(a, objId, antes); // siempre después de la frase de la acción
           if (extra) await hablar(extra);
-          if (sostiene) volverASuLugar(objId);
+          if (enMano) volverASuLugar(enMano);
+          enMano = null;
           festejo(900);
         }
 
@@ -396,6 +399,7 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
       } finally {
         resolverPP.current = null;
         setPrimerPlano(null);
+        if (enMano) volverASuLugar(enMano); // también si algo lanzó antes del 喂
         setSentada(false);
         setOcupado(false);
       }

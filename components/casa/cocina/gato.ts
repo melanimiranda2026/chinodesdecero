@@ -30,10 +30,10 @@ const punto = (u: number, v: number, h: number) => {
 /** Centro del cuadro del gato en cada escondite (unidades del cuarto). En el basurero: donde cae al saltar afuera. */
 export const LUGAR_GATO: Record<Escondite, { x: number; y: number }> = {
   refri: { x: OBJETOS.mao.x, y: OBJETOS.mao.y },
-  // en el piso, entre las patas de la mesa
-  mesa: punto(7.0, 1.4, 0),
-  // al lado del basurero, en piso libre
-  lajitong: punto(9.0, 3.9, 0),
+  // en el piso, bajo la punta derecha de la mesa: fuera de la vaca parada junto al 碗, el 盘子 o los 筷子
+  mesa: punto(9.8, 0.9, 0),
+  // delante del basurero, a los pies de la vaca parada en su `pie` (8.5, 3.6) y sin pisar su zona de toque
+  lajitong: punto(9.6, 4.6, 0),
   // sentado en el alféizar (donde se posa el pájaro)
   chuanghu: punto(8.3, 0.1, 3.6),
 };

@@ -130,15 +130,15 @@
 .tapa { transition: transform 0.35s ease; transform-origin: 30% 40%; }
 .tapaAbierta { transform: translateY(-14%) rotate(-14deg); }
 
-/* capa "pajaro" de la ventana: entra volando desde arriba a la derecha, da una vuelta y se posa en el marco */
-.pajaro { animation: pajaro 4.5s ease-in-out forwards; }
+/* capa "pajaro" de la ventana: entra volando desde arriba a la derecha, da una vuelta y se queda posado en el
+   marco mientras la ventana siga abierta (al cerrarla se va; al volver a abrirla la capa se monta de nuevo) */
+.pajaro { animation: pajaro 2.2s ease-in-out both; }
 @keyframes pajaro {
   0% { transform: translate(120%, -90%) scale(0.7); opacity: 0; }
-  10% { opacity: 1; }
-  30% { transform: translate(-25%, -45%) scale(0.9); }
-  45% { transform: translate(10%, -60%) scale(1) rotate(-10deg); }
-  60%, 88% { transform: translate(0, 0) scale(1); opacity: 1; }
-  100% { transform: translate(0, 0) scale(1); opacity: 0; }
+  20% { opacity: 1; }
+  55% { transform: translate(-25%, -45%) scale(0.9); }
+  80% { transform: translate(10%, -60%) scale(1) rotate(-10deg); }
+  100% { transform: translate(0, 0) scale(1); opacity: 1; }
 }
 
 /* el gato encontrado salta afuera */
@@ -163,6 +163,7 @@
 /* ---------- partículas (unidades del cuarto → %) ---------- */
 .brillo {
   position: absolute;
+  z-index: 41; /* encima de la cocina oscura */
   pointer-events: none;
   color: #ffe36b;
   font-size: clamp(10px, 2cqmin, 18px);

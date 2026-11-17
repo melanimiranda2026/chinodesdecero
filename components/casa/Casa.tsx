@@ -273,7 +273,6 @@ export function CasaVista({
   formulario?: ReactNode;
 }) {
   const { estado, camara, vaca, cara, globo, opciones, ocupado, posiciones, clases, particulas, gatoVisto } = casa;
-  const oscura = estado.deng === "apagada";
   const mundoRef = useRef<HTMLDivElement>(null);
   const ini = useRef<Inicio | null>(null);
   const sinClick = useRef(false);
@@ -329,6 +328,8 @@ export function CasaVista({
   const piso = useRef<{ cx: number; cy: number; x0: number; y0: number; movio: boolean } | null>(null);
   const [paneando, setPaneando] = useState(false);
   const quiz = casa.quiz;
+  // lámpara apagada: el cuarto se oscurece, salvo durante el 玩 (se juega a luz normal)
+  const oscura = estado.deng === "apagada" && !quiz;
   const entrar = () => {
     if (!entrada) return;
     registrar("entrar");
@@ -553,7 +554,7 @@ export function CasaVista({
                   <DibujoObjeto
                     id={id}
                     estado={gato && gatoVisto ? "visto" : estado[id]}
-                    extras={id === "chuanghu" && extra.includes("pajaro") ? ["pajaro"] : undefined}
+                    extras={id === "chuanghu" && estado.chuanghu === "abierta" && extra.includes("pajaro") ? ["pajaro"] : undefined}
                     claseCapa={claseCapa(id, estado, extra)}
                   />
                 </div>

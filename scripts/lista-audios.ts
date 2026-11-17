@@ -7,9 +7,17 @@ import { TEMAS } from "../components/puzzle/datos";
 const raiz = process.cwd();
 const pinyin = (s: Silaba[]) => s.map(([, p]) => p).join(" ");
 
+/** Tomas de la cocina que un nativo debe escuchar (eleven_v3, Yating, 16 nov. 2026). */
+const REVISAR_COCINA: Record<string, string> = {
+  wo3_na2_zhe5_wan3: "nueva: 碗 tiene que bajar y subir (3.er tono)",
+  wo3_na2_zhe5_pan2_zi5: "nueva: 盘 tiene que subir",
+  wo3_na2_zhe5_kuai4_zi5: "nueva",
+};
 const filas = frasesUsadas().map((f) => {
-  const archivo = `public/audio/cocina/${idAudio(f)}.mp3`;
-  return { archivo, hanzi: textoHanzi(f), pinyin: pinyin(f), existe: existsSync(join(raiz, archivo)) };
+  const id = idAudio(f);
+  const archivo = `public/audio/cocina/${id}.mp3`;
+  const nota = REVISAR_COCINA[id] ? ` (? nativo: ${REVISAR_COCINA[id]})` : "";
+  return { archivo, hanzi: textoHanzi(f), pinyin: pinyin(f) + nota, existe: existsSync(join(raiz, archivo)) };
 });
 
 // El puzzle: audios copiados del banco del proyecto padre (nombres del banco, no idAudio).

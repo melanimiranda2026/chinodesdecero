@@ -71,47 +71,15 @@ export function Portada() {
     };
   }, [grande]);
 
-  const jugar = () => {
-    // si estaba el puzzle, primero vuelve a la cocina (callar incluido)
-    if (juego !== "cocina") {
-      cambiar("cocina");
-      recordarJuego("cocina");
-    }
-    // todo dentro del clic: desbloquear el audio de iOS, música de la cocina y el saludo
-    casa.current?.entrar();
-    ventana.current?.scrollIntoView?.({ behavior: "smooth", block: "nearest" });
-  };
-
   return (
     <section className={styles.hero} aria-labelledby="hero-titulo">
       <div className={styles.texto}>
-        <p className={styles.marca}>{PORTADA.marca}</p>
         <h1 id="hero-titulo" className={styles.h1}>
           {PORTADA.h1}
         </h1>
         <p className={styles.subtitulo} data-testid="subtitulo">
           {PORTADA.subtitulo}
-          <span className={styles.sub2}>
-            {" "}
-            {PORTADA.subtitulo2}{" "}
-            <span className={styles.jin} lang="zh">
-              浸
-              <svg viewBox="0 0 120 34" aria-hidden="true" className={styles.jinLinea}>
-                <path d="M8 6 L112 28" stroke="#3A6FD6" strokeWidth="9" strokeLinecap="round" fill="none" />
-              </svg>
-            </span>
-            .
-          </span>
         </p>
-        <div className={styles.botones}>
-          <button type="button" className={styles.jugar} onClick={jugar}>
-            <span aria-hidden="true">▶</span>
-            {PORTADA.jugar}
-          </button>
-          <a href="#metodo" className={styles.como}>
-            {PORTADA.comoFunciona}
-          </a>
-        </div>
         <p className={styles.confianza}>{PORTADA.confianza}</p>
       </div>
 

@@ -36,10 +36,10 @@
 | public/audio/cocina/dao4_shui3.mp3 | 倒水 | dào shuǐ | sí |
 | public/audio/cocina/wo3_dao4_shui3.mp3 | 我倒水 | wǒ dào shuǐ | sí |
 | public/audio/cocina/na2.mp3 | 拿 | ná | sí |
-| public/audio/cocina/wo3_na2_wan3.mp3 | 我拿碗 | wǒ ná wǎn | sí |
+| public/audio/cocina/wo3_na2_zhe5_wan3.mp3 | 我拿着碗 | wǒ ná zhe wǎn (? nativo: nueva: 碗 tiene que bajar y subir (3.er tono)) | sí |
 | public/audio/cocina/chi1_jiao3_zi5.mp3 | 吃饺子 | chī jiǎo zi | sí |
 | public/audio/cocina/wo3_chi1_jiao3_zi5.mp3 | 我吃饺子 | wǒ chī jiǎo zi | sí |
-| public/audio/cocina/wo3_na2_kuai4_zi5.mp3 | 我拿筷子 | wǒ ná kuài zi | sí |
+| public/audio/cocina/wo3_na2_zhe5_kuai4_zi5.mp3 | 我拿着筷子 | wǒ ná zhe kuài zi (? nativo: nueva) | sí |
 | public/audio/cocina/da3_kai1.mp3 | 打开 | dǎ kāi | sí |
 | public/audio/cocina/wo3_da3_kai1_bing1_xiang1.mp3 | 我打开冰箱 | wǒ dǎ kāi bīng xiāng | sí |
 | public/audio/cocina/he1.mp3 | 喝 | hē | sí |
@@ -56,7 +56,7 @@
 | public/audio/cocina/cheng2_fan4.mp3 | 盛饭 | chéng fàn | sí |
 | public/audio/cocina/wo3_cheng2_fan4.mp3 | 我盛饭 | wǒ chéng fàn | sí |
 | public/audio/cocina/wo3_xi3_bei1_zi5.mp3 | 我洗杯子 | wǒ xǐ bēi zi | sí |
-| public/audio/cocina/wo3_na2_pan2_zi5.mp3 | 我拿盘子 | wǒ ná pán zi | sí |
+| public/audio/cocina/wo3_na2_zhe5_pan2_zi5.mp3 | 我拿着盘子 | wǒ ná zhe pán zi (? nativo: nueva: 盘 tiene que subir) | sí |
 | public/audio/cocina/wo3_xi3_guo1.mp3 | 我洗锅 | wǒ xǐ guō | sí |
 | public/audio/cocina/chi1_fan4.mp3 | 吃饭 | chī fàn | sí |
 | public/audio/cocina/wo3_chi1_fan4.mp3 | 我吃饭 | wǒ chī fàn | sí |

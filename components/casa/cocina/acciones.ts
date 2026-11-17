@@ -48,7 +48,7 @@ export function acciones(id: ObjetoId, E: EstadoCocina): Accion[] {
       if (e === "vacio")
         return E.guo === "cocido"
           ? [A(S("盛饭", "chéng fàn", "24"), "🍚", S("我盛饭", "wǒ chéng fàn", "324"), "servirArroz", { sfx: "whoosh", cambia: { wan: "lleno", guo: "sucio" } })]
-          : [A(NA, "✋", S("我拿碗", "wǒ ná wǎn", "323"), "tomar", { sfx: "whoosh" })];
+          : [A(NA, "✋", S("我拿着碗", "wǒ ná zhe wǎn", "3253"), "tomar", { sfx: "whoosh" })];
       if (e === "lleno")
         return [A(S("吃饭", "chī fàn", "14"), "😋", S("我吃饭", "wǒ chī fàn", "314"), "comer", { sfx: "nam", cambia: { wan: "sucio" } })];
       return [A(XI, "🫧", S("我洗碗", "wǒ xǐ wǎn", "333"), "lavar", { lugar: "fregadero", sfx: "pop-burbuja", cambia: { wan: "vacio" } })];
@@ -65,9 +65,9 @@ export function acciones(id: ObjetoId, E: EstadoCocina): Accion[] {
         return [A(S("吃饺子", "chī jiǎo zi", "135"), "🥟", S("我吃饺子", "wǒ chī jiǎo zi", "3135"), "comer", { sfx: "nam", cambia: { panzi: "sucio" } })];
       if (e === "sucio")
         return [A(XI, "🫧", S("我洗盘子", "wǒ xǐ pán zi", "3325"), "lavar", { lugar: "fregadero", sfx: "pop-burbuja", cambia: { panzi: "limpio" } })];
-      return [A(NA, "✋", S("我拿盘子", "wǒ ná pán zi", "3225"), "tomar", { sfx: "whoosh" })];
+      return [A(NA, "✋", S("我拿着盘子", "wǒ ná zhe pán zi", "32525"), "tomar", { sfx: "whoosh" })];
     case "kuaizi":
-      return [A(NA, "✋", S("我拿筷子", "wǒ ná kuài zi", "3245"), "tomar", { sfx: "whoosh" })];
+      return [A(NA, "✋", S("我拿着筷子", "wǒ ná zhe kuài zi", "32545"), "tomar", { sfx: "whoosh" })];
     case "pingguo":
       if (e === "sucio")
         return [A(XI, "🫧", S("我洗苹果", "wǒ xǐ píng guǒ", "3323"), "lavar", { lugar: "fregadero", sfx: "pop-burbuja", cambia: { pingguo: "limpio" } })];

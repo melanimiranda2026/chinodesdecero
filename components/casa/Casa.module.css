@@ -113,6 +113,9 @@
 }
 .inclina { transform: rotate(-35deg); }
 .encoge { transform: scale(0.7); }
+/* sostener (我拿着…): el objeto se muestra en alto, más grande, y se mece en la mano */
+.alza { transform: scale(1.35); animation: alza 0.9s ease-in-out 2; }
+@keyframes alza { 50% { transform: scale(1.35) translateY(-18%) rotate(-4deg); } }
 .tiembla { animation: tiembla 0.12s linear 8; }
 
 /* capa "puerta" del refri: gira sobre su bisagra (el borde del fondo), a 80.4 % del ancho del cuadro

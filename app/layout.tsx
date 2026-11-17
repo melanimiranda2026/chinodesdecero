@@ -19,7 +19,7 @@ const hanzi = localFont({
 const texto = Nunito({ weight: ["700", "900"], subsets: ["latin"], variable: "--f-texto", display: "swap" });
 const pixel = Silkscreen({ weight: ["400", "700"], subsets: ["latin"], variable: "--f-pixel", display: "swap" });
 
-const TITULO = "Chino desde cero";
+const TITULO = "Chino con la vaca";
 const DESCRIPCION =
   "Tus primeras palabras en chino, jugando en una cocina: escuchas a la vaca, tocas, arrastras y las reconoces de oído.";
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Adorno } from "./Adorno";
 import { CONTACTO_PRIVACIDAD } from "./Correo";
+import { Metodo } from "./Metodo";
 import { SOBRE, TIKTOK } from "./contenido";
 import styles from "./pagina.module.css";
 
@@ -33,6 +34,7 @@ export function Sobre() {
           </a>
         </div>
       </section>
+      <Metodo />
     </div>
   );
 }

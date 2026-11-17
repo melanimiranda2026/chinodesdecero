@@ -16,20 +16,8 @@
   text-align: center;
   min-width: 0;
 }
-.marca {
-  display: inline-block;
-  margin: 0;
-  padding: 4px 12px;
-  border-radius: 999px;
-  background: var(--tinta);
-  color: var(--papel);
-  font-size: 13px;
-  font-weight: 900;
-  letter-spacing: 0.04em;
-  transform: rotate(-2deg);
-}
 .h1 {
-  margin: 8px 0 6px;
+  margin: 0 0 6px;
   font-weight: 900;
   font-size: clamp(26px, 7.4vw, 56px);
   line-height: 1.06;
@@ -37,47 +25,7 @@
   text-wrap: balance;
 }
 .subtitulo { margin: 0; font-size: 15px; line-height: 1.35; text-wrap: balance; }
-/* en celular, una sola línea: la segunda frase aparece desde tablet */
-.sub2 { display: none; }
-.jin {
-  position: relative;
-  display: inline-block;
-  font-family: var(--f-hanzi), sans-serif;
-  font-weight: 400;
-  font-size: 1.45em;
-  line-height: 1;
-  color: var(--t4);
-  padding-bottom: 0.18em;
-}
-.jinLinea { position: absolute; left: 0; bottom: -0.08em; width: 100%; height: 0.3em; }
-
-.botones {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px 8px;
-  margin-top: 12px;
-}
-.jugar,
-.como {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35em;
-  min-height: 48px;
-  padding: 0.5em 0.85em;
-  border: 3px solid var(--tinta);
-  border-radius: 999px;
-  font: 900 15px/1.1 var(--f-texto), system-ui, sans-serif;
-  text-decoration: none;
-  white-space: nowrap;
-  cursor: pointer;
-  box-shadow: 0 4px 0 var(--tinta);
-}
-.jugar { background: #e2574e; color: #fff; }
-.como { background: var(--papel); color: var(--tinta); }
-.jugar:active, .como:active { translate: 0 3px; box-shadow: 0 1px 0 var(--tinta); }
-.jugar:focus-visible, .como:focus-visible, .pantalla:focus-visible { outline: 3px dashed var(--t4); outline-offset: 3px; }
+.pantalla:focus-visible { outline: 3px dashed var(--t4); outline-offset: 3px; }
 .confianza { margin: 8px 0 0; font-size: 12px; opacity: 0.75; }
 
 /* ---- ventana del juego ---- */
@@ -175,7 +123,6 @@
 .ventana.grande .barra { padding-top: env(safe-area-inset-top); height: calc(47px + env(safe-area-inset-top)); }
 
 @media (min-width: 600px) {
-  .sub2 { display: inline; }
   .subtitulo { font-size: 18px; }
   .jugar, .como { font-size: 18px; padding: 0.5em 1.3em; }
 }

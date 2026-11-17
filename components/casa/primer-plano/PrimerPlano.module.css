@@ -42,8 +42,11 @@
   background-position: 0 0, 26px 26px;
 }
 
-/* la "mesa" bajo el objeto: cambia según el fondo */
+.sinCapa { visibility: hidden; }
+
+/* la "mesa" bajo el objeto: solo la tabla de cortar, la cocinilla y el lavaplatos (un círculo blanco parecía un plato) */
 .mesa {
+  display: none;
   position: absolute;
   left: 50%;
   top: 57%;
@@ -56,8 +59,12 @@
   box-shadow: 0 10px 0 rgba(74, 42, 28, 0.25);
   pointer-events: none;
 }
+.pp[data-fondo="tabla"] .mesa,
+.pp[data-fondo="agua"] .mesa,
+.pp[data-fondo="fuego"] .mesa { display: block; }
 .pp[data-fondo="tabla"] .mesa { border-radius: 28px; background: #e2b07a; box-shadow: inset 0 -14px 0 #c8915c, 0 10px 0 rgba(74, 42, 28, 0.25); }
-.pp[data-fondo="agua"] .mesa { background: #bcd9e6; box-shadow: inset 0 14px 0 #8fb4c4, 0 10px 0 rgba(74, 42, 28, 0.25); }
+/* lavaplatos: una tina rectangular de metal, no un plato */
+.pp[data-fondo="agua"] .mesa { width: min(86%, 70cqh); aspect-ratio: 4 / 3; border-radius: 22px; background: #c9d3d8; box-shadow: inset 0 16px 0 #9fadb4, 0 10px 0 rgba(74, 42, 28, 0.25); }
 .pp[data-fondo="fuego"] .mesa { background: #3b3b3b; box-shadow: inset 0 0 0 18px #555, 0 10px 0 rgba(74, 42, 28, 0.25); }
 
 /* zona del gesto: las coordenadas 0–1 son relativas a este cuadrado */
@@ -128,7 +135,7 @@
   position: absolute;
   left: 50%;
   top: 3%;
-  transform: translateX(-50%) rotate(-2deg);
+  transform: translateX(-50%);
   z-index: 6;
   background: #fff;
   border: 5px solid var(--tinta);
@@ -142,7 +149,7 @@
   white-space: nowrap;
   animation: cartel 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) backwards 0.25s;
 }
-@keyframes cartel { from { transform: translateX(-50%) translateY(-150%) rotate(-8deg); } }
+@keyframes cartel { from { transform: translateX(-50%) translateY(-150%); } }
 .icono { font-size: clamp(26px, 6cqmin, 52px); }
 .hz { display: block; font-family: var(--f-hanzi), sans-serif; font-weight: 400; font-size: clamp(30px, 8cqmin, 70px); line-height: 1; text-align: center; }
 .py { display: block; font-weight: 900; font-size: clamp(13px, 2.8cqmin, 24px); text-align: center; }

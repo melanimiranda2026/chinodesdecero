@@ -19,7 +19,7 @@ describe("menú", () => {
     render(<Menu />);
     const nav = screen.getByRole("navigation", { name: "Principal" });
     const hrefs = Array.from(nav.querySelectorAll("a")).map((a) => a.getAttribute("href"));
-    expect(hrefs).toEqual(["/", "/?juego=cocina#juegos", "/?juego=puzzle#juegos", "/#metodo", "/sobre"]);
+    expect(hrefs).toEqual(["/", "/?juego=cocina#juegos", "/?juego=puzzle#juegos", "/sobre#metodo", "/sobre"]);
   });
 
   it("en / un clic en Puzzle elige el juego y no navega", () => {

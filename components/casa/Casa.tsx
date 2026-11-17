@@ -533,6 +533,7 @@ export function CasaVista({
                     extra.includes("tiembla") && styles.tiembla,
                     extra.includes("inclina") && styles.inclina,
                     extra.includes("encoge") && styles.encoge,
+                    extra.includes("alza") && styles.alza,
                   )}
                 >
                   <DibujoObjeto

@@ -19,11 +19,8 @@ vi.mock("@/components/casa/eventos", () => ({ registrar: (...a: unknown[]) => re
 import { decir, desbloquearAudio, callar, enfocarJuego } from "@/components/casa/audio/voz";
 import { CLAVE_JUEGO, EVENTO_JUEGO } from "@/components/pagina/juego";
 import { musica } from "@/components/casa/audio/sonido";
-import { NI_HAO } from "@/components/casa/cocina/frases";
 import { Portada } from "@/components/pagina/Portada";
 import { PORTADA } from "@/components/pagina/contenido";
-
-const avanzar = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -40,44 +37,17 @@ afterEach(() => {
 });
 
 describe("Portada: hero", () => {
-  it("copia del hero: H1, subtítulo con 浸, CTAs y línea de confianza", () => {
+  it("copia del hero: H1, subtítulo y línea de confianza, sin botones extra", () => {
     render(<Portada />);
     expect(screen.getByRole("heading", { level: 1, name: "Tus primeras palabras en chino, jugando" })).toBeTruthy();
     expect(PORTADA.h1).toBe("Tus primeras palabras en chino, jugando");
-    expect(screen.getByTestId("subtitulo").textContent).toBe(
-      "Toca, arrastra y escucha a la vaca en su cocina. Sin traducir nada: así funciona el Método Jìn 浸.",
-    );
+    expect(screen.getByTestId("subtitulo").textContent).toBe("Toca, arrastra, escucha y explora con la vaca.");
     expect(screen.getByText("Gratis · sin registrarte · funciona en tu celular")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Cómo funciona" }).getAttribute("href")).toBe("#metodo");
-    expect(screen.getByRole("button", { name: /Jugar ahora/ })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Cómo funciona" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Jugar ahora/ })).toBeNull();
     // venta honesta
     const texto = document.body.textContent ?? "";
     expect(texto).not.toMatch(/entiendes|aprende chino en tiktok/i);
-  });
-
-  it("“Jugar ahora” arranca el juego dentro del clic: audio, música, saludo y sin tarjeta de entrada", async () => {
-    const { container } = render(<Portada />);
-    const ventana = container.querySelector<HTMLElement>("[data-ventana]")!;
-    expect(ventana.querySelector('[data-capa="entrada"]')).toBeNull();
-    const scroll = vi.fn();
-    ventana.scrollIntoView = scroll;
-
-    fireEvent.click(screen.getByRole("button", { name: /Jugar ahora/ }));
-    // síncrono, dentro del gesto (iOS)
-    expect(desbloquearAudio).toHaveBeenCalledTimes(1);
-    expect(musica.tocar).toHaveBeenCalledWith("cocina");
-    expect(registrar).toHaveBeenCalledWith("entrar");
-    expect(scroll).toHaveBeenCalled();
-    expect(within(ventana).queryByRole("dialog")).toBeNull();
-
-    await avanzar(500);
-    expect(vi.mocked(decir).mock.calls[0][0]).toEqual(NI_HAO);
-
-    // un segundo clic no vuelve a saludar
-    fireEvent.click(screen.getByRole("button", { name: /Jugar ahora/ }));
-    await avanzar(500);
-    expect(desbloquearAudio).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(decir).mock.calls.filter((c) => c[0] === NI_HAO)).toHaveLength(1);
   });
 
   it("el primer toque dentro de la ventana del juego arranca, sin tarjeta de entrada", async () => {
@@ -152,15 +122,6 @@ describe("Portada: pestañas", () => {
     fireEvent.click(screen.getByRole("tab", { name: /拼图/ }));
     expect(localStorage.getItem(CLAVE_JUEGO)).toBe("puzzle");
     expect(window.location.search).toContain("juego=puzzle");
-    localStorage.removeItem(CLAVE_JUEGO);
-  });
-
-  it("“Jugar ahora” con el puzzle activo vuelve a la cocina", () => {
-    const { container } = render(<Portada />);
-    fireEvent.click(screen.getByRole("tab", { name: /拼图/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Jugar ahora/ }));
-    expect(screen.getByRole("tab", { name: /厨房/ }).getAttribute("aria-selected")).toBe("true");
-    expect(container.querySelector<HTMLElement>('[data-juego="cocina"]')!.hidden).toBe(false);
     localStorage.removeItem(CLAVE_JUEGO);
   });
 

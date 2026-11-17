@@ -5,7 +5,7 @@ import type { Espera, Luego } from "../useTiempos";
 import type { Ojos } from "../Vaca";
 
 export type Punto = { x: number; y: number };
-export type ClaseObjeto = "tiembla" | "inclina" | "encoge" | "directo";
+export type ClaseObjeto = "tiembla" | "inclina" | "encoge" | "directo" | "alza";
 
 /** Lo que una animación puede mover en la casa. Solo envoltorios de objeto, partículas y la cara de la vaca. */
 export interface Escena extends Omit<Particulas, "particulas"> {
@@ -49,12 +49,23 @@ export async function animar(a: Accion, objId: ObjetoId, s: Escena): Promise<voi
       if (a.anim === "beber") {
         s.luego(() => s.clase(objId, "inclina", true), 500);
         s.ojos("cerrados");
+        await espera(1300);
+        s.aplicar();
+        await espera(400);
+        s.clase(objId, "inclina", false);
+        s.ojos("abiertos");
+        break;
       }
-      await espera(1300);
+      // 我拿着…: llega a la mano, la vaca lo muestra en alto (sube y baja, brilla) y lo sostiene un rato
+      await espera(550);
+      s.ojos("felices");
+      s.clase(objId, "alza", true);
+      s.brillos(objId);
+      await espera(1900);
       s.aplicar();
-      await espera(400);
-      s.clase(objId, "inclina", false);
+      s.clase(objId, "alza", false);
       s.ojos("abiertos");
+      await espera(300);
       break;
     }
     case "comer": {
@@ -64,10 +75,12 @@ export async function animar(a: Accion, objId: ObjetoId, s: Escena): Promise<voi
       await espera(500);
       s.rafaga(8, 90, () => s.miga(migas.x, migas.y));
       s.ojos("felices");
-      s.clase(objId, "encoge", true);
+      // la manzana se come entera; del plato y del bol solo la comida (el recipiente queda, sucio)
+      const recipiente = objId === "panzi" || objId === "wan";
+      if (!recipiente) s.clase(objId, "encoge", true);
       await espera(900);
       s.aplicar();
-      s.clase(objId, "encoge", false);
+      if (!recipiente) s.clase(objId, "encoge", false);
       await espera(300);
       s.ojos("abiertos");
       break;

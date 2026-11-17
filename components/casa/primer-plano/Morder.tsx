@@ -5,6 +5,9 @@ import styles from "./PrimerPlano.module.css";
 
 export type Mordida = { u: number; v: number; r: number };
 
+/** Capas que son el recipiente, no la comida: se quedan enteras (no se come el plato ni el bol). */
+const RECIPIENTE = new Set(["plato", "bol", "mugre"]);
+
 /** Máscara SVG (con `<mask>`) sobre TODO el dibujo: opaca salvo los círculos de los mordiscos. */
 function mascara(mordidas: Mordida[]): string {
   const circulos = mordidas.map((m) => `<circle cx='${(m.u * 120).toFixed(1)}' cy='${(m.v * 120).toFixed(1)}' r='${m.r}' fill='black'/>`).join("");
@@ -26,8 +29,11 @@ export function Morder({
     : {};
   return (
     <div className={styles.pieza}>
+      <div className={styles.llena} data-recipiente>
+        <DibujoObjeto id={id} estado={estado} claseCapa={(n) => (RECIPIENTE.has(n) ? "" : styles.sinCapa)} />
+      </div>
       <div className={styles.llena} style={{ ...estilo, opacity: comido ? 0 : 1, transition: "opacity .4s" }} data-mordidas={mordidas.length}>
-        <DibujoObjeto id={id} estado={estado} />
+        <DibujoObjeto id={id} estado={estado} claseCapa={(n) => (RECIPIENTE.has(n) ? styles.sinCapa : "")} />
       </div>
       {ultima &&
         [-1, -0.5, 0, 0.5, 1].map((d) => (

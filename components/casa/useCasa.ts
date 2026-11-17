@@ -3,8 +3,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { idAudio, type Silaba } from "@/lib/silabas";
 import { ANCLAS, ESTADO_INICIAL, FREGADERO, OBJETOS, junto, type EstadoCocina, type ObjetoId } from "./cocina/datos";
 import { acciones, aplicar, type Accion } from "./cocina/acciones";
-import { animar, type ClaseObjeto, type Punto } from "./cocina/animar";
-import { NI_HAO, ZHE_SHI } from "./cocina/frases";
+import { animar, fraseDespues, type ClaseObjeto, type Punto } from "./cocina/animar";
+import { HEN_RE, NI_HAO, ZHE_SHI } from "./cocina/frases";
+import { lugarGato, siguienteEscondite } from "./cocina/gato";
 import { useQuiz, type EstadoQuiz } from "./useQuiz";
 import { useVivo } from "./useVivo";
 import { apuntar, limitarVaca, objetoBajo, puntoJunto, type Camara } from "./camara";
@@ -26,7 +27,9 @@ export interface CasaApi {
   estado: EstadoCocina;
   camara: Camara;
   vaca: Punto;
-  cara: { ojos: Ojos; hocico: Hocico; orejas: Orejas; salta: boolean };
+  cara: { ojos: Ojos; hocico: Hocico; orejas: Orejas; salta: boolean; sentada: boolean };
+  /** El gato está afuera (encontrado): se ve entero unos segundos y luego se va a otro escondite. */
+  gatoVisto: boolean;
   globo: Silaba[] | null;
   opciones: { id: ObjetoId; lista: Accion[] } | null;
   ocupado: boolean;
@@ -71,7 +74,13 @@ function bocaDe(abierta: number): Hocico {
 export interface OpcionesCasa {
   /** Se llama con el id de audio de cada frase que la vaca dijo de verdad (el audio sonó). */
   alEscuchar?: (idAudio: string) => void;
+  /** La hora (0–23) para lo que se come (早饭, 午饭, 晚饭). Por defecto, la del reloj. */
+  hora?: () => number;
 }
+
+const horaDelReloj = () => new Date().getHours();
+/** Lo que dura el gato afuera antes de irse al siguiente escondite. */
+const GATO_AFUERA_MS = 3000;
 
 export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaApi {
   const [estado, estadoRef, setEstado] = useVivo<EstadoCocina>(ESTADO_INICIAL);
@@ -82,6 +91,8 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
   const [hocico, setHocico] = useState<Hocico>("sonrisa");
   const [orejas, setOrejas] = useState<Orejas>("normales");
   const [salta, setSalta] = useState(false);
+  const [sentada, setSentada] = useState(false);
+  const [gatoVisto, gatoVistoRef, setGatoVisto] = useVivo(false);
   const [globo, setGlobo] = useState<Silaba[] | null>(null);
   const [opciones, setOpciones] = useState<CasaApi["opciones"]>(null);
   const [primerPlano, setPrimerPlano] = useState<CasaApi["primerPlano"]>(null);
@@ -96,6 +107,10 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
   useEffect(() => {
     escucharRef.current = ganchos.alEscuchar;
   }, [ganchos.alEscuchar]);
+  const horaRef = useRef(ganchos.hora ?? horaDelReloj);
+  useEffect(() => {
+    horaRef.current = ganchos.hora ?? horaDelReloj;
+  }, [ganchos.hora]);
   /** null = ✕ (salir sin aplicar la acción). */
   const resolverPP = useRef<((m: Medalla | null) => void) | null>(null);
   const turnoVoz = useRef(0);
@@ -208,6 +223,19 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
     setHocico("sonrisa");
   }, []);
 
+  // ---- el gato: sale entero con brillos y a los 3 s se va al siguiente escondite ----
+  const mostrarGato = useCallback(() => {
+    if (gatoVistoRef.current) return;
+    setGatoVisto(true);
+    brillos("mao", lugarGato(estadoRef.current.mao));
+    eventoRef.current?.("encontrar_gato", { donde: estadoRef.current.mao });
+    luego(() => {
+      const e = estadoRef.current;
+      setEstado({ ...e, mao: siguienteEscondite(e.mao, e.chuanghu === "abierta") });
+      setGatoVisto(false);
+    }, GATO_AFUERA_MS);
+  }, [gatoVistoRef, setGatoVisto, brillos, estadoRef, luego, setEstado]);
+
   const { quiz, quizRef, empezarQuiz, responderQuiz, repetirQuiz, cerrarQuiz } = useQuiz({
     ocupadoRef, estadoRef, setOcupado, cerrarOpciones, setCamara, setVaca, setGlobo,
     vistaTodo: VISTA_TODO, hablar, callarVaca, espera, luego, festejo, mirar, eventoRef,
@@ -216,15 +244,24 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
   const tocar = useCallback(
     async (id: ObjetoId) => {
       if (ocupadoRef.current || quizRef.current || estadoRef.current[id] === "nada") return;
+      if (id === "mao" && gatoVistoRef.current) return; // ya está afuera
       toques.current++;
-      brillos(id);
+      if (id === "mao") mostrarGato(); // tocar la cola: el gato sale
+      else brillos(id);
       clase(id, "tiembla", true);
       luego(() => clase(id, "tiembla", false), 1000);
       mirar("izquierda", 900);
       eventoRef.current?.("tocar_objeto", { id });
-      await efectoYLuegoVoz("pop", () => hablar(OBJETOS[id].nombre), { juego: "cocina" });
+      let turno = -1;
+      await efectoYLuegoVoz("pop", () => {
+        const dicho = hablar(OBJETOS[id].nombre);
+        turno = turnoVoz.current;
+        return dicho;
+      }, { juego: "cocina" });
+      // la tetera: 茶壶 y luego 很热 (si nada más habló entretanto)
+      if (id === "chahu" && turno === turnoVoz.current) await hablar(HEN_RE);
     },
-    [ocupadoRef, quizRef, estadoRef, brillos, clase, luego, mirar, hablar],
+    [ocupadoRef, quizRef, estadoRef, gatoVistoRef, mostrarGato, brillos, clase, luego, mirar, hablar],
   );
 
   const tocarVaca = useCallback(() => {
@@ -247,7 +284,7 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
         await espera(400);
         mirar("sorpresa", 700);
         await hablar([...ZHE_SHI, ...o.nombre]);
-        const lista = acciones(id, estadoRef.current);
+        const lista = acciones(id, estadoRef.current, horaRef.current());
         if (!lista.length) {
           mirar("izquierda", 900);
           return;
@@ -306,8 +343,9 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
           llevarA(objId, f.x, f.y);
         }
         await espera(750);
+        const antes = estadoRef.current;
 
-        if (GESTO_DE[a.anim]) {
+        if (GESTO_DE[a.anim] && !a.sinGesto) {
           // primer plano: el verbo se hace con el dedo (lo dibuja la Task 9)
           const m = await new Promise<Medalla | null>((res) => {
             resolverPP.current = res;
@@ -325,21 +363,30 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
           if (a.anim === "servirTe") volverASuLugar("beizi");
           festejo(900);
           eventoRef.current?.("gesto_completo", { anim: a.anim, medalla: m });
+          const extra = fraseDespues(a, objId, antes); // 很好吃 al terminar de morder, 很热 tras el té
+          if (extra) await hablar(extra);
         } else {
           const voz = efectoYLuegoVoz(a.sfx, () => hablar(a.frase), { juego: "cocina" });
           await animar(a, objId, {
             vaca: vacaRef.current, espera, luego, particula, miga, brillos, rafaga,
             aplicar: () => aplicarAccion(a), clase, llevarA, volverASuLugar, ojos: setOjos,
+            vacaA: setVaca, sentada: setSentada,
+            gatoSale: () => { if (estadoRef.current.mao === "lajitong") mostrarGato(); },
           });
-          if (a.anim !== "sacar") volverASuLugar(objId);
+          // el teléfono se queda en la mano hasta el 喂
+          const sostiene = a.anim === "llamar";
+          if (a.anim !== "sacar" && !sostiene) volverASuLugar(objId);
           await voz;
+          const extra = fraseDespues(a, objId, antes); // siempre después de la frase de la acción
+          if (extra) await hablar(extra);
+          if (sostiene) volverASuLugar(objId);
           festejo(900);
         }
 
         // después de la acción, el objeto ofrece lo que tiene sentido ahora (comer → lavar → …)
         await espera(500);
         const sig: ObjetoId = a.anim === "servirTe" ? "beizi" : a.anim === "servirArroz" ? "wan" : id;
-        const siguiente = acciones(sig, estadoRef.current);
+        const siguiente = acciones(sig, estadoRef.current, horaRef.current());
         if (siguiente.length) {
           setVaca(puntoJunto(sig));
           setCamara(apuntar(OBJETOS[sig].x, OBJETOS[sig].y + 60, 1.9));
@@ -349,11 +396,13 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
       } finally {
         resolverPP.current = null;
         setPrimerPlano(null);
+        setSentada(false);
         setOcupado(false);
       }
     },
     [ocupadoRef, estadoRef, vacaRef, cerrarOpciones, setOcupado, setVaca, setCamara, llevarA, espera, luego,
-      aplicarAccion, volverASuLugar, festejo, hablar, particula, miga, brillos, rafaga, clase, mostrarOpciones],
+      aplicarAccion, volverASuLugar, festejo, hablar, particula, miga, brillos, rafaga, clase, mostrarOpciones,
+      mostrarGato],
   );
 
   const terminarPrimerPlano = useCallback((m: Medalla) => {
@@ -383,7 +432,7 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
   }, [ocupadoRef, cerrarOpciones, setCamara]);
 
   return {
-    estado, camara, vaca, cara: { ojos, hocico, orejas, salta }, globo, opciones, ocupado, primerPlano,
+    estado, camara, vaca, cara: { ojos, hocico, orejas, salta, sentada }, gatoVisto, globo, opciones, ocupado, primerPlano,
     quiz, posiciones, clases, particulas,
     empezarQuiz, repetirQuiz, cerrarQuiz, saludar, restaurar,
     tocar, tocarVaca, soltarObjetoEnVaca, soltarVaca, elegir, empezarArrastre, verTodo, terminarPrimerPlano,

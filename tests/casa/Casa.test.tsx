@@ -15,7 +15,7 @@ vi.mock("@/components/casa/audio/sonido", () => ({
 
 import { decir, desbloquearAudio } from "@/components/casa/audio/voz";
 import { Casa, CasaVista } from "@/components/casa/Casa";
-import { useCasa, type AlEvento, type CasaApi } from "@/components/casa/useCasa";
+import { useCasa, type AlEvento, type CasaApi, type OpcionesCasa } from "@/components/casa/useCasa";
 import { ANCLAS, FREGADERO, OBJETOS, junto } from "@/components/casa/cocina/datos";
 import { acciones } from "@/components/casa/cocina/acciones";
 import { ESTADO_INICIAL } from "@/components/casa/cocina/datos";
@@ -25,10 +25,10 @@ import { textoHanzi } from "@/lib/silabas";
 const decirMock = vi.mocked(decir);
 
 /** Monta la vista real y deja el hook a mano para llamar sus funciones. */
-function montar(onEvento?: AlEvento) {
+function montar(onEvento?: AlEvento, ganchos?: OpcionesCasa) {
   const api = { current: null } as MutableRefObject<CasaApi | null>;
   function Prueba() {
-    const casa = useCasa(onEvento);
+    const casa = useCasa(onEvento, ganchos);
     api.current = casa;
     return <CasaVista casa={casa} />;
   }
@@ -369,5 +369,134 @@ describe("Casa: quiz, guardas y tarjetas", () => {
     expect(desbloquearAudio).toHaveBeenCalledTimes(1);
     await avanzar(600);
     expect(decirMock.mock.calls.length).toBeGreaterThan(0); // la vaca saluda
+  });
+});
+
+describe("Casa: objetos nuevos", () => {
+  const dichas = () => decirMock.mock.calls.map((c) => textoHanzi(c[0]));
+  const despues = (a: string, b: string) => {
+    const l = dichas();
+    const i = l.lastIndexOf(a);
+    expect(i, `dijo ${a}`).toBeGreaterThanOrEqual(0);
+    expect(l.slice(i + 1), `${b} después de ${a}`).toContain(b);
+  };
+
+  it("apagar la lámpara oscurece el escenario y encenderla lo aclara", async () => {
+    const { api } = montar();
+    expect(document.querySelector("[data-oscura]")).toBeNull();
+    act(() => { void api().elegir("deng", acciones("deng", api().estado)[0]); });
+    await avanzar(4000);
+    expect(api().estado.deng).toBe("apagada");
+    const oscuro = document.querySelector("[data-oscura]");
+    expect(oscuro).toBeTruthy();
+    expect(oscuro!.className).toMatch(/escenario/);
+    act(() => { void api().elegir("deng", acciones("deng", api().estado)[0]); });
+    await avanzar(4000);
+    expect(api().estado.deng).toBe("encendida");
+    expect(document.querySelector("[data-oscura]")).toBeNull();
+  });
+
+  it("tocar la cola del gato (en el refri): 猫, encontrar_gato y a los 3 s se va a la mesa", async () => {
+    const eventos: string[] = [];
+    const { api } = montar((n) => { eventos.push(n); });
+    const gato = screen.getByRole("button", { name: "猫" });
+    expect(gato.querySelector("[data-capa='cola']")).toBeTruthy();
+    expect(gato.querySelector("[data-capa='gato']")).toBeNull();
+    fireEvent.click(gato);
+    await avanzar(600);
+    expect(dichas()).toContain("猫");
+    expect(eventos).toContain("encontrar_gato");
+    expect(screen.getByRole("button", { name: "猫" }).querySelector("[data-capa='gato']")).toBeTruthy();
+    expect(api().estado.mao).toBe("refri");
+    await avanzar(3000);
+    expect(api().estado.mao).toBe("mesa");
+    expect(screen.getByRole("button", { name: "猫" }).querySelector("[data-capa='cola']")).toBeTruthy();
+  });
+
+  it("con el gato en el basurero no se ve; al abrir el tarro sale", async () => {
+    const { api } = montar();
+    act(() => api().restaurar({ ...ESTADO_INICIAL, mao: "lajitong" }));
+    expect(screen.queryByRole("button", { name: "猫" })).toBeNull();
+    act(() => { void api().elegir("lajitong", acciones("lajitong", api().estado)[0]); });
+    await avanzar(1800);
+    expect(screen.getByRole("button", { name: "猫" }).querySelector("[data-capa='gato']")).toBeTruthy();
+    await avanzar(4000);
+    despues("我打开垃圾桶", "猫"); // 猫 después de la frase de la acción
+    expect(api().estado.mao).toBe("refri"); // la ventana está cerrada: se salta chuanghu
+  });
+
+  it("comer el arroz a las 8: 我吃早饭 y luego 很好吃", async () => {
+    const { api } = montar(undefined, { hora: () => 8 });
+    act(() => api().restaurar({ ...ESTADO_INICIAL, wan: "lleno" }));
+    act(() => { void api().soltarObjetoEnVaca("wan"); });
+    await avanzar(3000);
+    fireEvent.click(within(screen.getByTestId("opciones")).getByRole("button", { name: "吃饭" }));
+    await avanzar(1500); // abre el primer plano
+    await avanzar(1500); // el primer plano dice la frase al entrar
+    expect(api().primerPlano?.objeto).toBe("wan");
+    expect(dichas()).toContain("我吃早饭");
+    expect(dichas()).not.toContain("很好吃");
+    act(() => api().terminarPrimerPlano("oro"));
+    await avanzar(3000);
+    despues("我吃早饭", "很好吃");
+  });
+
+  it("tocar la tetera: 茶壶 y luego 很热", async () => {
+    montar();
+    fireEvent.click(screen.getByRole("button", { name: "茶壶" }));
+    await avanzar(3000);
+    despues("茶壶", "很热");
+  });
+
+  it("beber café es la animación de la casa (sin primer plano): 我喝咖啡 y luego 很热", async () => {
+    const { api } = montar();
+    act(() => api().restaurar({ ...ESTADO_INICIAL, kafeibei: "cafe" }));
+    act(() => { void api().elegir("kafeibei", acciones("kafeibei", api().estado)[0]); });
+    await avanzar(800);
+    expect(api().primerPlano).toBeNull();
+    await avanzar(4000);
+    expect(api().estado.kafeibei).toBe("sucio");
+    despues("我喝咖啡", "很热");
+  });
+
+  it("beber té (primer plano): 我喝茶 y, al terminar, 很热; el agua no", async () => {
+    const { api } = montar();
+    act(() => api().restaurar({ ...ESTADO_INICIAL, beizi: "te" }));
+    act(() => { void api().elegir("beizi", acciones("beizi", api().estado)[0]); });
+    await avanzar(1500);
+    await avanzar(1500);
+    expect(api().primerPlano?.accion.anim).toBe("beber");
+    act(() => api().terminarPrimerPlano("oro"));
+    await avanzar(3000);
+    despues("我喝茶", "很热");
+
+    decirMock.mockClear();
+    act(() => api().restaurar({ ...ESTADO_INICIAL, beizi: "agua" }));
+    act(() => { void api().elegir("beizi", acciones("beizi", api().estado)[0]); });
+    await avanzar(1500);
+    await avanzar(1500);
+    act(() => api().terminarPrimerPlano("oro"));
+    await avanzar(3000);
+    expect(dichas()).toContain("我喝水");
+    expect(dichas()).not.toContain("很热");
+  });
+
+  it("llamar por teléfono: 我打电话 y luego 喂", async () => {
+    const { api } = montar();
+    act(() => { void api().elegir("shouji", acciones("shouji", api().estado)[0]); });
+    await avanzar(6000);
+    despues("我打电话", "喂");
+    expect(api().ocupado).toBe(false);
+    expect(api().posiciones.shouji).toBeUndefined();
+  });
+
+  it("sentarse: la vaca queda sentada un rato y luego se para", async () => {
+    const { api } = montar();
+    act(() => { void api().elegir("yizi", acciones("yizi", api().estado)[0]); });
+    await avanzar(1500);
+    expect(api().cara.sentada).toBe(true);
+    await avanzar(4000);
+    expect(api().cara.sentada).toBe(false);
+    expect(api().ocupado).toBe(false);
   });
 });

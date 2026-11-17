@@ -25,7 +25,8 @@ export interface Particulas {
   /** Gota, burbuja o vapor alrededor de `o` (w = ancho de la zona). */
   particula(tipo: TipoParticula, o: { x: number; y: number; w: number }, color?: string): void;
   miga(x: number, y: number): void;
-  brillos(id: ObjetoId): void;
+  /** Brillos sobre el objeto (o en `en`, si el objeto no está en su lugar: el gato). */
+  brillos(id: ObjetoId, en?: { x: number; y: number }): void;
   /** Repite `fn` n veces cada `cada` ms (gotas, burbujas, migas…). */
   rafaga(n: number, cada: number, fn: () => void): void;
 }
@@ -62,8 +63,8 @@ export function useParticulas(luego: Luego): Particulas {
     [agregar],
   );
   const brillos = useCallback<Particulas["brillos"]>(
-    (id) => {
-      const o = OBJETOS[id];
+    (id, en) => {
+      const o = { ...OBJETOS[id], ...en };
       for (let i = 0; i < 4; i++)
         agregar(
           { tipo: "brillo", x: o.x + (Math.random() - 0.5) * o.w, y: o.y + (Math.random() - 0.5) * o.w, retraso: i * 0.08 },

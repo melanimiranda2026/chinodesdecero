@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as EventoPuntero, type ReactNode, type Ref } from "react";
 import { textoHanzi } from "@/lib/silabas";
 import { OBJETOS, type EstadoCocina, type ObjetoId } from "./cocina/datos";
+import { gatoSeVe, lugarGato } from "./cocina/gato";
 import { aspectoDe, centroBase, encuadrar, encuadreInicial, enPantalla, objetoBajo, transformCSS } from "./camara";
 import { DibujoObjeto } from "./arte/DibujoObjeto";
 import { FondoCuarto } from "./arte/Capa";
@@ -34,6 +35,15 @@ const registrarFallo = (e: unknown) => console.error("[casa]", e);
 type Inicio =
   | { tipo: "obj"; id: ObjetoId; cx: number; cy: number; movio: boolean }
   | { tipo: "vaca"; cx: number; cy: number; x0: number; y0: number; movio: boolean };
+
+/** Clases de las capas que se animan por nombre: la puerta del refri, la tapa del basurero, el pájaro. */
+function claseCapa(id: ObjetoId, estado: EstadoCocina, extra: string[]): ((n: string) => string) | undefined {
+  if (id === "bingxiang") return (n) => (n === "puerta" ? cx(styles.puerta, estado.bingxiang === "abierto" && styles.puertaAbierta) : "");
+  if (id === "lajitong") return (n) => (n === "tapa" ? cx(styles.tapa, extra.includes("tapa") && styles.tapaAbierta) : "");
+  if (id === "chuanghu") return (n) => (n === "pajaro" ? styles.pajaro : "");
+  if (id === "mao") return (n) => (n === "gato" ? styles.gatoSale : "");
+  return undefined;
+}
 
 const llegaALaVaca = (p: Punto, vaca: Punto) => Math.hypot(p.x - vaca.x, p.y - (vaca.y - 100)) < RADIO_VACA;
 
@@ -262,7 +272,8 @@ export function CasaVista({
   aviso?: string | null;
   formulario?: ReactNode;
 }) {
-  const { estado, camara, vaca, cara, globo, opciones, ocupado, posiciones, clases, particulas } = casa;
+  const { estado, camara, vaca, cara, globo, opciones, ocupado, posiciones, clases, particulas, gatoVisto } = casa;
+  const oscura = estado.deng === "apagada";
   const mundoRef = useRef<HTMLDivElement>(null);
   const ini = useRef<Inicio | null>(null);
   const sinClick = useRef(false);
@@ -487,7 +498,7 @@ export function CasaVista({
         </div>
       )}
       <div className={styles.interior} inert={capa !== null}>
-      <div ref={escenarioRef} className={styles.escenario} data-medido={medido || undefined}>
+      <div ref={escenarioRef} className={styles.escenario} data-medido={medido || undefined} data-oscura={oscura || undefined}>
         <div
           ref={mundoRef}
           className={cx(styles.mundo, paneando && styles.paneando)}
@@ -501,13 +512,16 @@ export function CasaVista({
 
           {IDS.map((id, i) => {
             const o = OBJETOS[id];
+            const gato = id === "mao";
+            // el gato: solo la cola en su escondite (en el basurero no se ve); encontrado, entero
+            if (gato && !gatoSeVe(estado.mao, estado.chuanghu, gatoVisto)) return null;
             const arrastrado = arrObj?.id === id;
-            const p = arrastrado ? arrObj : posiciones[id] ?? o;
+            const p = arrastrado ? arrObj : posiciones[id] ?? (gato ? lugarGato(estado.mao) : o);
             const extra = clases[id] ?? [];
-            const abierto = estado.bingxiang === "abierto";
             return (
               <button
-                key={id}
+                // el gato cambia de escondite sin cruzar el cuarto
+                key={gato ? `mao:${estado.mao}` : id}
                 type="button"
                 data-objeto={id}
                 aria-label={textoHanzi(o.nombre)}
@@ -538,17 +552,17 @@ export function CasaVista({
                 >
                   <DibujoObjeto
                     id={id}
-                    estado={estado[id]}
-                    claseCapa={
-                      id === "bingxiang"
-                        ? (n) => (n === "puerta" ? cx(styles.puerta, abierto && styles.puertaAbierta) : "")
-                        : undefined
-                    }
+                    estado={gato && gatoVisto ? "visto" : estado[id]}
+                    extras={id === "chuanghu" && extra.includes("pajaro") ? ["pajaro"] : undefined}
+                    claseCapa={claseCapa(id, estado, extra)}
                   />
                 </div>
               </button>
             );
           })}
+
+          {/* lámpara apagada: el cuarto se oscurece; la vaca, las partículas y la UI quedan encima */}
+          {oscura && <div className={styles.oscuro} aria-hidden="true" />}
 
           {particulas.map((q) => {
             const estilo: CSSProperties & Record<string, string | number | undefined> = {
@@ -570,7 +584,7 @@ export function CasaVista({
             type="button"
             aria-label="牛"
             data-vaca
-            className={cx(styles.vaca, arrVaca && styles.vacaArrastrando, vacaEsObjetivo && styles.vacaObjetivo)}
+            className={cx(styles.vaca, arrVaca && styles.vacaArrastrando, vacaEsObjetivo && styles.vacaObjetivo, cara.sentada && styles.vacaSentada)}
             style={{ left: pct(vacaVista.x), top: pct(vacaVista.y) }}
             onPointerDown={vacaAbajo}
             onPointerMove={vacaMueve}

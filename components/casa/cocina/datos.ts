@@ -175,4 +175,8 @@ export const ANCLAS = {
   bocaVaca: { dx: 23, dy: -85 },
   /** De donde caen las migas al comer (relativo a sus patas). */
   migasVaca: { dx: 15, dy: -85 },
+  /** De donde cae el café al servirlo (relativo a kafeibei). */
+  sobreTaza: { dx: 0, dy: -20 },
+  /** Las patas de la vaca sentada (relativo a yizi): la silla es más baja que los pisos de la barra. */
+  asientoSilla: { dx: 0, dy: 22 },
 } as const;

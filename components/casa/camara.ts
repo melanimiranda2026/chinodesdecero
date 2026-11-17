@@ -89,7 +89,7 @@ export function limitarVaca(x: number, y: number): { x: number; y: number } {
   return { x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 };
 }
 
-/** Objeto más cercano a (vaca.x, vaca.y - 90), dentro de min(w/2, 50) + 70; ignora los "nada" y las zonas. */
+/** Objeto más cercano a (vaca.x, vaca.y - 90), dentro de min(w/2, 50) + 70; ignora los "nada", las zonas y el gato. */
 export function objetoBajo(vaca: { x: number; y: number }, e: EstadoCocina): ObjetoId | null {
   let mejor: ObjetoId | null = null;
   let dist = Infinity;
@@ -98,6 +98,8 @@ export function objetoBajo(vaca: { x: number; y: number }, e: EstadoCocina): Obj
     const o = OBJETOS[id];
     // una zona (la mesa) se toca, pero nunca es "el objeto de abajo": no le gana a lo que hay encima
     if (o.zona) continue;
+    // el gato cambia de escondite: se encuentra tocándolo, no llevándole la vaca
+    if (id === "mao") continue;
     const d = Math.hypot(o.x - vaca.x, o.y - (vaca.y - 90));
     // el alcance no crece con el cuadro del refri (300 de ancho): si no, "ganaría" a todo lo cercano
     if (d < Math.min(o.w / 2, 50) + 70 && d < dist) {

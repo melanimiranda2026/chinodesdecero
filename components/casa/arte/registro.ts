@@ -77,7 +77,8 @@ export const ARTE: Record<ObjetoId, ArteObjeto> = {
   // zhuozi_zona es una zona de toque invisible (no se dibuja nada)
   zhuozi: { capas: capasDe("zhuozi", ["zona"]), visibles: () => ["zona"] },
   shouji: { capas: capasDe("shouji", ["telefono"]), visibles: () => ["telefono"] },
-  mao: { capas: capasDe("mao", ["cola", "gato"]), visibles: () => ["cola", "gato"] },
+  // escondido se ve solo la cola; encontrado (la casa pasa "visto"), el gato entero
+  mao: { capas: capasDe("mao", ["cola", "gato"]), visibles: (e) => (e === "visto" ? ["gato"] : ["cola"]) },
 };
 
 /** Piezas de los minijuegos (mismo encuadre que los objetos). */

@@ -65,6 +65,8 @@ export interface CasaApi {
   cerrarRefri(): void;
   /** Tocar una comida del refri: dice su nombre (y cada tercer toque, 很冷). */
   tocarComida(id: ComidaId): Promise<void>;
+  /** Cuenta como escuchada una frase que sonó fuera de `hablar` (la receta). Nunca lanza. */
+  escuchar(idAudio: string): void;
   /** Cierra el quiz terminado (después de la tarjeta del método). */
   cerrarQuiz(): void;
   /** La vaca festeja y dice 你好 (al entrar a la casa). */
@@ -209,6 +211,14 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
     [luego],
   );
 
+  const escuchar = useCallback((id: string) => {
+    try {
+      escucharRef.current?.(id);
+    } catch {
+      /* contar lo escuchado nunca frena a la vaca */
+    }
+  }, []);
+
   const { refri, esperarRefri, elegirRefri, cerrarRefri, tocarComida } = useRefri({ hablar, hablando });
   /** Para encadenar la acción elegida dentro del refri (elegir se llama a sí misma). */
   const elegirRef = useRef<CasaApi["elegir"]>(async () => {});
@@ -281,11 +291,13 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
       mirar("izquierda", 900);
       eventoRef.current?.("tocar_objeto", { id });
       let turno = -1;
-      await efectoYLuegoVoz("pop", () => {
+      const decirNombre = () => {
         const dicho = hablar(OBJETOS[id].nombre);
         turno = turnoVoz.current;
         return dicho;
-      }, { juego: "cocina" });
+      };
+      // el pop solo si nada suena ni espera: nunca encima del mandarín
+      await (hablando.current === 0 ? efectoYLuegoVoz("pop", decirNombre, { juego: "cocina" }) : decirNombre());
       // la tetera: 茶壶 y luego 很热 (si nada más habló entretanto)
       if (id === "chahu" && turno === turnoVoz.current) await hablar(HEN_RE);
     },
@@ -488,6 +500,6 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
     quiz, posiciones, clases, particulas,
     empezarQuiz, repetirQuiz, cerrarQuiz, saludar, restaurar,
     tocar, tocarVaca, soltarObjetoEnVaca, soltarVaca, elegir, empezarArrastre, verTodo, terminarPrimerPlano,
-    cancelarPrimerPlano, refri, elegirRefri, cerrarRefri, tocarComida,
+    cancelarPrimerPlano, refri, elegirRefri, cerrarRefri, tocarComida, escuchar,
   };
 }

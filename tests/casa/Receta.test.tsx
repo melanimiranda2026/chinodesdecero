@@ -217,3 +217,25 @@ describe("La receta (做饭)", () => {
     expect(api().ocupado).toBe(false);
   });
 });
+
+describe("La receta cuenta lo escuchado", () => {
+  it("cada frase que sonó llega a alEscuchar (y las que no sonaron, no)", async () => {
+    const alEscuchar = vi.fn();
+    let api!: CasaApi;
+    function Prueba() {
+      api = useCasa(undefined, { alEscuchar });
+      return <CasaVista casa={api} activo />;
+    }
+    render(<Prueba />);
+    act(() => api.restaurar(ESTADO_INICIAL));
+    const receta = await abrirReceta(() => api);
+    expect(alEscuchar).toHaveBeenCalledWith("wo3_zuo4_fan4");
+    alEscuchar.mockClear();
+    decirMock.mockImplementation(() => Promise.resolve(false));
+    await tocar(receta, "米");
+    expect(alEscuchar).not.toHaveBeenCalled();
+    decirMock.mockImplementation(() => Promise.resolve(true));
+    await tocar(receta, "水");
+    expect(alEscuchar).toHaveBeenCalledWith("shui3");
+  });
+});

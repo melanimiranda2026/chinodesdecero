@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, type PointerEvent as EventoPuntero } from "react";
-import { textoHanzi, type Silaba } from "@/lib/silabas";
+import { idAudio, textoHanzi, type Silaba } from "@/lib/silabas";
 import { COLOR_TONO } from "@/lib/tonos";
 import type { Accion } from "../cocina/acciones";
 import { WO_ZUO_HAO_FAN_LE } from "../cocina/frases";
@@ -54,12 +54,14 @@ function Pinyin({ s }: { s: Silaba[] }) {
  * dice 我做好饭了 y `alTerminar` recibe la medalla (tiempo desde que apareció la cuchara), una sola vez.
  */
 export function Receta({
-  accion, alTerminar, alCancelar,
+  accion, alTerminar, alCancelar, alEscuchar,
 }: {
   accion: Accion;
   alTerminar: (m: Medalla) => void;
   /** ✕: salir sin cocinar. */
   alCancelar: () => void;
+  /** Se llama con el id de audio de cada frase que sonó de verdad (cuenta como escuchada). */
+  alEscuchar?: (idAudio: string) => void;
 }) {
   const [fase, setFase] = useState<Fase>("entra");
   const [en, setEn] = useState<Set<Ingrediente>>(() => new Set());
@@ -89,6 +91,10 @@ export function Receta({
   const arrastreRef = useRef<{ i: Ingrediente; x0: number; y0: number; movido: boolean } | null>(null);
   /** Después de un arrastre, el click que lo sigue no vuelve a echar. */
   const sinClickRef = useRef(false);
+  const alEscucharRef = useRef(alEscuchar);
+  useEffect(() => {
+    alEscucharRef.current = alEscuchar;
+  }, [alEscuchar]);
   const alTerminarRef = useRef(alTerminar);
   useEffect(() => {
     alTerminarRef.current = alTerminar;
@@ -113,7 +119,14 @@ export function Receta({
     if (!sesion.vivo) return Promise.resolve();
     return decir(s, { alBoca: (a) => sesion.vivo && setHocico(bocaDe(a)), juego: "cocina" }).finally(() => {
       if (sesion.vivo) setHocico("sonrisa"); // también si decir rechaza: la boca no queda abierta
-    }).then(() => {});
+    }).then((sono) => {
+      if (sono !== true) return;
+      try {
+        alEscucharRef.current?.(idAudio(s));
+      } catch {
+        /* contar lo escuchado nunca frena la receta */
+      }
+    });
   };
 
   // ---- entrada: iris, música de revolver y 我做饭; al salir vuelve la música de la cocina ----

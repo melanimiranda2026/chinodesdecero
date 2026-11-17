@@ -680,6 +680,7 @@ export function CasaVista({
             accion={receta.accion}
             alTerminar={casa.terminarPrimerPlano}
             alCancelar={casa.cancelarPrimerPlano}
+            alEscuchar={casa.escuchar}
           />
         )}
         {/* el refri por dentro: también fuera de .mundo, a luz normal aunque la lámpara esté apagada */}

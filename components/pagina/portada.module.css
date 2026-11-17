@@ -122,6 +122,14 @@
 }
 .ventana.grande .barra { padding-top: env(safe-area-inset-top); height: calc(47px + env(safe-area-inset-top)); }
 
+/* teléfono angosto: sin los puntos de la ventana; el pinyin va bajo el hanzi para que quepan las dos pestañas y el 全屏 */
+@media (max-width: 419px) {
+  .puntos { display: none; }
+  .pestana { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 2px; padding: 0 6px; min-height: 44px; }
+  .pestana > span:first-child { display: none; } /* el emoji sobra: el hanzi y el pinyin ya dicen cuál es */
+  .pestana .py { font-size: 11px; }
+}
+
 @media (min-width: 600px) {
   .subtitulo { font-size: 18px; }
   .jugar, .como { font-size: 18px; padding: 0.5em 1.3em; }

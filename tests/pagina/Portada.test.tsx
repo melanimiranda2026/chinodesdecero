@@ -186,3 +186,17 @@ describe("Portada: CSS del marco", () => {
     expect(css("app/page.tsx")).not.toMatch(/Bajar/);
   });
 });
+
+describe("Portada: barra de la ventana en pantallas angostas", () => {
+  const css = readFileSync(join(process.cwd(), "components/pagina/portada.module.css"), "utf8");
+  const bloque = css.match(/@media \(max-width: 4\d\d px?\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? css.match(/@media \(max-width: 4\d\dpx\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+
+  it("bajo ~420 px: sin puntos, pinyin bajo el hanzi y pestañas de al menos 44 px", () => {
+    expect(bloque).toMatch(/\.puntos\s*\{[^}]*display:\s*none/);
+    expect(bloque).toMatch(/\.pestana\s*\{[^}]*display:\s*flex[^}]*flex-direction:\s*column/);
+    expect(bloque).toMatch(/\.pestana\s*\{[^}]*justify-content:\s*center/);
+    expect(bloque).toMatch(/\.pestana\s*\{[^}]*padding:\s*0 6px/);
+    expect(bloque).toMatch(/\.pestana\s*\{[^}]*min-height:\s*44px/);
+    expect(bloque).toMatch(/\.pestana \.py\s*\{[^}]*font-size:\s*11px/);
+  });
+});

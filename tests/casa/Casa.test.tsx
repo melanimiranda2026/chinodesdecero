@@ -13,6 +13,7 @@ vi.mock("@/components/casa/audio/sonido", () => ({
   musica: { tocar: vi.fn(), parar: vi.fn(), bajar: vi.fn() },
 }));
 
+import { sfx } from "@/components/casa/audio/sonido";
 import { decir, desbloquearAudio } from "@/components/casa/audio/voz";
 import { Casa, CasaVista } from "@/components/casa/Casa";
 import { useCasa, type AlEvento, type CasaApi, type OpcionesCasa } from "@/components/casa/useCasa";
@@ -481,6 +482,21 @@ describe("Casa: objetos nuevos", () => {
     fireEvent.click(screen.getByRole("button", { name: "茶壶" }));
     await avanzar(3000);
     despues("茶壶", "很热");
+  });
+
+  it("un toque rápido mientras suena la tetera no pone el pop encima del mandarín", async () => {
+    montar();
+    decirMock.mockImplementation(() => new Promise((r) => setTimeout(() => r(true), 2000))); // el mandarín dura
+    fireEvent.click(screen.getByRole("button", { name: "茶壶" }));
+    await avanzar(500); // ya pasó el pop y la vaca está diciendo 茶壶
+    expect(sfx).toHaveBeenCalledWith("pop", "cocina");
+    vi.mocked(sfx).mockClear();
+    decirMock.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "猫" }));
+    await avanzar(10);
+    expect(sfx).not.toHaveBeenCalledWith("pop", expect.anything());
+    await avanzar(3000);
+    expect(dichas()).toContain("猫");
   });
 
   it("beber café es la animación de la casa (sin primer plano): 我喝咖啡 y luego 很热", async () => {

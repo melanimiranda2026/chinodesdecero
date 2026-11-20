@@ -93,3 +93,42 @@ test("metadatos, ícono y sin la flecha para bajar", async ({ page }) => {
   const como = (await page.getByRole("link", { name: "Cómo funciona" }).boundingBox())!;
   expect(como.height).toBeGreaterThanOrEqual(44);
 });
+
+test("客厅: la mesa de 50 palabras cabe sin scroll horizontal, fichas ≥ 44 px y la ficha de 咖啡", async ({ page }, info) => {
+  await page.goto("/");
+  // la casa ya está en la portada: no hay botón de entrada
+  const ventana = page.locator("main");
+  // entrar al living desde el minimapa (esperar a que el cuarto esté abierto)
+  const living = ventana.locator('[data-cuarto="living"]');
+  await expect(living).toBeVisible();
+  await expect(async () => {
+    await living.click({ timeout: 3000 });
+    await expect(ventana.locator("[data-mesa]")).toBeVisible({ timeout: 2500 });
+  }).toPass({ timeout: 20_000 });
+
+  await ventana.locator("[data-mesa]").click();
+  const mesa = page.getByTestId("mesa");
+  await expect(mesa).toBeVisible({ timeout: 15_000 });
+
+  const fichas = mesa.locator("[data-palabra]");
+  await expect(fichas).toHaveCount(50);
+  for (let i = 0; i < 50; i++) {
+    const f = fichas.nth(i);
+    await f.scrollIntoViewIfNeeded();
+    await expect(f).toBeVisible();
+    const c = (await f.boundingBox())!;
+    expect(c.width, `ficha ${i} ancho`).toBeGreaterThanOrEqual(44);
+    expect(c.height, `ficha ${i} alto`).toBeGreaterThanOrEqual(44);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
+  await mesa.evaluate((el) => el.scrollTo?.(0, 0));
+  await page.screenshot({ path: `${process.env.SMOKE_SHOTS ?? "test-results"}/mesa-${info.project.name}.png` });
+
+  await mesa.locator("[data-palabra]", { hasText: "咖啡" }).click();
+  const ficha = page.getByRole("dialog");
+  await expect(ficha).toBeVisible();
+  await expect(ficha).toContainText("Palabra gratis");
+  await expect(ficha).toContainText("café");
+  expect(await sinScrollHorizontal(page)).toBe(true);
+  await page.screenshot({ path: `${process.env.SMOKE_SHOTS ?? "test-results"}/ficha-${info.project.name}.png` });
+});

@@ -431,6 +431,7 @@
   position: relative;
 }
 .aqui { background: #f2c14e; animation: pulsoMapa 1.6s steps(2) infinite; cursor: default; }
+.abierto { cursor: pointer; }
 .bloq { filter: grayscale(0.8) brightness(0.8); }
 .bloq::after { content: "🔒"; position: absolute; right: 1px; bottom: 0; font-size: 0.55em; }
 /* Ya pidió que le avisemos: en vez del candado, un reloj de arena ("pronto"). */

@@ -13,7 +13,7 @@ import { PrimerPlano } from "./primer-plano/PrimerPlano";
 import { Refri } from "./refri/Refri";
 import { Receta } from "./receta/Receta";
 import { esReceta } from "./gestos/medalla";
-import { Minimapa } from "./Minimapa";
+import { CUARTOS_ABIERTOS, Minimapa } from "./Minimapa";
 import { Tarjetas, type CapaTarjeta } from "./Tarjetas";
 import { desbloquearAudio } from "./audio/voz";
 import { musica } from "./audio/sonido";
@@ -642,7 +642,7 @@ export function CasaVista({
             )}
           </>
         )}
-        <Minimapa cuartoActual="cocina" anotado={anotado} alTocarBloqueado={() => {
+        <Minimapa cuartoActual="cocina" abiertos={CUARTOS_ABIERTOS} anotado={anotado} alCambiar={() => { /* Task 8 */ }} alTocarBloqueado={() => {
           registrar("tocar_bloqueado");
           setPronto(true);
         }} />

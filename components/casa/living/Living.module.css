@@ -263,8 +263,9 @@
   background: #f8e7cc;
 }
 
-/* la vaca no se arrastra aquí: el toque pasa a la mesa aunque la tape un poco */
-.vaca { pointer-events: none; cursor: default; }
+/* la vaca no se arrastra aquí: el toque pasa a la mesa aunque la tape un poco
+   (.living .vaca gana sobre Casa.module.css .vaca sin depender del orden del CSS) */
+.living .vaca { pointer-events: none; cursor: default; }
 
 /* zona de toque del tablero (en unidades del cuarto); el dibujo de la mesa está en el fondo */
 .zonaMesa {

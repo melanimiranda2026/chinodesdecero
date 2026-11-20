@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import type { MutableRefObject } from "react";
 
 vi.mock("@/components/casa/audio/voz", () => ({
   decir: vi.fn(() => Promise.resolve(true)),
@@ -15,6 +16,11 @@ import { callar } from "@/components/casa/audio/voz";
 import { sfx } from "@/components/casa/audio/sonido";
 import { Living, PASO_MS, ZOOM_MS } from "@/components/casa/living/Living";
 import { PARADA_VACA } from "@/components/casa/living/lugares";
+import { PALABRAS } from "@/components/casa/living/palabras";
+import { CasaVista } from "@/components/casa/Casa";
+import { useCasa, type CasaApi } from "@/components/casa/useCasa";
+import { ESTADO_INICIAL } from "@/components/casa/cocina/datos";
+import { acciones } from "@/components/casa/cocina/acciones";
 
 const avanzar = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
 
@@ -136,5 +142,99 @@ describe("Living", () => {
     for (const el of container.querySelectorAll("[aria-label]")) {
       expect(el.getAttribute("aria-label")).not.toMatch(/[A-Za-z]/);
     }
+  });
+});
+
+/** La vista real de la casa con el hook a mano (como en Casa.test.tsx). */
+function montarCasa(props: { palabras?: readonly string[]; alAbrirPalabra?: (id: string) => void } = {}) {
+  const api = { current: null } as MutableRefObject<CasaApi | null>;
+  function Prueba({ activo = true }: { activo?: boolean }) {
+    const casa = useCasa();
+    api.current = casa;
+    return <CasaVista casa={casa} activo={activo} {...props} />;
+  }
+  const r = render(<Prueba />);
+  return { ...r, api: () => api.current!, rerender: (activo: boolean) => r.rerender(<Prueba activo={activo} />) };
+}
+const ir = (cuarto: string) => fireEvent.click(document.querySelector(`[data-cuarto="${cuarto}"]`) as HTMLElement);
+const enLiving = () => document.querySelector("[data-living]") !== null;
+const enCocina = () => document.querySelector("[data-objeto]") !== null;
+
+describe("Living en la casa", () => {
+  it("客厅 muestra el living sin la cocina; 厨房 vuelve y la cocina conserva su estado", () => {
+    const { api } = montarCasa();
+    act(() => api().restaurar({ ...ESTADO_INICIAL, pingguo: "limpio" }));
+    expect(enCocina()).toBe(true);
+    expect(enLiving()).toBe(false);
+    vi.mocked(callar).mockClear();
+    ir("living");
+    expect(enLiving()).toBe(true);
+    expect(enCocina()).toBe(false);
+    expect(callar).toHaveBeenCalled();
+    expect(document.querySelector('[data-cuarto="living"]')!.getAttribute("aria-current")).toBe("true");
+    vi.mocked(callar).mockClear();
+    ir("cocina");
+    expect(enLiving()).toBe(false);
+    expect(enCocina()).toBe(true);
+    expect(callar).toHaveBeenCalled();
+    expect(api().estado.pingguo).toBe("limpio");
+    expect(document.querySelector('[data-objeto="pingguo"]')).not.toBeNull();
+  });
+
+  it("en el living no hay 玩 ni ⤢ ni oscuridad, aunque la lámpara esté apagada; sí el minimapa", () => {
+    const { api } = montarCasa();
+    act(() => api().restaurar({ ...ESTADO_INICIAL, deng: "apagada" }));
+    expect(document.querySelector("[data-oscura]")).not.toBeNull();
+    ir("living");
+    expect(screen.queryByRole("button", { name: "玩" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "全部" })).toBeNull();
+    expect(document.querySelector("[data-oscura]")).toBeNull();
+    expect(document.querySelector("div[class*=oscuro]")).toBeNull();
+    expect(screen.getByRole("group", { name: "地图" })).toBeTruthy();
+  });
+
+  it("con el refri abierto el minimapa no cambia de cuarto", async () => {
+    const { api } = montarCasa();
+    act(() => { void api().elegir("bingxiang", acciones("bingxiang", ESTADO_INICIAL)[0]); });
+    await avanzar(6000);
+    expect(api().refri).toBe(true);
+    ir("living");
+    expect(enLiving()).toBe(false);
+  });
+
+  it("con un primer plano abierto el minimapa no cambia de cuarto", async () => {
+    const { api } = montarCasa();
+    act(() => { void api().soltarObjetoEnVaca("panzi"); });
+    await avanzar(3000);
+    fireEvent.click(within(screen.getByTestId("opciones")).getByRole("button", { name: "吃饺子" }));
+    await avanzar(1000);
+    expect(api().primerPlano).not.toBeNull();
+    ir("living");
+    expect(enLiving()).toBe(false);
+  });
+
+  it("las palabras abiertas llegan a la mesa y tocar una avisa", async () => {
+    const alAbrirPalabra = vi.fn();
+    const id = PALABRAS[0].id;
+    const { container } = montarCasa({ palabras: [id], alAbrirPalabra });
+    ir("living");
+    fireEvent.click(mesa(container));
+    await avanzar(PASO_MS + ZOOM_MS);
+    const tile = (i: string) => screen.getByTestId("mesa").querySelector<HTMLElement>(`[data-palabra="${i}"]`)!;
+    expect(tile(id).dataset.abierta).toBe("true");
+    fireEvent.click(tile(PALABRAS[1].id));
+    expect(alAbrirPalabra).toHaveBeenCalledWith(PALABRAS[1].id);
+  });
+
+  it("pestaña oculta en el living con una ficha abierta: la ficha se cierra (Review Focus 3)", async () => {
+    const { container, rerender } = montarCasa();
+    ir("living");
+    fireEvent.click(mesa(container));
+    await avanzar(PASO_MS + ZOOM_MS);
+    fireEvent.click(screen.getByTestId("mesa").querySelector<HTMLElement>("[data-palabra]")!);
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    rerender(false);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByTestId("mesa")).toBeNull();
   });
 });

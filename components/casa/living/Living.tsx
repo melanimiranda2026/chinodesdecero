@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { COLOR_TONO } from "@/lib/tonos";
 import { callar } from "../audio/voz";
 import { sfx } from "../audio/sonido";
@@ -7,6 +7,7 @@ import { FondoCuarto } from "../arte/Capa";
 import { apuntar, aspectoDe, encuadrar, transformCSS, type Camara } from "../camara";
 import { proyectar } from "../cocina/iso";
 import { Vaca } from "../Vaca";
+import { useEscenario } from "../useEscenario";
 import { Mesa } from "./Mesa";
 import { MESA_LIVING, PARADA_VACA } from "./lugares";
 import { PALABRAS } from "./palabras";
@@ -74,29 +75,7 @@ export function Living({
   useEffect(() => limpiar, []);
 
   // Tamaño real del escenario (en celular vertical deja de ser cuadrado), como en la cocina.
-  const raiz = useRef<HTMLDivElement>(null);
-  const [tam, setTam] = useState({ w: 0, h: 0 });
-  useLayoutEffect(() => {
-    const el = raiz.current;
-    if (!el) return;
-    const medir = () => {
-      const r = el.getBoundingClientRect();
-      if (!r.width || !r.height) return; // oculta (display none): se ignora
-      setTam((t) => (t.w === r.width && t.h === r.height ? t : { w: r.width, h: r.height }));
-    };
-    medir();
-    if (typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(medir);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-  // la transición de la cámara se enciende un cuadro después de la primera medida (sin animar el encuadre vertical)
-  const [medido, setMedido] = useState(false);
-  useEffect(() => {
-    if (medido || tam.w === 0) return;
-    const id = requestAnimationFrame(() => setMedido(true));
-    return () => cancelAnimationFrame(id);
-  }, [medido, tam.w]);
+  const { ref: raiz, tam, medido } = useEscenario();
 
   const aspecto = aspectoDe(tam.w, tam.h);
   const entra = fase === "zoom" || fase === "mesa";

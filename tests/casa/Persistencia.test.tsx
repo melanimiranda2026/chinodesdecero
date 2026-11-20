@@ -16,6 +16,8 @@ import { Casa } from "@/components/casa/Casa";
 import { CLAVE_AVANCE, cargarAvance } from "@/components/casa/avance";
 import { ESTADO_INICIAL } from "@/components/casa/cocina/datos";
 import { reiniciarEventos } from "@/components/casa/eventos";
+import { PASO_MS, ZOOM_MS } from "@/components/casa/living/Living";
+import { PALABRAS } from "@/components/casa/living/palabras";
 
 const avanzar = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
 
@@ -101,5 +103,34 @@ describe("Casa con avance", () => {
     entrarCasa();
     fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
     expect(screen.getByRole("button", { name: "Avísame" })).toBeTruthy();
+  });
+
+  it("abrir una palabra en la mesa la guarda en avance.palabras sin repetir; al recargar sale marcada", async () => {
+    const id = PALABRAS[2].id;
+    const abrirMesa = async () => {
+      fireEvent.click(document.querySelector('[data-cuarto="living"]') as HTMLElement);
+      fireEvent.click(document.querySelector("[data-mesa]") as HTMLElement);
+      await avanzar(PASO_MS + ZOOM_MS);
+    };
+    const tile = () => screen.getByTestId("mesa").querySelector<HTMLElement>(`[data-palabra="${id}"]`)!;
+    const { unmount } = render(<Casa />);
+    await avanzar(10);
+    entrarCasa();
+    await abrirMesa();
+    fireEvent.click(tile());
+    await avanzar(600);
+    expect(cargarAvance().palabras).toEqual([id]);
+    expect(JSON.parse(localStorage.getItem(CLAVE_AVANCE)!).palabras).toEqual([id]);
+    expect(tile().dataset.abierta).toBe("true");
+    fireEvent.click(tile());
+    await avanzar(600);
+    expect(cargarAvance().palabras).toEqual([id]);
+    unmount();
+
+    render(<Casa />);
+    await avanzar(10);
+    entrarCasa();
+    await abrirMesa();
+    expect(tile().dataset.abierta).toBe("true");
   });
 });

@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { ARTE, ARTE_PRIMER_PLANO, ARTE_REFRI, ARTE_REFRI_FONDO, ARTE_VACA, FONDO_CUARTO } from "@/components/casa/arte/registro";
+import { ARTE, ARTE_MESA, ARTE_PRIMER_PLANO, ARTE_REFRI, ARTE_REFRI_FONDO, ARTE_VACA, FONDO_CUARTO } from "@/components/casa/arte/registro";
+import { MESA_LIVING, PARADA_VACA } from "@/components/casa/living/lugares";
+import { alPiso } from "@/components/casa/cocina/iso";
 import { Capa, FondoCuarto } from "@/components/casa/arte/Capa";
 import { Vaca } from "@/components/casa/Vaca";
 import { estadosAlcanzables } from "@/components/casa/cocina/acciones";
@@ -138,5 +140,55 @@ describe("FondoCuarto", () => {
       const svg = readFileSync(join(process.cwd(), "public", src), "utf8");
       expect(svg).toContain('viewBox="0 0 1000 1000"');
     }
+  });
+});
+
+/** Un SVG generado de 1000 x 1000 unidades (o el dibujo a mano que lo reemplaza). */
+function esCuadroDeMil(capa: { tipo: string; src?: string }, patron: RegExp) {
+  expect(capa.tipo).toBe("img");
+  const src = capa.src!;
+  expect(src).toMatch(patron);
+  const ruta = join(process.cwd(), "public", src);
+  expect(existsSync(ruta), src).toBe(true);
+  if (src.endsWith(".svg")) expect(readFileSync(ruta, "utf8")).toContain('viewBox="0 0 1000 1000"');
+}
+
+describe("arte del living", () => {
+  it("el cuarto del living sale del manifiesto y es de 1000 x 1000", () => {
+    esCuadroDeMil(FONDO_CUARTO.living, /^\/arte\/living\/cuarto_living\.(svg|png|webp)$/);
+    const { container } = render(<FondoCuarto cuarto="living" />);
+    expect(container.querySelector('[data-capa="cuarto_living"]')).not.toBeNull();
+  });
+  it("la mesa vista desde arriba sale del manifiesto y es de 1000 x 1000", () => {
+    esCuadroDeMil(ARTE_MESA, /^\/arte\/living\/mesa_arriba\.(svg|png|webp)$/);
+  });
+  it("la mesa cae dentro del cuarto", () => {
+    const { x, y, w, h } = MESA_LIVING;
+    expect(w).toBeGreaterThan(0);
+    expect(h).toBeGreaterThan(0);
+    expect(x).toBeGreaterThanOrEqual(0);
+    expect(y).toBeGreaterThanOrEqual(0);
+    expect(x + w).toBeLessThanOrEqual(1000);
+    expect(y + h).toBeLessThanOrEqual(1000);
+  });
+  it("la vaca se para en el piso, al lado de la mesa y sin taparla", () => {
+    const { x, y } = PARADA_VACA;
+    const m = MESA_LIVING;
+    const dentro = x >= m.x && x <= m.x + m.w && y >= m.y && y <= m.y + m.h;
+    expect(dentro).toBe(false);
+    // sobre el piso del cuarto (el rombo de 0 a 10 en u y v)
+    const { u, v } = alPiso(x, y);
+    for (const c of [u, v]) {
+      expect(c).toBeGreaterThan(0);
+      expect(c).toBeLessThan(10);
+    }
+    // la vaca mide 170 de ancho y se apoya en las patas: su cuadro no se monta sobre la mesa
+    const vaca = { x0: x - 85, x1: x + 85, y0: y - 160, y1: y };
+    const choca = vaca.x0 < m.x + m.w && vaca.x1 > m.x && vaca.y0 < m.y + m.h && vaca.y1 > m.y;
+    expect(choca).toBe(false);
+    // y queda cerca: a menos de un cuerpo de vaca del borde de la mesa
+    const dx = Math.max(m.x - x, 0, x - (m.x + m.w));
+    const dy = Math.max(m.y - y, 0, y - (m.y + m.h));
+    expect(Math.hypot(dx, dy)).toBeLessThan(170);
   });
 });

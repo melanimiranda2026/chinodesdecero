@@ -1,6 +1,6 @@
-# Cómo editar el arte de la cocina
+# Cómo editar el arte de la casa
 
-La cocina es isométrica. Todo el dibujo lo genera el código (`scripts/arte-iso.ts`) como archivos SVG en `public/arte/cocina/`: uno por cuarto y uno por capa de cada objeto. Puedes repintar cualquiera en Krita: si guardas un PNG o WebP con **el mismo nombre** al lado del SVG, el juego usa tu dibujo en vez del generado. No hay que tocar código.
+La cocina y el living son isométricos. Todo el dibujo lo genera el código (`scripts/arte-iso.ts`) como archivos SVG en `public/arte/cocina/` y `public/arte/living/`: uno por cuarto y uno por capa de cada objeto. Puedes repintar cualquiera en Krita: si guardas un PNG o WebP con **el mismo nombre** al lado del SVG, el juego usa tu dibujo en vez del generado. No hay que tocar código.
 
 ## Pintar en Krita con capas (lo recomendado)
 
@@ -8,6 +8,7 @@ Si abres un SVG directo en Krita, todo queda en **una sola capa vectorial**: no 
 
 - Un `.ora` por objeto (`guo.ora`, `bingxiang.ora`, …), con sus capas ya separadas y con nombre (`olla`, `arroz`, `mugre`), alineadas y de 1024 × 1024 px.
 - `cuarto_cocina.ora` (2000 × 2000 px), con el cuarto partido en capas: `piso`, `paredes`, `ventana`, `repisa_izq`, `pared_der`, `sombras`, `meson_izq`, `meson_der`, `mesa` y `planta`.
+- `cuarto_living.ora` (2000 × 2000 px), igual para el living: `piso`, `paredes`, `alfombra`, `sombras`, `tele`, `sofa`, `sillas` (las dos de atrás), `mesa` (con las fichas de colores), `sillas_frente` y `planta`.
 
 Algunas capas vienen ocultas porque no se ven a la vez en el juego (las mitades de la manzana, el té del vaso). Préndelas con el ojito del panel Capas.
 
@@ -17,13 +18,13 @@ Algunas capas vienen ocultas porque no se ven a la vez en el juego (las mitades 
 2. En Krita: Archivo → Abrir → `arte-krita/guo.ora`. En el panel Capas ves `olla`, `arroz`, `mugre`.
 3. Pinta con la tableta **dentro de la capa** que quieres cambiar. Si prefieres pintar en capas nuevas, mételas en un **grupo con el nombre de la capa**: crea un grupo, ponle `arroz` y deja adentro la capa original y tus capas nuevas.
 4. Guarda con **Ctrl + S**, en el mismo `.ora`. Si Krita avisa que el formato puede perder cosas, acepta. No guardes como `.kra`: ese no se puede leer.
-5. Corre `npm run arte:krita-importar`. Deja en `public/arte/cocina/` un PNG por cada capa que cambiaste (las demás no las toca) y actualiza el manifiesto.
+5. Corre `npm run arte:krita-importar`. Deja en `public/arte/cocina/` (o `living/`, para `cuarto_living.ora`) un PNG por cada capa que cambiaste (las demás no las toca) y actualiza el manifiesto.
 6. Reinicia `npm run dev` y recarga.
 
 Cómo se lee lo que guardas:
 
 - **Objetos:** cada capa (o grupo) de arriba se exporta por su nombre, **aunque esté oculta**: el juego decide cuándo se ve. Dentro de un grupo, lo oculto no entra. Una capa con otro nombre (por ejemplo "Capa 3") se ignora con un aviso.
-- **Cuarto:** se exporta **todo lo visible junto** como `cuarto_cocina.png`. Si ocultas una capa, desaparece del juego.
+- **Cuarto:** se exporta **todo lo visible junto** como `cuarto_cocina.png` (o `cuarto_living.png`). Si ocultas una capa, desaparece del juego.
 - Solo se usa la mezcla normal: los modos de fusión (multiplicar, etc.) no se aplican en los objetos. En el cuarto sí, porque se usa la imagen final que guarda Krita.
 - No cambies el tamaño del lienzo: si no es 1024 (objetos) o 2000 (cuarto), el archivo no se importa.
 
@@ -56,6 +57,17 @@ Si guardas el trabajo de Krita (`.kra`), déjalo fuera de `public/` (por ejemplo
 ## Cambiar el dibujo generado
 
 Si en vez de pintar encima prefieres cambiar el diseño (colores, muebles, posiciones), se edita `scripts/arte-iso.ts` y se corre `npm run arte:generar`. Las medidas del cuarto y de los muebles están en `components/casa/cocina/iso.ts`; dónde va cada objeto, en `components/casa/cocina/datos.ts` (`LUGARES`). Si mueves un mueble, el juego se entera solo: las posiciones salen de los mismos números.
+
+## El living comedor (客厅)
+
+Mismo cuarto, misma proyección y misma paleta que la cocina. Archivos en `public/arte/living/` (o tu `.png` / `.webp` con el mismo nombre):
+
+| Archivo | Qué muestra |
+|---|---|
+| `cuarto_living` | El cuarto entero (1000 × 1000 unidades, 2000 × 2000 px): piso, paredes con friso de salvia, ventana redonda, cuadro de bambú, reloj, alfombra, mueble con la tele (电视), sofá (沙发), la mesa de comedor con 4 sillas al centro y la planta. Sobre la mesa van fichas de colores **sin letras**: los hanzi los pone el juego encima |
+| `mesa_arriba` | La mesa vista desde arriba (cuadrado de 1000 × 1000): tablero de madera con veta, nudos y canto, sin fichas. Es el fondo donde flotan las palabras |
+
+Las medidas de los muebles están en `components/casa/living/lugares.ts` (`MUEBLES_LIVING`). De ahí salen también `MESA_LIVING` (el rectángulo del tablero en el cuadro de 1000: zona de toque y centro del zoom) y `PARADA_VACA` (dónde se para la vaca, a la izquierda de la mesa). Si mueves la mesa ahí y corres `npm run arte:generar`, el dibujo y el juego se mueven juntos. Si repintas `cuarto_living` en Krita, deja la mesa donde está.
 
 ## La vaca
 

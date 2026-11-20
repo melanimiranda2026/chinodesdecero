@@ -96,8 +96,13 @@ export const ARTE_RECETA = { jarro: arte("cocina/refri_jarro") };
 /** Fondo del primer plano del refri: estantes de frente y el cajón rotulado 水果. */
 export const ARTE_REFRI_FONDO: Capa = arte("cocina/refri_interior");
 
-/** El cuarto completo (isométrico) en una sola capa de 1000x1000 unidades, sin los objetos. */
-export const FONDO_CUARTO: Record<"cocina", Capa> = { cocina: arte("cocina/cuarto_cocina") };
+/** Cada cuarto completo (isométrico) en una sola capa de 1000x1000 unidades, sin los objetos. */
+export const FONDO_CUARTO: Record<"cocina" | "living", Capa> = {
+  cocina: arte("cocina/cuarto_cocina"),
+  living: arte("living/cuarto_living"),
+};
+/** La mesa del living vista desde arriba (1000x1000): tablero de madera sin fichas; las palabras flotan encima. */
+export const ARTE_MESA: Capa = arte("living/mesa_arriba");
 
 /**
  * Capas de la vaca (todas del mismo cuadrado y centro que el cuerpo). Se cambian por nombre; PNG o WebP.

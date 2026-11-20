@@ -121,6 +121,24 @@ test("客厅: la mesa de 50 palabras cabe sin scroll horizontal, fichas ≥ 44 p
     expect(c.height, `ficha ${i} alto`).toBeGreaterThanOrEqual(44);
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
+
+  // legible en el celular: hanzi ≥ 18 px y el pinyin nunca se corta dentro de una sílaba (cada sílaba, una línea)
+  const medidas = await fichas.evaluateAll((els) =>
+    els.map((el) => {
+      const hz = el.querySelector<HTMLElement>("[data-hanzi-teja]")!;
+      const sil = [...el.querySelectorAll<HTMLElement>("[data-silaba]")];
+      return {
+        id: el.getAttribute("data-palabra"),
+        hz: parseFloat(getComputedStyle(hz).fontSize),
+        silabas: sil.map((s) => ({ py: s.textContent, alto: s.getBoundingClientRect().height, linea: parseFloat(getComputedStyle(s).lineHeight) || parseFloat(getComputedStyle(s).fontSize) * 1.2 })),
+      };
+    }),
+  );
+  for (const m of medidas) {
+    expect(m.hz, `${m.id}: hanzi ${m.hz}px`).toBeGreaterThanOrEqual(18);
+    expect(m.silabas.length, `${m.id}: sílabas`).toBeGreaterThan(0);
+    for (const s of m.silabas) expect(s.alto, `${m.id}: «${s.py}» en una línea`).toBeLessThan(s.linea * 1.5);
+  }
   await mesa.evaluate((el) => el.scrollTo?.(0, 0));
   await page.screenshot({ path: `${process.env.SMOKE_SHOTS ?? "test-results"}/mesa-${info.project.name}.png` });
 

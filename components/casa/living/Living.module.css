@@ -29,7 +29,8 @@
   text-align: center;
   font-family: var(--f-texto), system-ui, sans-serif;
   font-weight: 700;
-  overflow-wrap: anywhere;
+  /* solo se parte una palabra si no cabe sola en la línea (nunca a mitad de sílaba por gusto) */
+  overflow-wrap: break-word;
   animation: fichaEntra 0.45s cubic-bezier(0.3, 1.5, 0.5, 1);
 }
 .ficha:focus { outline: none; }
@@ -188,12 +189,34 @@
   box-shadow: 0 12px 0 rgba(40, 22, 12, 0.35);
 }
 
+/* celular vertical: la mesa llena el alto disponible (no cuadrada) y las fichas crecen.
+   El dibujo pasa a border-image: esquinas y borde quedan como están, la cubierta se estira. */
+@container (orientation: portrait) {
+  .tablero {
+    width: 100cqw;
+    height: 100cqh;
+    aspect-ratio: auto;
+    border-radius: 22px;
+  }
+  .tablero[data-borde="true"] {
+    background: none;
+    border-image-source: var(--arte-mesa);
+    border-image-slice: 6.2% fill;
+    border-image-width: 6.2cqw;
+    border-image-repeat: stretch;
+  }
+  .tablero[data-borde="true"] > [data-capa] { display: none; }
+  /* la cubierta empieza donde termina el borde del dibujo (6.2 % del ancho por lado) */
+  .rejilla { inset: 6.6cqw; }
+}
+
 /* las fichas sobre la cubierta (el borde del dibujo es ~6 % por lado); se desplaza en vertical si no caben */
 .rejilla {
   position: absolute;
   inset: 6.5%;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* 3 columnas en celular angosto: fichas de ~80 px, hanzi de 3 caracteres ≥ 20 px */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px 10px;
   align-content: start;
   padding: 10px 6px 18px;
@@ -203,8 +226,11 @@
   touch-action: pan-y;
   scrollbar-width: thin;
 }
-@media (min-width: 560px) { .rejilla { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
-@media (min-width: 900px) and (min-height: 700px) { .rejilla { grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 16px 12px; } }
+/* columnas según el lado de la tabla (no de la ventana: en la landing la casa es una ventana chica).
+   La tabla mide min(ancho, alto) en horizontal y el ancho en vertical: se piden ambos. */
+@container (min-width: 400px) and (min-height: 400px) { .rejilla { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@container (min-width: 560px) and (min-height: 560px) { .rejilla { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+@container (min-width: 860px) and (min-height: 860px) { .rejilla { grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 16px 12px; } }
 
 .teja {
   min-width: 44px;
@@ -247,8 +273,10 @@
 /* el hanzi se achica según cuántos caracteres tiene, medido contra el ancho de la propia ficha */
 .tejaHz { font-family: var(--f-hanzi), sans-serif; font-weight: 400; font-size: min(42px, 60cqi); line-height: 1.1; white-space: nowrap; }
 .tejaHz[data-largo="2"] { font-size: min(36px, 42cqi); }
-.tejaHz[data-largo="3"] { font-size: min(30px, 29cqi); }
-.tejaPy { font-weight: 900; font-size: clamp(11px, 19cqi, 14px); line-height: 1.1; max-width: 100%; overflow-wrap: anywhere; }
+.tejaHz[data-largo="3"] { font-size: min(30px, 31cqi); }
+.tejaPy { font-weight: 900; font-size: clamp(11px, 20cqi, 15px); line-height: 1.15; max-width: 100%; }
+/* una sílaba nunca se parte: el corte, si hace falta, cae entre sílabas */
+.tejaSil { display: inline-block; white-space: nowrap; }
 
 @media (prefers-reduced-motion: reduce) {
   .mesa,

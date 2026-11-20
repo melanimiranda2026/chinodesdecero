@@ -107,7 +107,12 @@ export function Mesa({
         ⭐ {cuenta}/{PALABRAS.length}
       </div>
 
-      <div className={styles.tablero}>
+      <div
+        className={styles.tablero}
+        // el mismo dibujo como border-image: en vertical la mesa se alarga sin deformar las esquinas ni el borde
+        data-borde={ARTE_MESA.tipo === "img" ? "true" : undefined}
+        style={ARTE_MESA.tipo === "img" ? ({ "--arte-mesa": `url("${ARTE_MESA.src}")` } as CSSProperties) : undefined}
+      >
         <Capa capa={ARTE_MESA} vista={VISTA_CUARTO} nombre="mesa_arriba" />
         <div className={styles.rejilla}>
           {PALABRAS.map((p, i) => {
@@ -124,10 +129,11 @@ export function Mesa({
                 style={desfase(i)}
                 onClick={(e) => tocar(p, e.currentTarget)}
               >
-                <span className={styles.tejaHz} data-largo={[...hz].length}>{hz}</span>
+                <span className={styles.tejaHz} data-hanzi-teja data-largo={[...hz].length}>{hz}</span>
                 <span className={styles.tejaPy}>
+                  {/* cada sílaba entera (inline-block, sin cortes): si no cabe, la línea se parte entre sílabas */}
                   {p.s.map(([, py, t], j) => (
-                    <span key={j} style={{ color: COLOR_TONO[t] }}>
+                    <span key={j} data-silaba className={styles.tejaSil} style={{ color: COLOR_TONO[t] }}>
                       {py}
                     </span>
                   ))}

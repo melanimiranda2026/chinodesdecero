@@ -1,5 +1,5 @@
 import { crearClienteNavegador } from "@/lib/supabase/navegador";
-import { avanceInicial, esObjeto, validarAvance, type Avance, type MedallaGuardada, MAX_ESCUCHADAS } from "./avance-validar";
+import { avanceInicial, esObjeto, validarAvance, type Avance, type MedallaGuardada, MAX_ESCUCHADAS, unirPalabras } from "./avance-validar";
 
 export {
   avanceInicial, avancePendiente, estadoValido, validarAvance, MAX_ESCUCHADAS, MAX_AVANCE_PENDIENTE,
@@ -137,6 +137,7 @@ export function fusionar(local: Avance, remoto: Avance, estadoCambio: boolean): 
     estado: estadoCambio ? local.estado : remoto.estado,
     medallas,
     escuchadas: [...new Set([...remoto.escuchadas, ...local.escuchadas])].slice(0, MAX_ESCUCHADAS),
+    palabras: unirPalabras(remoto.palabras, local.palabras),
   };
   const correo = local.correo ?? remoto.correo;
   if (correo) a.correo = correo;

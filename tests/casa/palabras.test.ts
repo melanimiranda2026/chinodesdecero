@@ -30,6 +30,23 @@ describe("las 50 palabras de la mesa", () => {
   it("sandhi: ninguna palabra trae dos sílabas seguidas en 3.er tono", () => {
     for (const p of PALABRAS) for (let i = 1; i < p.s.length; i++) expect(p.s[i - 1][2] === 3 && p.s[i][2] === 3, p.id).toBe(false);
   });
+  it("la marca de tono del pinyin coincide con el tono (color) de cada sílaba", () => {
+    const tonoDe = (py: string) => {
+      const n = py.normalize("NFD");
+      if (n.includes("̄")) return 1;
+      if (n.includes("́")) return 2;
+      if (n.includes("̌")) return 3;
+      if (n.includes("̀")) return 4;
+      return 5;
+    };
+    for (const p of PALABRAS) for (const [hz, py, t] of p.s) expect(tonoDe(py), `${p.id} ${hz} ${py}`).toBe(t);
+  });
+  it("你好 se escribe como se dice: ní hǎo (id ni2_hao3, con la nota del sandhi)", () => {
+    const nh = PALABRAS.find((p) => textoHanzi(p.s) === "你好")!;
+    expect(nh.id).toBe("ni2_hao3");
+    expect(nh.s.map(([, py]) => py)).toEqual(["ní", "hǎo"]);
+    expect(nh.nota).toMatch(/ní hǎo/);
+  });
   it("ninguna frase invita a inventar una historia", () => {
     for (const p of PALABRAS) expect(p.frase.toLowerCase()).not.toContain("inventa");
   });

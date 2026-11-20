@@ -71,6 +71,16 @@ describe("efectos nunca encima del mandarín", () => {
     expect(voz - pop).toBeGreaterThanOrEqual(350);
   });
 
+  it("dos toques rápidos (A y luego B en < 200 ms): el último toque gana y B se dice", async () => {
+    const { api } = montar();
+    act(() => { void api().tocar("beizi"); });
+    await avanzar(150);
+    act(() => { void api().tocar("wan"); });
+    await avanzar(3000);
+    const voces = linea.filter((l) => l.que.startsWith("voz:")).map((l) => l.que);
+    expect(voces.at(-1)).toBe(`voz:${textoHanzi(OBJETOS.wan.nombre)}`);
+  });
+
   it("una acción sin primer plano (打开): el efecto y después la frase", async () => {
     const { api } = montar();
     const abrir = acciones("bingxiang", ESTADO_INICIAL)[0];

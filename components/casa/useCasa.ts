@@ -127,6 +127,8 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
   /** null = ✕ (salir sin aplicar la acción). */
   const resolverPP = useRef<((m: Medalla | null) => void) | null>(null);
   const turnoVoz = useRef(0);
+  /** Cuenta los cortes de voz (callarVaca, empezar un arrastre): el nombre tras el pop solo cede ante esto. */
+  const cortes = useRef(0);
   // cuenta los toques a objetos: el saludo del primer toque cede ante lo que se tocó
   const toques = useRef(0);
   /** Frases en curso (para no tocar efectos encima del mandarín). */
@@ -243,6 +245,7 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
 
   const callarVaca = useCallback(() => {
     turnoVoz.current++;
+    cortes.current++;
     callar();
     setGlobo(null);
     setHocico("sonrisa");
@@ -293,10 +296,11 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
       mirar("izquierda", 900);
       eventoRef.current?.("tocar_objeto", { id });
       let turno = -1;
-      const antes = turnoVoz.current;
+      const antes = cortes.current;
       const decirNombre = async () => {
-        // durante el pop la vaca se calló (cambio de cuarto) o habló otra cosa: el nombre ya no va
-        if (turnoVoz.current !== antes) return false;
+        // durante el pop la vaca se calló (cambio de cuarto, arrastre): el nombre ya no va.
+        // Si solo habló otra cosa (otro toque rápido), el nombre sí va: el último toque gana.
+        if (cortes.current !== antes || ocupadoRef.current || quizRef.current) return false;
         const dicho = hablar(OBJETOS[id].nombre);
         turno = turnoVoz.current;
         return dicho;
@@ -489,6 +493,7 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
     cerrarOpciones();
     if (quizRef.current) return; // en el 玩 el globo con la pregunta se queda
     turnoVoz.current++;
+    cortes.current++;
     setGlobo(null);
   }, [cerrarOpciones, quizRef]);
 

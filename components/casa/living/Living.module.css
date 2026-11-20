@@ -299,4 +299,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .fichaChica { animation: none; }
+  /* sin caminata ni zoom animados: la vaca y la cámara llegan de una vez (los tiempos siguen iguales) */
+  .living [data-mundo],
+  .living .vaca { transition: none !important; }
 }

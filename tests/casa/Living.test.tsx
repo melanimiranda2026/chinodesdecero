@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { MutableRefObject } from "react";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 vi.mock("@/components/casa/audio/voz", () => ({
   decir: vi.fn(() => Promise.resolve(true)),
@@ -147,6 +149,17 @@ describe("Living", () => {
     expect(screen.queryByTestId("mesa")).toBeNull();
   });
 
+  it("es memo: el vapor de la cocina (cada 450 ms) no lo vuelve a pintar si sus props no cambian", () => {
+    expect((Living as unknown as { $$typeof: symbol }).$$typeof).toBe(Symbol.for("react.memo"));
+  });
+
+  it("con movimiento reducido no hay caminata ni zoom animados (CSS)", () => {
+    const css = readFileSync(join(process.cwd(), "components/casa/living/Living.module.css"), "utf8");
+    const reducido = [...css.matchAll(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/g)].map((m) => m[1]).join("\n");
+    expect(reducido).toMatch(/\.living \[data-mundo\][\s\S]*transition: none !important/);
+    expect(reducido).toMatch(/\.living \.vaca[\s\S]*transition: none !important/);
+  });
+
   it("sin español en el cuarto", () => {
     const { container } = montar();
     expect(container.textContent ?? "").not.toMatch(/[A-Za-zÁÉÍÓÚáéíóúñÑ]{2,}/);
@@ -190,6 +203,23 @@ describe("Living en la casa", () => {
     expect(callar).toHaveBeenCalled();
     expect(api().estado.pingguo).toBe("limpio");
     expect(document.querySelector('[data-objeto="pingguo"]')).not.toBeNull();
+  });
+
+  it("cambiar de cuarto hace un fundido corto (no al cargar) y con movimiento reducido no se ve", () => {
+    montarCasa();
+    const fundido = () => document.querySelector<HTMLElement>("[data-fundido]");
+    expect(fundido()).toBeNull();
+    ir("living");
+    const f1 = fundido()!;
+    expect(f1).not.toBeNull();
+    expect(f1.getAttribute("aria-hidden")).toBe("true");
+    ir("cocina");
+    // uno nuevo en cada cambio: la animación vuelve a empezar
+    expect(fundido()).not.toBe(f1);
+    const css = readFileSync(join(process.cwd(), "components/casa/Casa.module.css"), "utf8");
+    expect(css).toMatch(/\.fundido \{[^}]*pointer-events: none/);
+    expect(css).toMatch(/\.fundido \{[^}]*animation: [^;]*0\.2s/);
+    expect(css).toMatch(/prefers-reduced-motion: reduce\) \{[^}]*\.fundido \{ display: none; \}/);
   });
 
   it("en el living no hay 玩 ni ⤢ ni oscuridad, aunque la lámpara esté apagada; sí el minimapa", () => {

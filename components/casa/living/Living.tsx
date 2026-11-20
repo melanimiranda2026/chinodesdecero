@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
 import { COLOR_TONO } from "@/lib/tonos";
 import { callar } from "../audio/voz";
 import { sfx } from "../audio/sonido";
@@ -57,7 +57,7 @@ const SOBRE_LA_MESA = [
  * El living comedor (客厅): el cuarto, la vaca y la mesa con fichas de colores encima. Tocar la mesa: la vaca
  * camina hasta ella, se sorprende (orejas arriba), la cámara entra y se abre la mesa vista desde arriba.
  */
-export function Living({
+export const Living = memo(function Living({
   abiertas, alAbrir, activo,
 }: {
   abiertas: readonly string[];
@@ -169,4 +169,4 @@ export function Living({
       {fase === "mesa" && <Mesa abiertas={abiertas} alAbrir={alAbrir} alCerrar={volver} />}
     </div>
   );
-}
+});

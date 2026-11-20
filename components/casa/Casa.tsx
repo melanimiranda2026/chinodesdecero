@@ -338,6 +338,8 @@ export function CasaVista({
   // El cuarto a la vista (no se guarda: siempre se entra por la cocina). useCasa sigue montado: la cocina no se pierde.
   const [cuarto, setCuarto] = useState<Cuarto>("cocina");
   const living = cuarto === "living";
+  /** Cuántas veces se cambió de cuarto: cada cambio monta un fundido nuevo (0 = recién cargado, sin fundido). */
+  const [fundidos, setFundidos] = useState(0);
   const aspecto = aspectoDe(tam.w, tam.h);
   const vertical = aspecto > 1;
   // Paneo del dedo sobre el piso; cada vez que la casa mueve la cámara (enfoque, ⤢, quiz) se olvida.
@@ -365,6 +367,7 @@ export function CasaVista({
     setArrObj(null);
     setArrVaca(null);
     setPaneando(false);
+    setFundidos((n) => n + 1);
     setCuarto(c);
   };
   const entrar = () => {
@@ -650,6 +653,8 @@ export function CasaVista({
           </button>
         </div>
         )}
+
+        {fundidos > 0 && <div key={fundidos} data-fundido className={styles.fundido} aria-hidden="true" />}
 
         {/* botón 玩, marcador de estrellas y 🔊 (solo en la cocina) */}
         {!living && <button

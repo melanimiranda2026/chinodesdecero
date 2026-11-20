@@ -153,3 +153,7 @@
   .marco { flex: none; aspect-ratio: 1; }
   .ventana.grande .marco { flex: 1; aspect-ratio: auto; }
 }
+
+/* 🔊/🔇 al lado del 全屏, mismo alto; papel en vez de amarillo para que no compitan */
+.mudo { background: var(--papel); width: 48px; font-size: 20px; }
+.mudo[aria-pressed="true"] { background: #f3d9d4; }

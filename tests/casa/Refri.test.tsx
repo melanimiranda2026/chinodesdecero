@@ -66,7 +66,7 @@ describe("Refri en primer plano", () => {
     expect(refri.querySelectorAll("[data-comida]")).toHaveLength(COMIDAS.length);
   });
 
-  it("tocar 香蕉 dice 香蕉; cada tercer toque, además 很冷", async () => {
+  it("tocar comidas dice solo sus nombres: 很冷 nunca se mete entre los toques", async () => {
     const { api } = montar();
     const refri = await abrirRefri(api);
     decirMock.mockClear();
@@ -76,11 +76,32 @@ describe("Refri en primer plano", () => {
     expect(dichos()).toEqual(["香蕉"]);
     fireEvent.click(within(refri).getByRole("button", { name: "牛奶" }));
     await avanzar(1000);
-    expect(dichos()).toEqual(["香蕉", "牛奶"]);
     fireEvent.click(banana);
-    await avanzar(2000);
-    expect(dichos()).toEqual(["香蕉", "牛奶", "香蕉", textoHanzi(HEN_LENG)]);
+    await avanzar(1000);
+    for (let i = 0; i < 6; i++) fireEvent.click(banana);
+    await avanzar(5000);
+    expect(dichos()).not.toContain(textoHanzi(HEN_LENG));
+    expect(dichos().slice(0, 3)).toEqual(["香蕉", "牛奶", "香蕉"]);
     expect(banana.getAttribute("data-rebota")).not.toBeNull();
+  });
+
+  it("al abrir, si nadie toca nada, la vaca dice 很冷 una sola vez", async () => {
+    const { api } = montar();
+    const abrir = acciones("bingxiang", api().estado).find((a) => a.anim === "abrir")!;
+    act(() => { void api().elegir("bingxiang", abrir); });
+    await avanzar(8000);
+    expect(dichos().filter((d) => d === textoHanzi(HEN_LENG))).toHaveLength(1);
+  });
+
+  it("si se toca una comida enseguida al abrir, no hay 很冷", async () => {
+    const { api } = montar();
+    const abrir = acciones("bingxiang", api().estado).find((a) => a.anim === "abrir")!;
+    act(() => { void api().elegir("bingxiang", abrir); });
+    // espera a que aparezca el primer plano y toca de inmediato
+    for (let t = 0; t < 40 && !screen.queryByTestId("refri"); t++) await avanzar(100);
+    fireEvent.click(within(screen.getByTestId("refri")).getByRole("button", { name: "香蕉" }));
+    await avanzar(5000);
+    expect(dichos()).not.toContain(textoHanzi(HEN_LENG));
   });
 
   it("el rótulo 水果 del cajón es un botón (>= 44 px) con pinyin que dice 水果", async () => {
@@ -93,10 +114,6 @@ describe("Refri en primer plano", () => {
     fireEvent.click(cajon);
     await avanzar(1000);
     expect(dichos()).toEqual(["水果"]);
-    // no cuenta para el 很冷 de las comidas
-    for (let i = 0; i < 3; i++) fireEvent.click(cajon);
-    await avanzar(3000);
-    expect(dichos()).not.toContain(textoHanzi(HEN_LENG));
   });
 
   it("el cajón mide al menos 44 px en el CSS", () => {

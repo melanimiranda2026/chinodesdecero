@@ -1,4 +1,4 @@
-import { cargar, contexto, listo, puedeSonar, type JuegoVoz } from "./motor";
+import { alCambiarMudo, cargar, contexto, estaMudo, listo, puedeSonar, type JuegoVoz } from "./motor";
 
 /** Efectos y música de fondo. Todo es opcional: si el navegador no deja, se ignora. */
 
@@ -68,7 +68,7 @@ let pedido = 0;
 /** La pista que suena (o está cargando): pedirla otra vez no la reinicia. null si no hay o no pudo sonar. */
 let actual: Pista | null = null;
 
-const volumen = () => (vozActiva ? Math.min(VOLUMEN_MUSICA, VOLUMEN_MUSICA_BAJO) : VOLUMEN_MUSICA);
+const volumen = () => (estaMudo() ? 0 : vozActiva ? Math.min(VOLUMEN_MUSICA, VOLUMEN_MUSICA_BAJO) : VOLUMEN_MUSICA);
 
 function aplicarVolumen() {
   const v = volumen();
@@ -157,3 +157,9 @@ export const musica = {
     aplicarVolumen();
   },
 };
+
+// Con el silencio puesto: se cortan los efectos que sonaban y la música queda en 0 (vuelve al quitarlo).
+alCambiarMudo((m) => {
+  if (m) for (const cortar of [...sonando]) cortar();
+  aplicarVolumen();
+});

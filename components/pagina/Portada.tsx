@@ -5,6 +5,7 @@ import { callar, enfocarJuego } from "@/components/casa/audio/voz";
 import { Puzzle } from "@/components/puzzle/Puzzle";
 import { CLAVE_JUEGO, EVENTO_JUEGO, juegoInicial, recordarJuego, type Juego } from "./juego";
 import { PORTADA } from "./contenido";
+import { BotonMudo } from "./BotonMudo";
 import styles from "./portada.module.css";
 
 const PESTAÑAS: { id: Juego; icono: string; hanzi: string; pinyin: string }[] = [
@@ -112,6 +113,7 @@ export function Portada() {
               </button>
             ))}
           </div>
+          <BotonMudo className={cx(styles.pantalla, styles.mudo)} />
           <button
             type="button"
             className={styles.pantalla}

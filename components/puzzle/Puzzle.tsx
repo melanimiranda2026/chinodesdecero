@@ -8,6 +8,7 @@ import { registrar } from "@/components/casa/eventos";
 import { Vaca } from "@/components/casa/Vaca";
 import { TAI_BANG_LE, HEN_HAO } from "@/components/casa/cocina/frases";
 import { Correo } from "@/components/pagina/Correo";
+import { BotonMudo } from "@/components/pagina/BotonMudo";
 import { elegirJuego } from "@/components/pagina/juego";
 import { COLOR_TONO } from "@/lib/tonos";
 import { ETAPAS, idNivel, TEMAS, type Etapa } from "./datos";
@@ -141,7 +142,7 @@ export function Puzzle({ ventana = false }: { ventana?: boolean } = {}) {
             </Link>
             <h1 className={styles.titulo}>
               <PiezaIcono className={styles.tituloIcono} />
-              <span>El puzzle</span>
+              <span className={styles.tituloTexto}>El puzzle</span>
               <span className={styles.tituloZh} lang="zh">
                 拼图 <span className={styles.tituloPy}>pīn tú</span>
               </span>
@@ -149,6 +150,8 @@ export function Puzzle({ ventana = false }: { ventana?: boolean } = {}) {
           </>
         )}
         <Vasos vasos={vasos.vasos} espera={espera} gratis={pantalla.tipo === "ronda" && pantalla.gratis} gasto={gasto} />
+        {/* en la portada el 🔊 va en la barra de la ventana; en su página, aquí */}
+        {!ventana && <BotonMudo />}
       </header>
 
       {pantalla.tipo === "mapa" && (

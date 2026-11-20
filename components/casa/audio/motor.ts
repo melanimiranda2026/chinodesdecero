@@ -18,8 +18,45 @@ export function enfocarJuego(j: JuegoVoz | null): void {
   foco = j;
 }
 
-/** ¿Puede sonar lo que pide este juego? Sin juego pedido o sin foco, siempre. */
+// ---- silencio: el botón 🔇 apaga la vaca, los efectos y la música en todos los juegos ----
+export const CLAVE_MUDO = "cdc:mudo";
+let mudo = false;
+const oyentesMudo = new Set<(m: boolean) => void>();
+
+export function estaMudo(): boolean {
+  return mudo;
+}
+/** Silencia (o no) todo el sonido y lo recuerda en este navegador. */
+export function ponerMudo(m: boolean): void {
+  if (m === mudo) return;
+  mudo = m;
+  try {
+    localStorage.setItem(CLAVE_MUDO, m ? "1" : "0");
+  } catch {
+    /* sin almacenamiento: dura hasta recargar */
+  }
+  for (const f of [...oyentesMudo]) {
+    try { f(m); } catch { /* un oyente roto no frena a los demás */ }
+  }
+}
+/** Lo que eligió la persona la última vez (false si no hay nada o no se puede leer). */
+export function mudoGuardado(): boolean {
+  try {
+    return localStorage.getItem(CLAVE_MUDO) === "1";
+  } catch {
+    return false;
+  }
+}
+export function alCambiarMudo(f: (m: boolean) => void): () => void {
+  oyentesMudo.add(f);
+  return () => {
+    oyentesMudo.delete(f);
+  };
+}
+
+/** ¿Puede sonar lo que pide este juego? Nunca con el silencio puesto; sin juego pedido o sin foco, siempre. */
 export function puedeSonar(j?: JuegoVoz): boolean {
+  if (mudo) return false;
   return !j || !foco || j === foco;
 }
 
@@ -105,5 +142,6 @@ export function cargar(url: string): Promise<AudioBuffer | null> {
 export function reiniciarMotor(): void {
   ctx = null;
   foco = null;
+  mudo = false;
   buffers.clear();
 }

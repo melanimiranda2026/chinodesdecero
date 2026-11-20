@@ -1,5 +1,5 @@
 import { idAudio, type Silaba } from "@/lib/silabas";
-import { cargar, contexto, listo, puedeSonar, type JuegoVoz } from "./motor";
+import { alCambiarMudo, cargar, contexto, listo, puedeSonar, type JuegoVoz } from "./motor";
 import { musica } from "./sonido";
 
 export { desbloquearAudio, enfocarJuego, type JuegoVoz } from "./motor";
@@ -18,6 +18,11 @@ let cortarActual: (() => void) | null = null;
 export function callar(): void {
   cortarActual?.();
 }
+
+// Al poner el silencio, la frase que sonaba se corta (el globo con el texto sigue).
+alCambiarMudo((m) => {
+  if (m) callar();
+});
 
 /**
  * Toca la frase con la voz de la vaca. SIEMPRE resuelve: al terminar, ante un error (fetch 404,

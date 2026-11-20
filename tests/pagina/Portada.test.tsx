@@ -72,6 +72,13 @@ describe("Portada: hero", () => {
     expect(copia.textContent ?? "").not.toMatch(/[a-záéíóúñ]{2,}/i);
     for (const el of barra.querySelectorAll("[aria-label]")) expect(el.getAttribute("aria-label")).not.toMatch(/[a-z]{2,}/i);
   });
+  it("la barra trae el botón 🔊 para silenciar a la vaca, junto al 全屏", () => {
+    const { container } = render(<Portada />);
+    const barra = container.querySelector<HTMLElement>("[data-barra]")!;
+    const mudo = within(barra).getByRole("button", { name: "静音" });
+    expect(mudo.getAttribute("aria-pressed")).toBe("false");
+    expect(within(barra).getByRole("button", { name: "全屏" })).toBeTruthy();
+  });
 });
 
 describe("Portada: pestañas", () => {

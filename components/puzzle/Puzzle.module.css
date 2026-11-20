@@ -57,6 +57,9 @@
   white-space: nowrap;
 }
 .tituloIcono { width: 24px; height: 24px; flex: none; color: var(--t2); }
+/* en celulares angostos el título cede su lugar al 🔊 (queda la pieza): la barra nunca se sale de la pantalla */
+.tituloTexto { white-space: nowrap; }
+@media (max-width: 400px) { .tituloTexto { display: none; } }
 .tituloZh { display: none; font-family: var(--f-hanzi), sans-serif; font-weight: 400; font-size: 19px; }
 .tituloPy { font-family: var(--f-texto), system-ui, sans-serif; font-weight: 900; font-size: 11px; opacity: 0.65; }
 

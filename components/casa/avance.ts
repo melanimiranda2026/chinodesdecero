@@ -2,7 +2,7 @@ import { crearClienteNavegador } from "@/lib/supabase/navegador";
 import { avanceInicial, esObjeto, validarAvance, type Avance, type MedallaGuardada, MAX_ESCUCHADAS, unirPalabras } from "./avance-validar";
 
 export {
-  avanceInicial, avancePendiente, estadoValido, validarAvance, MAX_ESCUCHADAS, MAX_AVANCE_PENDIENTE,
+  avanceInicial, avancePendiente, estadoValido, unirPalabras, validarAvance, MAX_ESCUCHADAS, MAX_AVANCE_PENDIENTE,
   type Avance, type MedallaGuardada,
 } from "./avance-validar";
 
@@ -96,10 +96,10 @@ export async function subirAvance(a: Avance): Promise<boolean> {
 export type ResultadoSync =
   | { tipo: "sin-sesion" }
   | { tipo: "fallo" }
-  /** Gana el servidor (también en empate): hay que adoptarlo. */
-  | { tipo: "remoto"; avance: Avance }
-  /** Gana lo local: el servidor está vacío o tiene menos escuchadas. */
-  | { tipo: "subir" };
+  /** Gana el servidor (también en empate): hay que adoptarlo (con las palabras de ambos). `subir`: lo local aportó palabras que el servidor no tiene. */
+  | { tipo: "remoto"; avance: Avance; subir: boolean }
+  /** Gana lo local: el servidor está vacío o tiene menos escuchadas. `palabras`: unión de ambos lados. */
+  | { tipo: "subir"; palabras: string[] };
 
 /**
  * Compara con la cuenta SIN escribir nada. Solo `subir` autoriza a subir, y únicamente si el GET
@@ -112,10 +112,15 @@ export async function sincronizar(a: Avance, sucio = false): Promise<ResultadoSy
     const r = await fetch("/api/avance");
     if (!r.ok) return { tipo: "fallo" };
     const { datos } = (await r.json()) as { datos: unknown };
-    if (!esObjeto(datos)) return { tipo: "subir" }; // servidor vacío
+    if (!esObjeto(datos)) return { tipo: "subir", palabras: a.palabras }; // servidor vacío
     const remoto = validarAvance(datos);
-    if (sucio && a.escuchadas.length > remoto.escuchadas.length) return { tipo: "subir" };
-    return { tipo: "remoto", avance: { ...remoto, correo: a.correo ?? remoto.correo } };
+    const palabras = unirPalabras(remoto.palabras, a.palabras);
+    if (sucio && a.escuchadas.length > remoto.escuchadas.length) return { tipo: "subir", palabras };
+    return {
+      tipo: "remoto",
+      avance: { ...remoto, palabras, correo: a.correo ?? remoto.correo },
+      subir: palabras.length > remoto.palabras.length,
+    };
   } catch {
     return { tipo: "fallo" };
   }

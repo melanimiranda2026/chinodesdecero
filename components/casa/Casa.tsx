@@ -19,7 +19,7 @@ import { desbloquearAudio } from "./audio/voz";
 import { musica } from "./audio/sonido";
 import { useCasa, type AlEvento, type CasaApi, type Punto } from "./useCasa";
 import { NOMBRES_EVENTO, type NombreEvento } from "@/lib/eventos-nombres";
-import { EVENTO_AVANCE, avanceInicial, cargarAviso, cargarAvance, guardarAvance, sincronizar, subirAvance, fusionar, type Avance, type DetalleAvance } from "./avance";
+import { EVENTO_AVANCE, avanceInicial, cargarAviso, cargarAvance, guardarAvance, sincronizar, subirAvance, fusionar, unirPalabras, type Avance, type DetalleAvance } from "./avance";
 import { registrar } from "./eventos";
 import { Correo } from "@/components/pagina/Correo";
 import styles from "./Casa.module.css";
@@ -117,6 +117,8 @@ export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; re
           restaurado.current = f.estado;
           restaurarRef.current(f.estado);
         }
+      } else {
+        avance.current = { ...avance.current, palabras: unirPalabras(r.palabras, avance.current.palabras) };
       }
       sucio.current = true;
       guardarYSubir();
@@ -126,11 +128,13 @@ export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; re
       // un correo dejado mientras volaba el GET gana sobre el del servidor
       const correo = avance.current.correo ?? r.avance.correo;
       avance.current = correo ? { ...r.avance, correo } : r.avance;
-      sucio.current = false; // no queda nada que subir
+      sucio.current = r.subir; // solo queda por subir lo que el servidor no tenía (palabras)
       guardarAvance(avance.current);
       restaurado.current = r.avance.estado;
       restaurarRef.current(r.avance.estado);
+      if (r.subir) guardarYSubir();
     } else {
+      avance.current = { ...avance.current, palabras: unirPalabras(r.palabras, avance.current.palabras) };
       sucio.current = true;
       guardarYSubir();
     }

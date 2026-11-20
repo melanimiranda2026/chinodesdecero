@@ -154,3 +154,13 @@ describe("palabras abiertas", () => {
     expect(f.palabras).toEqual(["xi1_hong2_shi4", "ta1_ella", "shui2_guo3"]);
   });
 });
+
+import { avancePendiente } from "@/components/casa/avance";
+
+describe("avancePendiente con palabras", () => {
+  it("deja pasar las palabras validas y descarta el correo", () => {
+    const p = avancePendiente({ ...avanceInicial(), palabras: ["ta1_ella", "no_existe"], correo: "a@b.cl" });
+    expect(p?.palabras).toEqual(["ta1_ella"]);
+    expect(p).not.toHaveProperty("correo");
+  });
+});

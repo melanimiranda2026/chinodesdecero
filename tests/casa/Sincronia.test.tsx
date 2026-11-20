@@ -25,7 +25,7 @@ import { reiniciarEventos } from "@/components/casa/eventos";
 
 const avanzar = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
 const estadoLimpio = { ...ESTADO_INICIAL, pingguo: "limpio" };
-const remotoCon = (escuchadas: string[], estado = estadoLimpio) => ({ datos: { estado, medallas: {}, escuchadas } });
+const remotoCon = (escuchadas: string[], estado = estadoLimpio, palabras: string[] = []) => ({ datos: { estado, medallas: {}, escuchadas, palabras } });
 const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status });
 const local = (a: object) =>
   localStorage.setItem(CLAVE_AVANCE, JSON.stringify({ estado: ESTADO_INICIAL, medallas: {}, escuchadas: [], ...a }));
@@ -161,6 +161,37 @@ describe("sincronizacion con la cuenta", () => {
       await vi.advanceTimersByTimeAsync(50);
     });
     expect(cargarAvance().escuchadas).toEqual([]);
+  });
+});
+
+describe("palabras abiertas entre dispositivos", () => {
+  it("gana el remoto: adopta la union (remoto primero) y sube lo que el servidor no tenia", async () => {
+    local({ estado: estadoLimpio, escuchadas: ["a"], palabras: ["ta1_ella"] });
+    const puts = red(() => json(remotoCon(["a"], estadoLimpio, ["xi1_hong2_shi4"])));
+    render(<Casa />);
+    await avanzar(3000);
+    expect(cargarAvance().palabras).toEqual(["xi1_hong2_shi4", "ta1_ella"]);
+    expect(puts.length).toBe(1);
+    expect((puts[0] as { datos: { palabras: string[] } }).datos.palabras).toEqual(["xi1_hong2_shi4", "ta1_ella"]);
+  });
+  it("gana el remoto y no hay palabras nuevas: no sube", async () => {
+    local({ estado: estadoLimpio, escuchadas: ["a"], palabras: ["ta1_ella"] });
+    const puts = red(() => json(remotoCon(["a"], estadoLimpio, ["ta1_ella", "shui2_guo3"])));
+    render(<Casa />);
+    await avanzar(3000);
+    expect(cargarAvance().palabras).toEqual(["ta1_ella", "shui2_guo3"]);
+    expect(puts).toEqual([]);
+  });
+  it("gana lo local: lo que se sube incluye las palabras del servidor", async () => {
+    local({ estado: estadoLimpio, escuchadas: ["a", "b"], palabras: ["ta1_ella"] });
+    const puts = red(() => json(remotoCon(["a"], estadoLimpio, ["shui2_guo3"])));
+    render(<Casa />);
+    await avanzar(10);
+    entrarCasa();
+    fireEvent.click(screen.getByRole("button", { name: "杯子" }));
+    await avanzar(3000);
+    expect(puts.length).toBeGreaterThan(0);
+    expect((puts[puts.length - 1] as { datos: { palabras: string[] } }).datos.palabras).toEqual(["shui2_guo3", "ta1_ella"]);
   });
 });
 

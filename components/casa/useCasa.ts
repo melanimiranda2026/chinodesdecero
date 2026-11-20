@@ -69,6 +69,8 @@ export interface CasaApi {
   escuchar(idAudio: string): void;
   /** Cierra el quiz terminado (después de la tarjeta del método). */
   cerrarQuiz(): void;
+  /** Corta lo que dice la vaca y lo que venía después (很热, 你好, el nombre tras el pop). Al cambiar de cuarto. */
+  callarVaca(): void;
   /** La vaca festeja y dice 你好 (al entrar a la casa). */
   saludar(): void;
   /** Pone el estado de la cocina guardado (al cargar el avance). */
@@ -291,7 +293,10 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
       mirar("izquierda", 900);
       eventoRef.current?.("tocar_objeto", { id });
       let turno = -1;
-      const decirNombre = () => {
+      const antes = turnoVoz.current;
+      const decirNombre = async () => {
+        // durante el pop la vaca se calló (cambio de cuarto) o habló otra cosa: el nombre ya no va
+        if (turnoVoz.current !== antes) return false;
         const dicho = hablar(OBJETOS[id].nombre);
         turno = turnoVoz.current;
         return dicho;
@@ -500,6 +505,6 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
     quiz, posiciones, clases, particulas,
     empezarQuiz, repetirQuiz, cerrarQuiz, saludar, restaurar,
     tocar, tocarVaca, soltarObjetoEnVaca, soltarVaca, elegir, empezarArrastre, verTodo, terminarPrimerPlano,
-    cancelarPrimerPlano, refri, elegirRefri, cerrarRefri, tocarComida, escuchar,
+    cancelarPrimerPlano, refri, elegirRefri, cerrarRefri, tocarComida, escuchar, callarVaca,
   };
 }

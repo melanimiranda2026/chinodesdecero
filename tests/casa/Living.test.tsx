@@ -12,7 +12,10 @@ vi.mock("@/components/casa/audio/sonido", () => ({
   musica: { tocar: vi.fn(), parar: vi.fn(), bajar: vi.fn() },
 }));
 
-import { callar } from "@/components/casa/audio/voz";
+import { callar, decir } from "@/components/casa/audio/voz";
+import { esperaDe } from "@/components/casa/audio/turnos";
+import { HEN_RE, NI_HAO } from "@/components/casa/cocina/frases";
+import { textoHanzi } from "@/lib/silabas";
 import { sfx } from "@/components/casa/audio/sonido";
 import { Living, PASO_MS, ZOOM_MS } from "@/components/casa/living/Living";
 import { PARADA_VACA } from "@/components/casa/living/lugares";
@@ -236,5 +239,68 @@ describe("Living en la casa", () => {
     rerender(false);
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(screen.queryByTestId("mesa")).toBeNull();
+  });
+});
+
+describe("Living en la casa: la voz de la cocina no se cuela", () => {
+  const decirMock = vi.mocked(decir);
+  const dichas = () => decirMock.mock.calls.map((c) => textoHanzi(c[0]));
+  beforeEach(() => {
+    decirMock.mockReset();
+    decirMock.mockImplementation(() => Promise.resolve(true));
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("tocar 茶壶 y pasar al 客厅 mientras suena: 很热 nunca se dice", async () => {
+    montarCasa();
+    let fin!: (v: boolean) => void;
+    decirMock.mockImplementationOnce(() => new Promise<boolean>((r) => { fin = r; }));
+    fireEvent.click(screen.getByRole("button", { name: "茶壶" }));
+    await avanzar(esperaDe("pop"));
+    expect(dichas()).toEqual(["茶壶"]);
+    ir("living");
+    await act(async () => { fin(false); });
+    await avanzar(5000);
+    expect(dichas()).not.toContain(textoHanzi(HEN_RE));
+  });
+
+  it("si el primer toque en la casa es 客厅, no se dice 你好", async () => {
+    montarCasa();
+    const b = document.querySelector('[data-cuarto="living"]') as HTMLElement;
+    fireEvent.pointerDown(b);
+    fireEvent.click(b);
+    expect(enLiving()).toBe(true);
+    await avanzar(5000);
+    expect(dichas()).not.toContain(textoHanzi(NI_HAO));
+  });
+
+  it("pasar al 客厅 durante el pop: la voz de la cocina no sale", async () => {
+    montarCasa();
+    fireEvent.click(screen.getByRole("button", { name: "茶壶" }));
+    await avanzar(10);
+    ir("living");
+    await avanzar(5000);
+    expect(decirMock).not.toHaveBeenCalled();
+  });
+
+  it("pasar de cuarto en medio de un arrastre no deja el arrastre colgado", async () => {
+    // jsdom mide 0: con un ancho real el arrastre sí mueve el vaso
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({ width: 1000, height: 1000, x: 0, y: 0, top: 0, left: 0, right: 1000, bottom: 1000, toJSON: () => ({}) } as DOMRect);
+    montarCasa();
+    const obj = () => document.querySelector<HTMLElement>('[data-objeto="beizi"]')!;
+    fireEvent.pointerDown(obj(), { clientX: 0, clientY: 0, pointerId: 1 });
+    fireEvent.pointerMove(obj(), { clientX: 200, clientY: 200, pointerId: 1 });
+    expect(obj().className).toMatch(/arrastrando/);
+    ir("living");
+    ir("cocina");
+    expect(obj().className).not.toMatch(/arrastrando/);
+    // el arrastre viejo no se come el próximo toque
+    fireEvent.pointerUp(obj(), { clientX: 200, clientY: 200, pointerId: 1 });
+    decirMock.mockClear();
+    fireEvent.click(obj());
+    await avanzar(2000);
+    expect(dichas()).toContain("杯子");
   });
 });

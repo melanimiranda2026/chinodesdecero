@@ -17,7 +17,7 @@ import { CUARTOS_ABIERTOS, Minimapa, type Cuarto } from "./Minimapa";
 import { Living } from "./living/Living";
 import { useEscenario } from "./useEscenario";
 import { Tarjetas, type CapaTarjeta } from "./Tarjetas";
-import { callar, desbloquearAudio } from "./audio/voz";
+import { desbloquearAudio } from "./audio/voz";
 import { musica } from "./audio/sonido";
 import { useCasa, type AlEvento, type CasaApi, type Punto } from "./useCasa";
 import { NOMBRES_EVENTO, type NombreEvento } from "@/lib/eventos-nombres";
@@ -357,7 +357,14 @@ export function CasaVista({
   // a mitad de una secuencia (refri, primer plano, receta) o del 玩 no se cambia de cuarto
   const cambiarCuarto = (c: Cuarto) => {
     if (ocupado || quiz || c === cuarto) return;
-    callar();
+    casa.callarVaca(); // corta la voz y lo que venía después (很热, 你好, el nombre tras el pop)
+    // un segundo dedo en el minimapa a mitad de un arrastre: el arrastre se suelta sin efecto
+    ini.current = null;
+    piso.current = null;
+    sinClick.current = false;
+    setArrObj(null);
+    setArrVaca(null);
+    setPaneando(false);
     setCuarto(c);
   };
   const entrar = () => {

@@ -23,7 +23,7 @@ const EXTRA = "，。？！、：；“”‘’（）…—·《》 0123456789?
 
 export function hanziDe(texto: string): Set<string> {
   const s = new Set<string>();
-  for (const c of texto) if (/[㐀-鿿]/.test(c)) s.add(c);
+  for (const c of texto) if (/[⺀-⻿㐀-鿿]/.test(c)) s.add(c);
   return s;
 }
 

@@ -147,9 +147,10 @@ const ORIGEN_MESA: Record<string, [string, string | null]> = {
 };
 const mesa = PALABRAS.flatMap((p) => {
   const [normal, lenta] = ORIGEN_MESA[p.audio ?? p.id] ?? ["?", null];
-  const compartida = p.audio ? " (misma toma que 他)" : "";
-  const estado = (o: string) => (o === "cocina" ? (REVISAR_COCINA[p.id] ? `? nativo: ${REVISAR_COCINA[p.id]}` : "revisada") : "? nativo: copiada del proyecto de videos");
-  const filas = [{ archivo: `public${srcPalabra(p)}`, origen: (normal === "cocina" ? `public/audio/cocina/${p.id}.mp3` : `video/${normal}`) + compartida, estado: estado(normal) }];
+  const base = p.audio ?? p.id;
+  const compartida = p.audio ? ` (también la usa ${p.id})` : "";
+  const estado = (o: string) => (o === "cocina" ? (REVISAR_COCINA[base] ? `? nativo: ${REVISAR_COCINA[base]}` : "revisada") : "? nativo: copiada del proyecto de videos");
+  const filas = [{ archivo: `public${srcPalabra(p)}`, origen: (normal === "cocina" ? `public/audio/cocina/${base}.mp3` : `video/${normal}`) + compartida, estado: estado(normal) }];
   if (p.lento && !p.audio) filas.push({ archivo: `public${srcPalabra(p, true)}`, origen: `video/${lenta}`, estado: "? nativo: copiada del proyecto de videos" });
   return filas.map((f) => ({ ...f, hanzi: textoHanzi(p.s), existe: existsSync(join(raiz, f.archivo)) }));
 });

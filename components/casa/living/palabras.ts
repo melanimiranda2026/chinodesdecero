@@ -76,7 +76,7 @@ export const PALABRAS: readonly Palabra[] = [
   w(S("牛奶", "niú nǎi", "23"), "leche", "suma", [p("牛", "vaca"), p("奶", "leche")], "牛 vaca + 奶 leche.", false),
   w(S("冰箱", "bīng xiāng", "11"), "refrigerador", "suma", [p("冰", "hielo"), p("箱", "caja")], "冰 hielo + 箱 caja.", false),
   w(S("手机", "shǒu jī", "31"), "celular", "suma", [p("手", "mano"), p("机", "máquina")], "手 mano + 机 máquina.", false),
-  w(S("水果", "shuǐ guǒ", "33"), "fruta", "suma", [p("水", "agua"), p("果", "fruto")], "水 agua + 果 fruto.", false),
+  w(S("水果", "shuí guǒ", "23"), "fruta", "suma", [p("水", "agua"), p("果", "fruto")], "水 agua + 果 fruto.", false, { nota: "Dos 3.º tonos seguidos: se escribe shuǐguǒ pero se dice shuíguǒ.", audio: "shui3_guo3" }),
   w(S("你好", "nǐ hǎo", "23"), "hola", "suma", [p("你", "tú"), p("好", "bien")], "你 tú + 好 bien.", false, { nota: "Dos 3.º tonos seguidos: el primero suena como 2.º, ní hǎo." }),
   // Literalmente
   w(S("西红柿", "xī hóng shì", "124"), "tomate", "literal", [p("西", "oeste"), p("红", "rojo"), p("柿", "kaki")], "Literalmente: kaki rojo del oeste.", true),

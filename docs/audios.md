@@ -182,7 +182,7 @@ Copiadas, no generadas (cero créditos). La vaca las dice en el living.
 | public/audio/palabras/niu2_nai3.mp3 | 牛奶 | public/audio/cocina/niu2_nai3.mp3 | ? nativo: nueva (17 nov. 2026) | sí |
 | public/audio/palabras/bing1_xiang1.mp3 | 冰箱 | public/audio/cocina/bing1_xiang1.mp3 | revisada | sí |
 | public/audio/palabras/shou3_ji1.mp3 | 手机 | public/audio/cocina/shou3_ji1.mp3 | ? nativo: nueva (17 nov. 2026) | sí |
-| public/audio/palabras/shui3_guo3.mp3 | 水果 | public/audio/cocina/shui3_guo3.mp3 | ? nativo: nueva (17 nov. 2026) | sí |
+| public/audio/palabras/shui3_guo3.mp3 | 水果 | public/audio/cocina/shui3_guo3.mp3 (también la usa shui2_guo3) | ? nativo: nueva (17 nov. 2026) | sí |
 | public/audio/palabras/ni2_hao3.mp3 | 你好 | public/audio/cocina/ni2_hao3.mp3 | revisada | sí |
 | public/audio/palabras/xi1_hong2_shi4.mp3 | 西红柿 | public/audio/cocina/xi1_hong2_shi4.mp3 | revisada | sí |
 | public/audio/palabras/xi1_hong2_shi4_lento.mp3 | 西红柿 | video/banco/xihongshi_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
@@ -235,4 +235,4 @@ Copiadas, no generadas (cero créditos). La vaca las dice en el living.
 | public/audio/palabras/mao1.mp3 | 猫 | public/audio/cocina/mao1.mp3 | ? nativo: nueva: 猫 sube un poco (286→327 Hz) | sí |
 | public/audio/palabras/ta1.mp3 | 他 | video/banco/ta.mp3 | ? nativo: copiada del proyecto de videos | sí |
 | public/audio/palabras/ta1_lento.mp3 | 他 | video/banco/ta_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
-| public/audio/palabras/ta1.mp3 | 她 | video/banco/ta.mp3 (misma toma que 他) | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/ta1.mp3 | 她 | video/banco/ta.mp3 (también la usa ta1_ella) | ? nativo: copiada del proyecto de videos | sí |

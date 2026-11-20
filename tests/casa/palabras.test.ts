@@ -8,8 +8,10 @@ describe("las 50 palabras de la mesa", () => {
   it("son 50, con ids únicos que coinciden con su audio", () => {
     expect(PALABRAS).toHaveLength(50);
     expect(new Set(PALABRAS.map((p) => p.id)).size).toBe(50);
-    for (const p of PALABRAS) expect(p.audio ?? p.id).toBe(idAudio(p.s));
-    expect(PALABRAS.filter((p) => p.audio).map((p) => p.id)).toEqual(["ta1_ella"]);
+    // Sin `audio`, el id es el de sus sílabas. 她 comparte la toma de 他; 水果 usa la toma ya existente (shuǐguǒ, dicha shuíguǒ).
+    for (const p of PALABRAS.filter((x) => !x.audio)) expect(p.id).toBe(idAudio(p.s));
+    expect(PALABRAS.filter((x) => x.audio).map((x) => [x.id, x.audio])).toEqual([["shui2_guo3", "shui3_guo3"], ["ta1_ella", "ta1"]]);
+    expect(PALABRAS.filter((p) => p.audio).map((p) => p.id)).toEqual(["shui2_guo3", "ta1_ella"]);
   });
   it("cada palabra tiene su mp3 (y el lento si lo declara)", () => {
     for (const p of PALABRAS) {
@@ -24,6 +26,9 @@ describe("las 50 palabras de la mesa", () => {
   it("suma, literal, 好+algo y por partes traen al menos 2 piezas; radical y dibujo al menos 1", () => {
     const min: Record<Tecnica, number> = { suma: 2, literal: 2, haoMas: 2, partes: 2, radical: 1, dibujo: 1, gratis: 0, igual: 0 };
     for (const p of PALABRAS) expect(p.piezas.length).toBeGreaterThanOrEqual(min[p.tecnica]);
+  });
+  it("sandhi: ninguna palabra trae dos sílabas seguidas en 3.er tono", () => {
+    for (const p of PALABRAS) for (let i = 1; i < p.s.length; i++) expect(p.s[i - 1][2] === 3 && p.s[i][2] === 3, p.id).toBe(false);
   });
   it("ninguna frase invita a inventar una historia", () => {
     for (const p of PALABRAS) expect(p.frase.toLowerCase()).not.toContain("inventa");

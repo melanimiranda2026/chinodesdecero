@@ -111,6 +111,38 @@ describe("Mesa vista desde arriba", () => {
     expect(decirMock).toHaveBeenCalledTimes(2);
   });
 
+  it("la línea de tono se vuelve a dibujar en cada toma: la lenta, la natural y cada 🔊", async () => {
+    const fines: ((v: boolean) => void)[] = [];
+    decirMock.mockImplementation(() => new Promise<boolean>((r) => { fines.push(r); }));
+    montar();
+    const linea = () => screen.getByRole("dialog").querySelector("[data-linea-tono]")!;
+    fireEvent.click(tile("西红柿"));
+    const lenta = linea();
+    expect(lenta.getAttribute("data-activa")).toBe("true");
+    await act(async () => { fines.shift()!(true); await Promise.resolve(); await Promise.resolve(); });
+    expect(decirMock).toHaveBeenCalledTimes(2);
+    const natural = linea();
+    expect(natural.getAttribute("data-activa")).toBe("true");
+    expect(natural).not.toBe(lenta);
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Escuchar otra vez" }));
+    expect(linea()).not.toBe(natural);
+    expect(linea().getAttribute("data-activa")).toBe("true");
+  });
+
+  it("al cerrar la ficha el foco vuelve a la palabra que la abrió", () => {
+    montar();
+    const t = tile("西红柿");
+    t.focus();
+    fireEvent.click(t);
+    expect(document.activeElement).toBe(screen.getByRole("dialog"));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cerrar" }));
+    expect(document.activeElement).toBe(t);
+    // también con Escape
+    fireEvent.click(tile("水"));
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(document.activeElement).toBe(tile("水"));
+  });
+
   it("返回 vuelve al living; con una ficha abierta, ✕ cierra solo la ficha", () => {
     const { alCerrar } = montar();
     fireEvent.click(tile("水"));

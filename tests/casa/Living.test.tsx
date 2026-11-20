@@ -119,6 +119,14 @@ describe("Living", () => {
     expect(screen.getByTestId("mesa")).toBeTruthy();
   });
 
+  it("al cerrar la mesa el foco vuelve al botón 桌子", async () => {
+    const { container } = montar();
+    fireEvent.click(mesa(container));
+    await avanzar(PASO_MS + ZOOM_MS);
+    fireEvent.click(screen.getByRole("button", { name: "返回" }));
+    expect(document.activeElement).toBe(mesa(container));
+  });
+
   it("activo=false con la mesa abierta: se cierra y calla la voz", async () => {
     const { container, rerender } = montar();
     fireEvent.click(mesa(container));

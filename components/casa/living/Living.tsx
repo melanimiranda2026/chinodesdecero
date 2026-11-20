@@ -95,9 +95,12 @@ export function Living({
     );
   };
 
+  const zona = useRef<HTMLButtonElement>(null);
   const volver = () => {
     limpiar();
     setFase("cuarto");
+    // el foco vuelve al 桌子 (la mesa a pantalla completa se va)
+    zona.current?.focus({ preventScroll: true });
   };
 
   // pestaña oculta: se sale de la mesa (o de la caminata) y se calla la voz
@@ -128,6 +131,7 @@ export function Living({
         <FondoCuarto cuarto="living" />
 
         <button
+          ref={zona}
           type="button"
           data-mesa
           aria-label="桌子"

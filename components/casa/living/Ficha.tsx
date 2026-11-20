@@ -125,11 +125,13 @@ function Cuerpo({ palabra }: { palabra: Palabra }) {
  * dibuja mientras la vaca habla, significado y el truco en español (la mesa es la excepción al "sin español").
  */
 export function Ficha({
-  palabra, hablando, alRepetir, alCerrar,
+  palabra, hablando, toma = 0, alRepetir, alCerrar,
 }: {
   palabra: Palabra;
   /** La vaca está diciendo la palabra: la línea de tono se dibuja. */
   hablando: boolean;
+  /** Número de la toma en curso: cada toma nueva vuelve a dibujar la línea de tono. */
+  toma?: number;
   /** 🔊: que la vaca la diga otra vez. */
   alRepetir: () => void;
   /** ✕, Escape o tocar fuera. */
@@ -181,7 +183,7 @@ export function Ficha({
               <span aria-hidden="true">🔊</span>
             </button>
           </span>
-          <LineaTono s={palabra.s} activa={hablando} />
+          <LineaTono s={palabra.s} activa={hablando} vez={toma} />
           <span className={styles.significado} data-significado>{palabra.es}</span>
         </div>
 

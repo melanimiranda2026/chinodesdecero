@@ -32,12 +32,13 @@ export function contorno(s: Silaba[], i: number): [number, number][] {
 /** Segundos que tarda en dibujarse cada sílaba. */
 const POR_SILABA = 0.38;
 
-export function LineaTono({ s, activa }: { s: Silaba[]; activa: boolean }) {
+/** `vez`: número de la toma; al cambiar, la línea se vuelve a dibujar desde el principio. */
+export function LineaTono({ s, activa, vez = 0 }: { s: Silaba[]; activa: boolean; vez?: number }) {
   const ancho = MARGEN * 2 + PARTE * s.length;
   return (
     <svg
-      // la clave cambia al empezar a hablar: la animación vuelve a empezar
-      key={activa ? "habla" : "quieta"}
+      // la clave cambia al empezar a hablar y en cada toma (lenta, natural, 🔊): la animación vuelve a empezar
+      key={activa ? `habla-${vez}` : "quieta"}
       className={styles.lineaTono}
       data-linea-tono
       data-activa={activa}

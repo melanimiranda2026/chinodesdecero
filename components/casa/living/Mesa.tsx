@@ -43,6 +43,10 @@ export function Mesa({
   /** Cada secuencia lleva su número: si se tocó otra palabra, la vieja no sigue. */
   const turno = useRef(0);
   const suena = useRef(false);
+  /** Cuenta las tomas dichas (lenta, natural, cada 🔊): la línea de tono se vuelve a dibujar en cada una. */
+  const [toma, setToma] = useState(0);
+  /** La palabra que abrió la ficha: al cerrarla, el foco vuelve ahí. */
+  const origen = useRef<HTMLElement | null>(null);
 
   const vista = new Set(abiertas);
   const cuenta = PALABRAS.filter((p) => vista.has(p.id)).length;
@@ -70,16 +74,19 @@ export function Mesa({
     suena.current = true;
     setHablando(true);
     if (p.lento) {
+      setToma((n) => n + 1);
       await decir(p.s, { src: srcPalabra(p, true), juego: "cocina" });
       if (!sigue()) return;
     }
+    setToma((n) => n + 1);
     await decir(p.s, { src: srcPalabra(p), juego: "cocina" });
     if (!sigue()) return;
     suena.current = false;
     setHablando(false);
   };
 
-  const tocar = (p: Palabra) => {
+  const tocar = (p: Palabra, el: HTMLElement) => {
+    origen.current = el;
     setFicha(p);
     alAbrir(p.id);
     void sonar(p);
@@ -88,6 +95,7 @@ export function Mesa({
   const cerrarFicha = () => {
     parar();
     setFicha(null);
+    origen.current?.focus({ preventScroll: true });
   };
 
   return (
@@ -114,7 +122,7 @@ export function Mesa({
                 aria-label={hz}
                 className={styles.teja}
                 style={desfase(i)}
-                onClick={() => tocar(p)}
+                onClick={(e) => tocar(p, e.currentTarget)}
               >
                 <span className={styles.tejaHz} data-largo={[...hz].length}>{hz}</span>
                 <span className={styles.tejaPy}>
@@ -130,7 +138,7 @@ export function Mesa({
         </div>
       </div>
 
-      {ficha && <Ficha palabra={ficha} hablando={hablando} alRepetir={() => void sonar(ficha)} alCerrar={cerrarFicha} />}
+      {ficha && <Ficha palabra={ficha} hablando={hablando} toma={toma} alRepetir={() => void sonar(ficha)} alCerrar={cerrarFicha} />}
     </div>
   );
 }

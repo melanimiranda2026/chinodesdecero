@@ -97,6 +97,8 @@ describe("POST /api/suscribir", () => {
       medallas: { cortar: "oro" },
       escuchadas: ["ni2_hao3", "bei1_zi5"],
       palabras: [],
+      cuartos: {},
+      fichas: [],
     });
   });
 

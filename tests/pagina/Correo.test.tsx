@@ -123,7 +123,7 @@ describe("Correo", () => {
     enviar();
     await screen.findByRole("status");
     const cuerpo = JSON.parse((f.mock.calls[0][1] as RequestInit).body as string);
-    expect(cuerpo.avance).toEqual({ estado: ESTADO_INICIAL, medallas: { cortar: "oro" }, escuchadas: ["x"], palabras: [] });
+    expect(cuerpo.avance).toEqual({ estado: ESTADO_INICIAL, medallas: { cortar: "oro" }, escuchadas: ["x"], palabras: [], cuartos: {}, fichas: [] });
   });
 
   it("el campo trampa está oculto y fuera del orden de foco; si se llena, viaja como `sitio`", async () => {

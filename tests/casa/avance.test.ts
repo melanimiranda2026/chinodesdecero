@@ -12,7 +12,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe("avance", () => {
   it("sin nada guardado devuelve el inicial", () => {
-    expect(cargarAvance()).toEqual({ estado: ESTADO_INICIAL, medallas: {}, escuchadas: [], palabras: [] });
+    expect(cargarAvance()).toEqual({ estado: ESTADO_INICIAL, medallas: {}, escuchadas: [], palabras: [], cuartos: {}, fichas: [] });
   });
   it("si localStorage.getItem lanza, devuelve el inicial; guardar no lanza", () => {
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
@@ -162,5 +162,43 @@ describe("avancePendiente con palabras", () => {
     const p = avancePendiente({ ...avanceInicial(), palabras: ["ta1_ella", "no_existe"], correo: "a@b.cl" });
     expect(p?.palabras).toEqual(["ta1_ella"]);
     expect(p).not.toHaveProperty("correo");
+  });
+});
+
+import { LIVING } from "@/components/casa/living/cuarto";
+import { todasLasFichas } from "@/components/casa/motor/progreso";
+
+describe("cuartos y fichas", () => {
+  const [f1, f2] = todasLasFichas(LIVING);
+  it("un avance antiguo da cuartos {} y fichas [] y conserva el correo", () => {
+    const v = validarAvance({ estado: {}, medallas: {}, escuchadas: [], palabras: [], correo: "a@b.cl" });
+    expect(v.cuartos).toEqual({});
+    expect(v.fichas).toEqual([]);
+    expect(v.correo).toBe("a@b.cl");
+  });
+  it("avanceInicial trae cuartos {} y fichas []", () => {
+    expect(avanceInicial().cuartos).toEqual({});
+    expect(avanceInicial().fichas).toEqual([]);
+  });
+  it("descarta lo desconocido y conserva lo valido", () => {
+    const v = validarAvance({
+      cuartos: {
+        living: { tocados: ["shafa", "nope", "shafa"], logros: ["zuo@shafa", "zuo@nope", "x@shafa", 3] },
+        banco: { tocados: ["a"], logros: [] },
+      },
+      fichas: [f1, "xx", f1, f2],
+    });
+    expect(v.cuartos).toEqual({ living: { tocados: ["shafa"], logros: ["zuo@shafa"] } });
+    expect(v.fichas).toEqual([f1, f2]);
+  });
+  it("fusionar une tocados, logros y fichas en orden remoto + local", () => {
+    const base = avanceInicial();
+    const f = fusionar(
+      { ...base, cuartos: { living: { tocados: ["yizi", "shafa"], logros: ["zuo@yizi"] } }, fichas: [f2, f1] },
+      { ...base, cuartos: { living: { tocados: ["shafa"], logros: ["zuo@shafa"] } }, fichas: [f1] },
+      false,
+    );
+    expect(f.cuartos.living).toEqual({ tocados: ["shafa", "yizi"], logros: ["zuo@shafa", "zuo@yizi"] });
+    expect(f.fichas).toEqual([f1, f2]);
   });
 });

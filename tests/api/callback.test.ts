@@ -17,7 +17,7 @@ import { ESTADO_INICIAL } from "@/components/casa/cocina/datos";
 const ir = (qs: string) => GET(new Request(`https://sitio.test/auth/callback${qs}`));
 const destino = (r: Response) => new URL(r.headers.get("location")!).pathname + new URL(r.headers.get("location")!).search;
 const USER = { id: "u1", email: "Ana@B.cl" };
-const avance = (escuchadas: string[]) => ({ estado: ESTADO_INICIAL, medallas: {}, escuchadas, palabras: [] });
+const avance = (escuchadas: string[]) => ({ estado: ESTADO_INICIAL, medallas: {}, escuchadas, palabras: [], cuartos: {}, fichas: [] });
 const conToken = () => ir("?token_hash=abc&type=email");
 
 beforeEach(() => {

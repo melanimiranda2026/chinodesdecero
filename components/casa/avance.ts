@@ -1,8 +1,9 @@
 import { crearClienteNavegador } from "@/lib/supabase/navegador";
-import { avanceInicial, esObjeto, validarAvance, type Avance, type MedallaGuardada, MAX_ESCUCHADAS, unirPalabras } from "./avance-validar";
+import type { CuartoId } from "./motor/tipos";
+import { avanceInicial, esObjeto, validarAvance, type Avance, type MedallaGuardada, MAX_ESCUCHADAS, unirPalabras, unirFichas } from "./avance-validar";
 
 export {
-  avanceInicial, avancePendiente, estadoValido, unirPalabras, validarAvance, MAX_ESCUCHADAS, MAX_AVANCE_PENDIENTE,
+  avanceInicial, avancePendiente, estadoValido, unirPalabras, unirFichas, validarAvance, MAX_ESCUCHADAS, MAX_AVANCE_PENDIENTE,
   type Avance, type MedallaGuardada,
 } from "./avance-validar";
 
@@ -128,6 +129,19 @@ export async function sincronizar(a: Avance, sucio = false): Promise<ResultadoSy
 
 const ORDEN: Record<MedallaGuardada, number> = { bronce: 1, plata: 2, oro: 3 };
 
+function unirCuartos(remoto: Avance["cuartos"], local: Avance["cuartos"]): Avance["cuartos"] {
+  const r: Avance["cuartos"] = {};
+  for (const id of new Set([...Object.keys(remoto), ...Object.keys(local)]) as Set<CuartoId>) {
+    const a = remoto[id];
+    const b = local[id];
+    r[id] = {
+      tocados: [...new Set([...(a?.tocados ?? []), ...(b?.tocados ?? [])])],
+      logros: [...new Set([...(a?.logros ?? []), ...(b?.logros ?? [])])],
+    };
+  }
+  return r;
+}
+
 /**
  * Une lo local con lo del servidor cuando hubo cambios locales durante el GET.
  * El estado de la cocina es del servidor salvo que el estado mismo haya cambiado aquí.
@@ -143,6 +157,8 @@ export function fusionar(local: Avance, remoto: Avance, estadoCambio: boolean): 
     medallas,
     escuchadas: [...new Set([...remoto.escuchadas, ...local.escuchadas])].slice(0, MAX_ESCUCHADAS),
     palabras: unirPalabras(remoto.palabras, local.palabras),
+    cuartos: unirCuartos(remoto.cuartos, local.cuartos),
+    fichas: unirFichas(remoto.fichas, local.fichas),
   };
   const correo = local.correo ?? remoto.correo;
   if (correo) a.correo = correo;

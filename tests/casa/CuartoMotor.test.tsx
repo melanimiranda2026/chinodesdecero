@@ -228,6 +228,17 @@ describe("CuartoMotor", () => {
     expect(vi.mocked(sfx).mock.calls.filter(([n]) => n === "boing").length).toBe(0);
   });
 
+  it("la puerta cerrada no hace boing durante la caminata (a la mesa o a una acción), pero la bandeja parpadea", async () => {
+    const { container } = montar();
+    fireEvent.click(zona("桌子"));
+    await avanzar(400); // dijo 这是桌子 y camina a la mesa
+    expect(container.querySelector("[data-cuarto-motor]")!.getAttribute("data-ocupado")).toBe("true");
+    vi.mocked(sfx).mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "厨房" }));
+    expect(sfx).not.toHaveBeenCalledWith("boing", expect.anything());
+    expect(container.querySelector("[data-parpadea]")).not.toBeNull();
+  });
+
   it("desmontar justo después de tocar: no dice el nombre, no abre y se calla", async () => {
     const { alAbrir, unmount } = montar();
     fireEvent.click(zona("桌子"));

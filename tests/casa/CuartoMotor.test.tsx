@@ -405,4 +405,30 @@ describe("CuartoMotor", () => {
     expect(frames).toMatch(/opacity/);
     expect(frames).not.toMatch(/scale|transform/);
   });
+  it("pistas: lo no tocado brilla (nuevo), lo tocado con acciones pendientes brilla suave y lo terminado no brilla", async () => {
+    const { container } = montar({ tocados: ["yizi"], logros: [] });
+    const pista = (id: string) => container.querySelector<HTMLElement>(`[data-objeto="${id}"]`)!.dataset.pista;
+    expect(pista("shafa")).toBe("nuevo");
+    expect(pista("zhuozi")).toBe("nuevo");
+    expect(pista("yizi")).toBe("pendiente");
+    fireEvent.click(zona("桌子"));
+    // la mesa no tiene acciones: una vez tocada ya no brilla
+    expect(pista("zhuozi")).toBeUndefined();
+    fireEvent.click(zona("沙发"));
+    expect(pista("shafa")).toBe("pendiente");
+    await avanzar(400);
+    fireEvent.click(pildora());
+    await avanzar(PASO_MS + POSE_MS + 100);
+    expect(pista("shafa")).toBeUndefined();
+  });
+
+  it("pistas en CSS: halo cálido que no recibe toques; con movimiento reducido no late", () => {
+    const css = readFileSync(join(process.cwd(), "components/casa/motor/Motor.module.css"), "utf8");
+    const halo = css.match(/\.zona\[data-pista\]::after \{([\s\S]*?)\n\}/)?.[1] ?? "";
+    expect(halo).toMatch(/pointer-events: none/);
+    expect(halo).toMatch(/#ffe36b|255, 227, 107/);
+    expect(css).toMatch(/\.zona\[data-pista="nuevo"\]::after \{[^}]*animation/);
+    const reducido = [...css.matchAll(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/g)].map((m) => m[1]).join("\n");
+    expect(reducido).toMatch(/\.zona\[data-pista\]::after \{ animation: none/);
+  });
 });

@@ -96,6 +96,13 @@ export function CuartoMotor({
   const pPildora = elegido ? enPantalla(vista, elegido.zona.x + elegido.zona.w / 2, elegido.zona.y, aspecto) : null;
   const pGlobo = enPantalla(vista, c.vaca.x, c.vaca.y - 170, aspecto);
   const ficha = c.cola[0];
+  /** Qué se puede tocar: lo no tocado late (nuevo); lo tocado con acciones por hacer queda con un brillo suave. */
+  const pistaDe = (o: DefCuarto["objetos"][number]): "nuevo" | "pendiente" | undefined =>
+    !c.progreso.tocados.includes(o.id)
+      ? "nuevo"
+      : o.acciones.some((a) => !c.progreso.logros.includes(`${a}@${o.id}`))
+        ? "pendiente"
+        : undefined;
 
   const estiloVaca: CSSProperties = {
     left: pct(c.vaca.x),
@@ -123,6 +130,7 @@ export function CuartoMotor({
             key={o.id}
             type="button"
             data-objeto={o.id}
+            data-pista={pistaDe(o)}
             aria-label={textoHanzi(o.nombre)}
             className={cx(styles.zona, c.brillo === o.id && styles.brilla)}
             style={{ left: pct(o.zona.x), top: pct(o.zona.y), width: pct(o.zona.w), height: pct(o.zona.h) }}

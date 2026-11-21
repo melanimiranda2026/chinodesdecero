@@ -151,6 +151,25 @@
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85), 0 0 18px 6px rgba(255, 227, 107, 0.75);
 }
 
+/* pista de lo que se puede tocar: halo de crayón (amarillo y blanco, como .vacaObjetivo) dentro de la zona, sin
+   recibir toques. Lo no tocado late despacio; lo tocado con acciones pendientes queda quieto y más tenue. */
+.zona[data-pista]::after {
+  content: "";
+  position: absolute;
+  inset: 6%;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(255, 227, 107, 0.34) 0%, rgba(255, 227, 107, 0.16) 55%, rgba(255, 227, 107, 0) 78%);
+  box-shadow: inset 0 0 14px 5px rgba(255, 255, 255, 0.4), 0 0 18px 6px rgba(255, 227, 107, 0.5);
+  opacity: 0.85;
+}
+.zona[data-pista="nuevo"]::after { animation: pistaLate 2.4s ease-in-out infinite alternate; }
+.zona[data-pista="pendiente"]::after { opacity: 0.45; }
+@keyframes pistaLate {
+  from { opacity: 0.45; }
+  to { opacity: 1; }
+}
+
 /* píldora de acción junto al objeto (fuera del mundo: el zoom no la achica) */
 .pildoras {
   position: absolute;
@@ -220,6 +239,7 @@
   50% { background: rgba(255, 227, 107, 0.75); border-color: #4a2a1c; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .zona[data-pista]::after { animation: none; }
   .pildoras { animation: none; }
   .puertaLista { animation: none; box-shadow: 0 0 14px 6px rgba(255, 227, 107, 0.85); }
 }

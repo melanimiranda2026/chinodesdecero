@@ -58,10 +58,18 @@ describe("Sobre nosotros", () => {
     const mail = screen.getByRole("link", { name: "niu@chinoconlavaca.com" });
     expect(mail.getAttribute("href")).toBe("mailto:niu@chinoconlavaca.com");
     expect(screen.getByRole("link", { name: "Síguenos en TikTok" }).getAttribute("href")).toBe(TIKTOK.url);
-    expect(screen.getByRole("link", { name: "Jugar ahora" }).getAttribute("href")).toBe("/#juegos");
+    expect(screen.getByRole("link", { name: "Jugar ahora" }).getAttribute("href")).toBe("/");
     expect(container.textContent?.toLowerCase()).not.toContain("aprende chino en tiktok");
     // el método vive aquí ahora (el menú enlaza a /sobre#metodo)
     expect(container.querySelector("#metodo")).toBeTruthy();
+    expect(container.textContent?.toLowerCase()).not.toContain("chino desde cero");
+  });
+});
+
+describe("TikTok", () => {
+  it("el nombre de la cuenta de TikTok solo vive en TIKTOK (enlace), con su pendiente anotado", async () => {
+    const { readFileSync } = await import("node:fs");
+    expect(readFileSync("components/pagina/contenido.ts", "utf-8")).toMatch(/PENDIENTE: la dueña confirma la cuenta oficial y su @ \(spec §11\.1\)/);
   });
 });
 

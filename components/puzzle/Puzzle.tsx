@@ -9,7 +9,6 @@ import { Vaca } from "@/components/casa/Vaca";
 import { TAI_BANG_LE, HEN_HAO } from "@/components/casa/cocina/frases";
 import { Correo } from "@/components/pagina/Correo";
 import { BotonMudo } from "@/components/pagina/BotonMudo";
-import { elegirJuego } from "@/components/pagina/juego";
 import { COLOR_TONO } from "@/lib/tonos";
 import { ETAPAS, idNivel, TEMAS, type Etapa } from "./datos";
 import { cargarAvancePuzzle, guardarAvancePuzzle, type AvancePuzzle } from "./avance";
@@ -232,7 +231,6 @@ export function Puzzle({ ventana = false }: { ventana?: boolean } = {}) {
                 hayGanados={ganados.size > 0}
                 onLlenar={llenarConCorreo}
                 onMapa={() => setPantalla({ tipo: "mapa" })}
-                ventana={ventana}
               />
             )}
           </section>
@@ -485,7 +483,7 @@ function Fin({
 }
 
 function SinVasos({
-  espera, correoGuardado, correoLleno, hayGanados, onLlenar, onMapa, ventana,
+  espera, correoGuardado, correoLleno, hayGanados, onLlenar, onMapa,
 }: {
   espera: number | null;
   correoGuardado: boolean;
@@ -493,7 +491,6 @@ function SinVasos({
   hayGanados: boolean;
   onLlenar: () => void;
   onMapa: () => void;
-  ventana: boolean;
 }) {
   useEffect(() => {
     callar();
@@ -519,16 +516,7 @@ function SinVasos({
               Repasar un nivel ganado
             </button>
           )}
-          <Link
-            href="/?juego=cocina#juegos"
-            className={styles.botonSuave}
-            onClick={(ev) => {
-              // en la ventana de la portada ya estamos en "/": cambiar de pestaña en vez de navegar
-              if (!ventana || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
-              ev.preventDefault();
-              elegirJuego("cocina");
-            }}
-          >
+          <Link href="/" className={styles.botonSuave}>
             Jugar en la cocina
           </Link>
         </div>

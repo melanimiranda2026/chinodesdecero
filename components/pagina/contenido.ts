@@ -26,7 +26,7 @@ export const METODO: { titulo: string; ideas: Idea[]; fuente?: string } = {
 };
 
 export type VideoTikTok = { titulo: string; miniatura: string; url: string };
-// CONFIRMAR con la dueña el @ exacto
+// PENDIENTE: la dueña confirma la cuenta oficial y su @ (spec §11.1)
 export const TIKTOK: { nombre: string; url: string; videos: VideoTikTok[] } = {
   nombre: "chino comprensible",
   url: "https://www.tiktok.com/@chinocomprensible",
@@ -38,15 +38,15 @@ export const PORTADA = {
   marca: "chino con la vaca",
   h1: "Tus primeras palabras en chino, jugando",
   subtitulo: "Toca, arrastra, escucha y explora con la vaca.",
-  confianza: "Gratis · sin registrarte · funciona en tu celular",
+  confianza: "Gratis · funciona en tu celular",
 } as const;
 
 /** Menú de arriba, en todas las páginas. En celular, "corto" reemplaza al texto largo. */
 export const MENU = {
   etiqueta: "Principal",
   enlaces: [
-    { clave: "cocina", icono: "🍳", texto: "Cocina", corto: "Cocina", href: "/?juego=cocina#juegos" },
-    { clave: "puzzle", icono: "🧩", texto: "Puzzle", corto: "Puzzle", href: "/?juego=puzzle#juegos" },
+    { clave: "casa", icono: "🏠", texto: "Casa", corto: "Casa", href: "/" },
+    { clave: "puzzle", icono: "🧩", texto: "Puzzle", corto: "Puzzle", href: "/puzzle" },
     { clave: "metodo", icono: "浸", texto: "Método", corto: "Método", href: "/sobre#metodo" },
     { clave: "sobre", icono: "🐄", texto: "Sobre nosotros", corto: "Nosotros", href: "/sobre" },
   ],

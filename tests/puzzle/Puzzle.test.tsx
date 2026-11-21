@@ -153,7 +153,7 @@ describe("Puzzle", () => {
     expect(document.querySelector('button[data-pieza="2"]')).toBeTruthy(); // sigue en la bandeja
   });
 
-  it("sin vasos, en la ventana, 'Jugar en la cocina' cambia a la pestaña de la cocina", async () => {
+  it("sin vasos, 'Jugar en la cocina' lleva a la casa (/) sin eventos de pestaña", async () => {
     localStorage.setItem(CLAVE_PUZZLE, JSON.stringify({ ganados: [], perfectos: [], vasos: { vasos: 1, desde: Date.now() }, correoLleno: false }));
     const elegido = vi.fn();
     window.addEventListener("cdc:juego", elegido);
@@ -165,10 +165,9 @@ describe("Puzzle", () => {
     fireEvent.click(document.querySelector<HTMLButtonElement>('button[data-pieza="2"]')!);
     await avanzar(10);
     const cocina = screen.getByRole("link", { name: "Jugar en la cocina" });
-    expect(cocina.getAttribute("href")).toBe("/?juego=cocina#juegos");
+    expect(cocina.getAttribute("href")).toBe("/");
     fireEvent.click(cocina);
-    expect(elegido).toHaveBeenCalledTimes(1);
-    expect((elegido.mock.calls[0][0] as CustomEvent).detail).toBe("cocina");
+    expect(elegido).not.toHaveBeenCalled();
     window.removeEventListener("cdc:juego", elegido);
   });
 

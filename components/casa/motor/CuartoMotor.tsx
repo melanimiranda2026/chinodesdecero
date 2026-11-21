@@ -179,7 +179,7 @@ export function CuartoMotor({
         </div>
       )}
 
-      <RelojSolar hora={horaDe(def, c.progreso)} />
+      <RelojSolar hora={horaDe(def, c.progreso)} className={styles.reloj} />
       <div className={styles.bandejaCaja} data-parpadea={parpadeo ? "true" : undefined} key={parpadeo}>
         <Bandeja fichas={fichasDe(def, c.progreso)} todas={todas} />
       </div>

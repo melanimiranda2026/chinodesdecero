@@ -95,6 +95,10 @@
   box-shadow: none;
 }
 
+/* reloj solar del cuarto: centrado y angosto, entre la bandeja (abajo a la izquierda, ≤ 31% − 8px y ≤ 120px) y el
+   minimapa (abajo a la derecha, 108px + su anillo); en el celular de 360px el 38% lo pisaba */
+.cuarto .reloj { width: min(38%, calc(100% - 2 * (2% + max(116px, min(31% - 4px, 124px))))); }
+
 /* ---------- cuarto del motor: escenario, zonas, píldora, puerta ---------- */
 .cuarto {
   position: absolute;

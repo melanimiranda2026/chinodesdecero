@@ -72,6 +72,8 @@ export interface CuartoApi {
   /** Fichas por mostrar girando, en orden. */
   cola: Silaba[][];
   sacarDeCola(): void;
+  /** Nada suena ni está por sonar: un efecto (el boing de la puerta) no queda encima del mandarín. */
+  puedeSonar(): boolean;
 }
 
 /**
@@ -179,14 +181,18 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
 
       const sec = secuencia.current;
       let dicho = false;
+      // durante la espera del pop el nombre ya cuenta como "por sonar": nada se toca encima
+      const conPop = hablando.current === 0;
+      if (conPop) hablando.current++;
       const decirNombre = async () => {
+        if (conPop) hablando.current--;
         // durante el pop se cortó (pestaña oculta) o empezó una acción: el nombre ya no va
         if (sec !== secuencia.current || ocupadoRef.current) return;
         dicho = true;
         await hablar([...ZHE_SHI, ...o.nombre]);
       };
       // el pop solo si nada suena: nunca encima del mandarín
-      await (hablando.current === 0 ? efectoYLuegoVoz("pop", decirNombre, { juego: "cocina" }) : decirNombre());
+      await (conPop ? efectoYLuegoVoz("pop", decirNombre, { juego: "cocina" }) : decirNombre());
       if (o.abre && dicho && sec === secuencia.current && activoRef.current) abrirRef.current?.(o.abre);
     },
     [ocupadoRef, progresoRef, luego, aplicar, hablar],
@@ -239,7 +245,18 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
     setOcupado(false);
   }, [opc.activo, setOcupado]);
 
-  const sacarDeCola = useCallback(() => setCola((c) => c.slice(1)), []);
+  // al desmontar (cambio de cuarto): lo que venía (el nombre tras el pop, alAbrir, la frase) ya no corre y se calla
+  useEffect(
+    () => () => {
+      secuencia.current++;
+      turnoVoz.current++;
+      callar();
+    },
+    [],
+  );
 
-  return { vaca, pose, globo, hocico, ocupado, elegido, brillo, progreso, tocarObjeto, hacer, cola, sacarDeCola };
+  const sacarDeCola = useCallback(() => setCola((c) => c.slice(1)), []);
+  const puedeSonar = useCallback(() => hablando.current === 0, []);
+
+  return { vaca, pose, globo, hocico, ocupado, elegido, brillo, progreso, tocarObjeto, hacer, cola, sacarDeCola, puedeSonar };
 }

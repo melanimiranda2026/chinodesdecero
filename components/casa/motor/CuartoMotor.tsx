@@ -66,8 +66,8 @@ export function CuartoMotor({
   const listo = completo(def, c.progreso);
   const tocarPuerta = () => {
     if (listo) return alSalir();
-    // cerrada: boing y la bandeja muestra lo que falta
-    sfx("boing", "cocina");
+    // cerrada: boing (nunca encima del mandarín) y la bandeja muestra lo que falta
+    if (c.puedeSonar()) sfx("boing", "cocina");
     setParpadeo((n) => n + 1);
     clearTimeout(parpadeoT.current);
     parpadeoT.current = setTimeout(() => setParpadeo(0), PARPADEO_MS);

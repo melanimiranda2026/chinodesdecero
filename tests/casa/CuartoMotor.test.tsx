@@ -209,6 +209,36 @@ describe("CuartoMotor", () => {
     expect(alEvento.mock.calls.filter(([n]) => n === "cuarto_completo").length).toBe(1);
   });
 
+  it("la puerta cerrada no hace boing mientras suena el mandarín (frase o nombre), pero la bandeja parpadea igual", async () => {
+    vi.mocked(decir).mockImplementation((s) =>
+      textoHanzi(s) === "我坐下" ? new Promise<boolean>(() => {}) : Promise.resolve(true),
+    );
+    const { container } = montar();
+    fireEvent.click(zona("沙发"));
+    // durante la espera del pop, antes del nombre: tampoco
+    fireEvent.click(screen.getByRole("button", { name: "厨房" }));
+    expect(sfx).not.toHaveBeenCalledWith("boing", expect.anything());
+    await avanzar(400);
+    fireEvent.click(pildora());
+    await avanzar(PASO_MS + 100); // la frase queda sonando
+    vi.mocked(sfx).mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "厨房" }));
+    expect(sfx).not.toHaveBeenCalledWith("boing", expect.anything());
+    expect(container.querySelector("[data-parpadea]")).not.toBeNull();
+    expect(vi.mocked(sfx).mock.calls.filter(([n]) => n === "boing").length).toBe(0);
+  });
+
+  it("desmontar justo después de tocar: no dice el nombre, no abre y se calla", async () => {
+    const { alAbrir, unmount } = montar();
+    fireEvent.click(zona("桌子"));
+    vi.mocked(callar).mockClear();
+    unmount();
+    expect(callar).toHaveBeenCalled();
+    await avanzar(1000);
+    expect(llamadasFrase(S("这是桌子", "zhè shì zhuō zi", "4415"))).toBe(0);
+    expect(alAbrir).not.toHaveBeenCalled();
+  });
+
   it("con el progreso ya completo la puerta lleva a la salida y no se vuelve a emitir cuarto_completo", () => {
     const { alSalir, alEvento } = montar(COMPLETO);
     fireEvent.click(screen.getByRole("button", { name: "厨房" }));

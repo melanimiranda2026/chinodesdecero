@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Silaba } from "@/lib/silabas";
 import { callar, decir } from "../audio/voz";
-import { efectoYLuegoVoz } from "../audio/turnos";
+import { efectoYLuegoVoz, esperaDe } from "../audio/turnos";
 import { ZHE_SHI } from "../cocina/frases";
 import { proyectar, type Punto } from "../cocina/iso";
 import type { AlEvento } from "../useCasa";
@@ -116,12 +116,16 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
   const turnoVoz = useRef(0);
   /** Frases en curso (para no tocar el pop encima del mandarín). */
   const hablando = useRef(0);
+  /** Cada toque de objeto lo sube: el nombre y lo que sigue solo corren si su toque es el último. */
+  const toque = useRef(0);
+  /** Pops cuyo nombre aún no empieza: un toque nuevo espera en silencio en vez de hablar encima del pop. */
+  const popsPendientes = useRef(0);
   /** cuarto_completo se emite una sola vez, al completarse aquí. */
   const avisado = useRef(false);
 
-  /** La vaca habla: globo + boca. Nunca lanza. */
+  /** La vaca habla: globo + boca. Nunca lanza. `true` si su turno sigue vigente al terminar (nadie la cortó con otra frase). */
   const hablar = useCallback(
-    async (s: Silaba[]): Promise<void> => {
+    async (s: Silaba[]): Promise<boolean> => {
       const turno = ++turnoVoz.current;
       hablando.current++;
       setGlobo(s);
@@ -131,11 +135,12 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
         /* sin voz: el cuarto sigue igual */
       }
       hablando.current--;
-      if (turno !== turnoVoz.current) return;
+      if (turno !== turnoVoz.current) return false;
       setHocico("sonrisa");
       luego(() => {
         if (turno === turnoVoz.current) setGlobo(null);
       }, 1500);
+      return true;
     },
     [luego],
   );
@@ -180,20 +185,35 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
       setElegido(pendientes ? id : null);
 
       const sec = secuencia.current;
+      // un doble toque (o tocar otro objeto) deja viejo a este: su nombre y lo que seguía ya no corren
+      const mio = ++toque.current;
       let dicho = false;
-      // durante la espera del pop el nombre ya cuenta como "por sonar": nada se toca encima
+      // el pop solo si nada suena: nunca encima del mandarín. Si otro pop aún suena, se espera en silencio.
       const conPop = hablando.current === 0;
-      if (conPop) hablando.current++;
-      const decirNombre = async () => {
-        if (conPop) hablando.current--;
-        // durante el pop se cortó (pestaña oculta) o empezó una acción: el nombre ya no va
-        if (sec !== secuencia.current || ocupadoRef.current) return;
+      const tras = !conPop && popsPendientes.current > 0;
+      // durante la espera del pop el nombre ya cuenta como "por sonar": nada se toca encima
+      if (conPop || tras) {
+        hablando.current++;
+        popsPendientes.current++;
+      }
+      const decirNombre = async (): Promise<boolean> => {
+        if (conPop || tras) {
+          hablando.current--;
+          popsPendientes.current--;
+        }
+        // durante el pop se cortó (pestaña oculta), empezó una acción o llegó otro toque: el nombre ya no va
+        if (mio !== toque.current || sec !== secuencia.current || ocupadoRef.current) return false;
         dicho = true;
-        await hablar([...ZHE_SHI, ...o.nombre]);
+        return hablar([...ZHE_SHI, ...o.nombre]);
       };
-      // el pop solo si nada suena: nunca encima del mandarín
-      await (conPop ? efectoYLuegoVoz("pop", decirNombre, { juego: "cocina" }) : decirNombre());
-      if (!o.abre || !dicho || sec !== secuencia.current || !activoRef.current || ocupadoRef.current) return;
+      const entero = await (conPop
+        ? efectoYLuegoVoz("pop", decirNombre, { juego: "cocina" })
+        : tras
+          ? espera(esperaDe("pop")).then(decirNombre)
+          : decirNombre());
+      // solo si el nombre sonó entero y este toque sigue siendo el último
+      if (!o.abre || !dicho || !entero || mio !== toque.current) return;
+      if (sec !== secuencia.current || !activoRef.current || ocupadoRef.current) return;
       // después del nombre la vaca camina hasta el objeto y recién ahí se abre (movimiento reducido: llega de una vez)
       setOcupado(true);
       const camino = ++secuencia.current;

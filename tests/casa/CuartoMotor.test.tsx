@@ -287,6 +287,75 @@ describe("CuartoMotor", () => {
     expect(container.querySelector("[data-cuarto-motor]")!.getAttribute("data-ocupado")).toBeNull();
   });
 
+  /** decir como el de verdad: una frase nueva corta la que suena (la anterior resuelve). */
+  function vozQueCorta() {
+    let actual: ((v: boolean) => void) | null = null;
+    vi.mocked(decir).mockImplementation(() => {
+      actual?.(true);
+      return new Promise<boolean>((r) => { actual = r; });
+    });
+    return () => act(async () => { const r = actual; actual = null; r?.(true); });
+  }
+  const ZHE_SHI_ZHUOZI = S("这是桌子", "zhè shì zhuō zi", "4415");
+  const ZHE_SHI_SHAFA = S("这是沙发", "zhè shì shā fā", "4411");
+
+  it("doble toque rápido en un objeto con `abre`: dice el nombre una vez y abre recién cuando terminó", async () => {
+    const terminarVoz = vozQueCorta();
+    const { alAbrir } = montar();
+    fireEvent.click(zona("桌子"));
+    fireEvent.click(zona("桌子"));
+    await avanzar(400);
+    expect(llamadasFrase(ZHE_SHI_ZHUOZI)).toBe(1);
+    // el nombre sigue sonando: nadie camina ni abre encima
+    await avanzar(PASO_MS + 500);
+    expect(alAbrir).not.toHaveBeenCalled();
+    await terminarVoz();
+    await avanzar(PASO_MS + 100);
+    expect(alAbrir).toHaveBeenCalledTimes(1);
+    expect(llamadasFrase(ZHE_SHI_ZHUOZI)).toBe(1);
+  });
+
+  it("沙发 y enseguida 桌子: solo suena el último nombre y abre una vez, sin pisarlo", async () => {
+    const terminarVoz = vozQueCorta();
+    const { alAbrir } = montar();
+    fireEvent.click(zona("沙发"));
+    fireEvent.click(zona("桌子"));
+    await avanzar(400);
+    expect(llamadasFrase(ZHE_SHI_SHAFA)).toBe(0);
+    expect(llamadasFrase(ZHE_SHI_ZHUOZI)).toBe(1);
+    await avanzar(PASO_MS + 500);
+    expect(alAbrir).not.toHaveBeenCalled();
+    await terminarVoz();
+    await avanzar(PASO_MS + 100);
+    expect(alAbrir).toHaveBeenCalledTimes(1);
+  });
+
+  it("doble toque rápido en un objeto sin `abre`: el nombre suena una sola vez y un solo pop", async () => {
+    const terminarVoz = vozQueCorta();
+    montar();
+    fireEvent.click(zona("沙发"));
+    fireEvent.click(zona("沙发"));
+    await avanzar(400);
+    await terminarVoz();
+    await avanzar(2000);
+    expect(llamadasFrase(ZHE_SHI_SHAFA)).toBe(1);
+    expect(vi.mocked(sfx).mock.calls.filter(([n]) => n === "pop").length).toBe(1);
+  });
+
+  it("tocar otro objeto mientras suena un nombre con `abre`: el primero no camina ni abre", async () => {
+    const terminarVoz = vozQueCorta();
+    const { alAbrir } = montar();
+    fireEvent.click(zona("桌子"));
+    await avanzar(400);
+    fireEvent.click(zona("沙发")); // corta 这是桌子
+    await avanzar(PASO_MS + 500);
+    expect(llamadasFrase(ZHE_SHI_SHAFA)).toBe(1);
+    expect(alAbrir).not.toHaveBeenCalled();
+    await terminarVoz();
+    await avanzar(PASO_MS + 100);
+    expect(alAbrir).not.toHaveBeenCalled();
+  });
+
   it("cámara, sorpresa y decorado: la cámara de afuera manda, la vaca se sorprende y el decorado va en el mundo", () => {
     const r = render(
       <CuartoMotor

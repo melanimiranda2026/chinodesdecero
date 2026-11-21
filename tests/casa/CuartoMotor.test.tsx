@@ -488,4 +488,46 @@ describe("CuartoMotor", () => {
     expect(parseFloat(vaca(container).style.top)).toBeCloseTo(52, 2);
   });
 
+  it("la ficha que gana una acción (坐 en el 2.º asiento) aparece recién cuando la vaca se paró; el logro cuenta tras la frase", async () => {
+    const { container, alCambiar } = montar({ tocados: ["shafa", "yizi", "zhuozi"], logros: ["zuo@shafa"] });
+    const carta = () => container.querySelector("[data-ficha-ganada]");
+    fireEvent.click(zona("椅子"));
+    await avanzar(400);
+    fireEvent.click(pildora());
+    await avanzar(PASO_MS + 100);
+    // la frase terminó: el logro y la ficha ya cuentan, pero la carta no tapa la pose
+    expect(vaca(container).getAttribute("data-pose")).toBe("sentada");
+    expect(ultimo(alCambiar)[1]).toEqual([fichaId(ZUO)]);
+    expect(carta()).toBeNull();
+    await avanzar(POSE_MS - 200);
+    expect(carta()).toBeNull();
+    await avanzar(300);
+    expect(vaca(container).getAttribute("data-pose")).toBeNull();
+    expect(carta()!.getAttribute("aria-label")).toBe("坐");
+    await avanzar(1700);
+    expect(carta()).toBeNull();
+  });
+
+  it("pestaña oculta a mitad de la pose: la carta de la ficha se muestra una sola vez (ni se pierde ni se duplica)", async () => {
+    const { container, desactivar } = montar({ tocados: ["shafa", "yizi", "zhuozi"], logros: ["zuo@shafa"] });
+    // cada carta montada es un elemento nuevo: se cuentan las de 坐
+    const vistas = new Set<Element>();
+    const obs = new MutationObserver(() => {
+      const c = container.querySelector("[data-ficha-ganada]");
+      if (c?.getAttribute("aria-label") === "坐") vistas.add(c);
+    });
+    obs.observe(container, { childList: true, subtree: true });
+    fireEvent.click(zona("椅子"));
+    await avanzar(400);
+    fireEvent.click(pildora());
+    await avanzar(PASO_MS + 100);
+    expect(container.querySelector("[data-ficha-ganada]")).toBeNull();
+    desactivar();
+    expect(container.querySelector("[data-ficha-ganada]")!.getAttribute("aria-label")).toBe("坐");
+    await avanzar(POSE_MS + 4000);
+    obs.disconnect();
+    expect(container.querySelector("[data-ficha-ganada]")).toBeNull();
+    expect(vistas.size).toBe(1);
+  });
+
 });

@@ -152,9 +152,15 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
     [luego],
   );
 
-  /** Guarda el progreso nuevo, avisa afuera con las fichas recién ganadas y las pone en la cola. */
+  /** Cartas de fichas ganadas por una acción: esperan a que termine la pose para no taparla. */
+  const cartasEnEspera = useRef<Silaba[][]>([]);
+
+  /**
+   * Guarda el progreso nuevo, avisa afuera con las fichas recién ganadas y las pone en la cola.
+   * `trasLaPose`: la carta que gira espera a que la vaca se pare (el logro y la ficha cuentan ya).
+   */
   const aplicar = useCallback(
-    (nuevo: ProgresoCuarto) => {
+    (nuevo: ProgresoCuarto, trasLaPose = false) => {
       const antes = progresoRef.current;
       if (nuevo === antes) return;
       const d = defRef.current;
@@ -168,7 +174,9 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
       }
       if (nuevas.length) {
         const sil = silabasDeFichas(d);
-        setCola((c) => [...c, ...nuevas.map((f) => sil.get(f)!)]);
+        const cartas = nuevas.map((f) => sil.get(f)!);
+        if (trasLaPose) cartasEnEspera.current.push(...cartas);
+        else setCola((c) => [...c, ...cartas]);
         for (const f of nuevas) eventoRef.current?.("ficha_ganada", { cuarto: d.id, ficha: f });
       }
       if (!avisado.current && !completo(d, antes) && completo(d, nuevo)) {
@@ -244,6 +252,10 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
       setVaca(deVuelta.current);
       deVuelta.current = null;
     }
+    // ya de pie: ahora sí giran las cartas ganadas por la acción (una vez: la espera se vacía)
+    const cartas = cartasEnEspera.current;
+    cartasEnEspera.current = [];
+    if (cartas.length) setCola((c) => [...c, ...cartas]);
   }, [setVaca]);
 
   const hacer = useCallback(
@@ -264,7 +276,7 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
         await hablar(a.frase);
         // el logro solo cuenta si la frase terminó sin corte
         if (sec !== secuencia.current) return;
-        aplicar(lograr(progresoRef.current, a.id, o.id));
+        aplicar(lograr(progresoRef.current, a.id, o.id), true);
         eventoRef.current?.("accion_lograda", { cuarto: d.id, accion: a.id, objeto: o.id });
         // primero el audio, después la pose: sentada, se sube al asiento de un saltito (reducido: aparece ahí)
         if (a.pose === "sentada" && o.asiento) {

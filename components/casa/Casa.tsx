@@ -21,7 +21,7 @@ import { desbloquearAudio } from "./audio/voz";
 import { musica } from "./audio/sonido";
 import { useCasa, type AlEvento, type CasaApi, type Punto } from "./useCasa";
 import { NOMBRES_EVENTO, type NombreEvento } from "@/lib/eventos-nombres";
-import { EVENTO_AVANCE, avanceInicial, cargarAviso, cargarAvance, guardarAvance, sincronizar, subirAvance, fusionar, unirPalabras, type Avance, type DetalleAvance } from "./avance";
+import { EVENTO_AVANCE, avanceInicial, cargarAviso, cargarAvance, guardarAvance, sincronizar, subirAvance, fusionar, unirPalabras, unirCuartos, unirFichas, type Avance, type DetalleAvance } from "./avance";
 import { registrar } from "./eventos";
 import { Correo } from "@/components/pagina/Correo";
 import styles from "./Casa.module.css";
@@ -123,7 +123,12 @@ export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; re
           restaurarRef.current(f.estado);
         }
       } else {
-        avance.current = { ...avance.current, palabras: unirPalabras(r.palabras, avance.current.palabras) };
+        avance.current = {
+          ...avance.current,
+          palabras: unirPalabras(r.palabras, avance.current.palabras),
+          cuartos: unirCuartos(r.cuartos, avance.current.cuartos),
+          fichas: unirFichas(r.fichas, avance.current.fichas),
+        };
       }
       sucio.current = true;
       verPalabras();
@@ -140,7 +145,12 @@ export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; re
       restaurarRef.current(r.avance.estado);
       if (r.subir) guardarYSubir();
     } else {
-      avance.current = { ...avance.current, palabras: unirPalabras(r.palabras, avance.current.palabras) };
+      avance.current = {
+          ...avance.current,
+          palabras: unirPalabras(r.palabras, avance.current.palabras),
+          cuartos: unirCuartos(r.cuartos, avance.current.cuartos),
+          fichas: unirFichas(r.fichas, avance.current.fichas),
+        };
       sucio.current = true;
       guardarYSubir();
     }

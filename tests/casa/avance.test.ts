@@ -202,3 +202,47 @@ describe("cuartos y fichas", () => {
     expect(f.fichas).toEqual([f1, f2]);
   });
 });
+
+
+describe("sincronizar con cuartos y fichas", () => {
+  const [f1, f2] = todasLasFichas(LIVING);
+  const remoto = { ...avanceInicial(), cuartos: { living: { tocados: ["shafa"], logros: [] } }, fichas: [f1] };
+  const local = { ...avanceInicial(), cuartos: { living: { tocados: ["yizi"], logros: [] } }, fichas: [f2] };
+  const simular = (datos: unknown) => {
+    vi.resetModules();
+    vi.doMock("@/lib/supabase/navegador", () => ({
+      crearClienteNavegador: () => ({ auth: { getSession: async () => ({ data: { session: {} } }) } }),
+    }));
+    vi.stubGlobal("fetch", async () => ({ ok: true, json: async () => ({ datos }) }));
+  };
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.doUnmock("@/lib/supabase/navegador");
+    vi.resetModules();
+  });
+  it("al adoptar el remoto conserva lo local y pide subir", async () => {
+    simular(remoto);
+    const { sincronizar: s } = await import("@/components/casa/avance");
+    const r = await s(local, false);
+    expect(r.tipo).toBe("remoto");
+    if (r.tipo !== "remoto") return;
+    expect(r.avance.fichas).toEqual([f1, f2]);
+    expect(r.avance.cuartos.living).toEqual({ tocados: ["shafa", "yizi"], logros: [] });
+    expect(r.subir).toBe(true);
+  });
+  it("en la rama subir lleva la unión con lo del remoto", async () => {
+    simular({ ...remoto, escuchadas: [] });
+    const { sincronizar: s } = await import("@/components/casa/avance");
+    const r = await s({ ...local, escuchadas: ["a"] }, true);
+    expect(r.tipo).toBe("subir");
+    if (r.tipo !== "subir") return;
+    expect(r.fichas).toEqual([f1, f2]);
+    expect(r.cuartos.living?.tocados).toEqual(["shafa", "yizi"]);
+  });
+  it("sin nada local nuevo no pide subir", async () => {
+    simular(remoto);
+    const { sincronizar: s } = await import("@/components/casa/avance");
+    const r = await s(remoto, false);
+    expect(r.tipo === "remoto" && r.subir).toBe(false);
+  });
+});

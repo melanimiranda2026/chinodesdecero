@@ -2,6 +2,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { cargarAvance, guardarCorreo, MAX_AVANCE_PENDIENTE } from "@/components/casa/avance";
 import { registrar } from "@/components/casa/eventos";
+import { correoValido } from "@/lib/correo";
 import { bytes } from "@/lib/limite";
 import styles from "./Correo.module.css";
 
@@ -36,33 +37,48 @@ export function Correo({ origen, boton = "Avísame", listo: textoListo }: { orig
     setEstado("enviando");
     setError("");
     const conAviso = acepta;
+    const email = correo.trim();
+    /**
+     * El servidor no respondió bien (503, 429, 500, sin red) pero el correo tiene buena forma: queda guardado en este
+     * navegador y la casa se entera, así la puerta del living se abre igual (se gana siempre). El aviso dice la verdad:
+     * no se mandó ningún enlace. El correo queda en el avance; el próximo envío desde el pie lo vuelve a intentar.
+     */
+    const guardarAqui = () => {
+      if (!correoValido(email)) return false;
+      guardarCorreo(email, conAviso);
+      return true;
+    };
+    const QUEDO = " Tu correo quedó guardado en este navegador, así que puedes seguir jugando.";
     try {
       const r = await fetch("/api/suscribir", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email: correo.trim(), consentimiento: conAviso, origen, sitio, avance: avanceParaEnviar() }),
+        body: JSON.stringify({ email, consentimiento: conAviso, origen, sitio, avance: avanceParaEnviar() }),
       });
       // 502: el servidor guardó el correo (y el consentimiento) pero el enlace no salió: aquí también queda guardado,
       // así la puerta del living se abre igual; el aviso pide reintentar solo por el enlace.
       if (r.ok || r.status === 502) {
-        guardarCorreo(correo.trim(), conAviso);
+        guardarCorreo(email, conAviso);
         registrar("dejar_correo", { origen, consentimiento: conAviso });
       }
       if (r.ok) {
         setResultado(conAviso ? "aviso" : "correo");
+      } else if (r.status === 400) {
+        // correo inválido: aquí sí hay que corregirlo, no pasa
+        setError("Ese correo no parece correcto. Revísalo e inténtalo otra vez.");
+      } else if (r.status === 502) {
+        setError("Guardamos tu correo, pero no pudimos enviarte el enlace. Inténtalo otra vez en un rato.");
       } else {
+        const aqui = guardarAqui() ? QUEDO : "";
         setError(
-          r.status === 400
-            ? "Ese correo no parece correcto. Revísalo e inténtalo otra vez."
-            : r.status === 429
-              ? "Recibimos muchos intentos seguidos. Espera un rato e inténtalo otra vez."
-              : r.status === 502
-                ? "Guardamos tu correo, pero no pudimos enviarte el enlace. Inténtalo otra vez en un rato."
-                : "No pudimos guardar tu correo ahora. Inténtalo otra vez en un rato.",
+          r.status === 429
+            ? `Recibimos muchos intentos seguidos.${aqui} Espera un rato e inténtalo otra vez para recibir el enlace.`
+            : `No pudimos guardar tu correo en el servidor ahora.${aqui} Inténtalo otra vez en un rato para recibir el enlace.`,
         );
       }
     } catch {
-      setError("No pudimos conectarnos. Revisa tu internet e inténtalo otra vez.");
+      const aqui = guardarAqui() ? QUEDO : "";
+      setError(`No pudimos conectarnos.${aqui} Revisa tu internet e inténtalo otra vez para recibir el enlace.`);
     }
     enVuelo.current = false;
     setEstado("libre");

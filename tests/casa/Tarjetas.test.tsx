@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { Tarjetas } from "@/components/casa/Tarjetas";
 
-const base = { anotado: false, alEntrar: vi.fn(), alSeguir: vi.fn(), alCerrar: vi.fn() };
+const base = { anotado: false, alSeguir: vi.fn(), alCerrar: vi.fn() };
 
 describe("Tarjetas", () => {
   it("pronto: invita a dejar el correo", () => {
@@ -18,26 +18,10 @@ describe("Tarjetas", () => {
     render(<Tarjetas {...base} capa="pronto" formulario={<div>FORM</div>} />);
     expect(screen.getByText("FORM")).toBeTruthy();
   });
-  it("entrada: botón ▶ Jugar, sin cerrar con Escape", () => {
-    const alEntrar = vi.fn();
-    const alCerrar = vi.fn();
-    render(<Tarjetas {...base} alEntrar={alEntrar} alCerrar={alCerrar} capa="entrada" />);
-    const d = screen.getByRole("dialog");
-    // en la landing la entrada solo tapa la ventana del juego: no es modal para toda la página
-    expect(d.getAttribute("aria-modal")).toBeNull();
-    expect(screen.getByRole("button", { name: "Jugar" }).textContent).toBe("▶ Jugar");
-    fireEvent.keyDown(document, { key: "Escape" });
-    expect(alCerrar).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
-    expect(alEntrar).toHaveBeenCalled();
-  });
-  it("entrada: al cargar no le roba el foco al hero", () => {
-    const b = document.createElement("button");
-    document.body.appendChild(b);
-    b.focus();
-    render(<Tarjetas {...base} capa="entrada" />);
-    expect(document.activeElement).toBe(b);
-    b.remove();
+  it("ya no hay tarjeta de entrada ni botón Jugar", () => {
+    render(<Tarjetas {...base} capa={null} />);
+    expect(screen.queryByRole("button", { name: "Jugar" })).toBeNull();
+    expect(document.querySelector('[data-capa="entrada"]')).toBeNull();
   });
   it("pronto: Escape cierra y el botón principal recibe el foco", () => {
     const alCerrar = vi.fn();
@@ -67,8 +51,8 @@ describe("Tarjetas: foco", () => {
     input.focus();
     expect(document.activeElement).toBe(input);
     // callbacks nuevos en cada render, como hace Casa
-    rerender(<Tarjetas {...base} alEntrar={() => {}} alSeguir={() => {}} alCerrar={() => {}} capa="pronto" formulario={formulario} />);
-    rerender(<Tarjetas {...base} alEntrar={() => {}} alSeguir={() => {}} alCerrar={() => {}} capa="pronto" formulario={formulario} />);
+    rerender(<Tarjetas {...base} alSeguir={() => {}} alCerrar={() => {}} capa="pronto" formulario={formulario} />);
+    rerender(<Tarjetas {...base} alSeguir={() => {}} alCerrar={() => {}} capa="pronto" formulario={formulario} />);
     expect(document.activeElement).toBe(input);
   });
   it("Escape usa el último callback", () => {

@@ -2,12 +2,14 @@ import type { CSSProperties } from "react";
 import { COLOR_TONO } from "@/lib/tonos";
 import { textoHanzi } from "@/lib/silabas";
 import { ROLES, type Etapa, type Pieza as DatosPieza } from "./datos";
+import { FormaPieza } from "./FormaPieza";
 import styles from "./Puzzle.module.css";
 
 /** Contenido de una pieza: pinyin con color de tono sobre cada hanzi; rol y glosa según la etapa. */
 export function CaraPieza({ pieza, etapa }: { pieza: DatosPieza; etapa: Etapa }) {
   return (
     <>
+      <FormaPieza />
       <span className={styles.silabas} lang="zh">
         {pieza.silabas.map(([hz, py, t], i) => (
           <span key={i} className={styles.sil}>

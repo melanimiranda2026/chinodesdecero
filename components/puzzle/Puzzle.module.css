@@ -5,7 +5,6 @@
   --ease-rebote: cubic-bezier(0.34, 1.56, 0.64, 1);
   --sombra-tecla: 0 4px 0 var(--tinta);
   max-width: 760px;
-  min-height: 100svh;
   margin: 0 auto;
   padding: 10px 16px 40px;
   display: grid;
@@ -13,7 +12,10 @@
   gap: 14px;
 }
 .juego ::selection { background: #ffd24a; color: var(--tinta); }
-.cargando { min-height: 100svh; }
+/* En su propia página ocupa toda la pantalla; en la ventana de la portada, solo lo que necesita. */
+.enPagina { min-height: 100svh; }
+/* En su propia página el menú fijo va arriba: la barra se pega justo debajo. */
+.enPagina .barra { top: calc(var(--alto-menu, 0px) + 8px); }
 
 /* ---------- barra ---------- */
 .barra {
@@ -55,6 +57,9 @@
   white-space: nowrap;
 }
 .tituloIcono { width: 24px; height: 24px; flex: none; color: var(--t2); }
+/* en celulares angostos el título cede su lugar al 🔊 (queda la pieza): la barra nunca se sale de la pantalla */
+.tituloTexto { white-space: nowrap; }
+@media (max-width: 400px) { .tituloTexto { display: none; } }
 .tituloZh { display: none; font-family: var(--f-hanzi), sans-serif; font-weight: 400; font-size: 19px; }
 .tituloPy { font-family: var(--f-texto), system-ui, sans-serif; font-weight: 900; font-size: 11px; opacity: 0.65; }
 
@@ -279,6 +284,17 @@
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
+/* Con forma de puzzle (el SVG ya midió): relleno y borde pasan a la silueta. */
+.forma { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.formaPieza { fill: var(--fondo, #fff); stroke: var(--tinta); stroke-width: 3; stroke-linejoin: round; }
+.formaHueco { fill: rgba(255, 255, 255, 0.6); stroke: rgba(74, 42, 28, 0.35); stroke-width: 3; stroke-dasharray: 7 5; stroke-linejoin: round; transition: fill 160ms ease, stroke 160ms ease; }
+.pieza[data-forma] { background: transparent; border-color: transparent; box-shadow: none; }
+.pieza[data-forma] .forma { filter: drop-shadow(0 4px 0 rgba(74, 42, 28, 0.35)); }
+.pieza[data-forma].esPregunta .formaPieza { stroke: #e0473c; }
+.pieza[data-forma].esPregunta .forma { filter: drop-shadow(0 4px 0 rgba(224, 71, 60, 0.45)); }
+.pieza > :not(.forma) { position: relative; }
+.suelta[data-forma]:not(:disabled):hover { box-shadow: none; }
+.suelta.levantada[data-forma] .forma { filter: drop-shadow(0 14px 14px rgba(74, 42, 28, 0.3)); }
 .esPregunta { border-color: #e0473c; box-shadow: 0 4px 0 rgba(224, 71, 60, 0.45); }
 .silabas { display: flex; gap: 3px; }
 .sil { display: inline-flex; flex-direction: column; align-items: center; gap: 1px; }
@@ -323,6 +339,7 @@
   background: rgba(74, 42, 28, 0.07);
 }
 .hueco {
+  position: relative;
   display: grid;
   place-items: center;
   min-width: 50px;
@@ -332,7 +349,13 @@
   background: rgba(255, 255, 255, 0.6);
   transition: transform 160ms var(--ease-out), border-color 160ms ease, background-color 160ms ease;
 }
+.hueco[data-forma] { background: transparent; border-color: transparent; }
 .huecoSobre { border-color: var(--t4); background: #e4edff; transform: scale(1.05); }
+.huecoSobre .formaHueco { fill: #e4edff; stroke: var(--t4); }
+/* Piezas con forma: los huecos se juntan para que la pestaña encaje en el hueco del vecino. */
+.fila:has([data-forma]) { gap: 0; padding-inline: 14px; }
+.fila:has([data-forma]) .hueco { margin-inline: -3px; }
+.fila:has([data-forma]) .huecoLleno { border-width: 0; }
 .huecoLleno { border-color: transparent; background: transparent; min-width: 0; }
 .encajada { animation: encaja 320ms var(--ease-rebote); }
 @keyframes encaja {

@@ -1,3 +1,4 @@
+import { entrarCasa } from "./entrar";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { MutableRefObject } from "react";
@@ -99,17 +100,17 @@ describe("efectos nunca encima del mandarín", () => {
     act(() => { void api().tocar("beizi"); });
     await avanzar(400); // ya habla
     act(() => api().tocarVaca());
-    expect(sfxMock).not.toHaveBeenCalledWith("boing");
+    expect(sfxMock).not.toHaveBeenCalledWith("boing", "cocina");
     await act(async () => { terminar(true); await vi.advanceTimersByTimeAsync(10); });
     act(() => api().tocarVaca());
-    expect(sfxMock).toHaveBeenCalledWith("boing");
+    expect(sfxMock).toHaveBeenCalledWith("boing", "cocina");
   });
 });
 
 describe("玩: salir y respaldo mudo", () => {
   it("tocar 玩 otra vez durante el quiz lo termina sin tarjeta", async () => {
     const { api } = montar();
-    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
+    entrarCasa();
     const jugar = screen.getByRole("button", { name: "玩" });
     fireEvent.click(jugar);
     await avanzar(800);
@@ -189,7 +190,7 @@ describe("escuchadas y música", () => {
     decirMock.mockImplementation(() => Promise.resolve(false));
     render(<Casa />);
     await avanzar(10);
-    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
+    entrarCasa();
     fireEvent.click(screen.getByRole("button", { name: "杯子" }));
     await avanzar(3000);
     expect(JSON.parse(localStorage.getItem(CLAVE_AVANCE) ?? "{}").escuchadas ?? []).toEqual([]);
@@ -198,15 +199,15 @@ describe("escuchadas y música", () => {
   it("una frase que sonó sí cuenta", async () => {
     render(<Casa />);
     await avanzar(10);
-    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
+    entrarCasa();
     await avanzar(3000);
     expect(cargarAvance().escuchadas).toContain("ni2_hao3");
   });
 
-  it("la música de la cocina empieza en el toque de 'Jugar'", () => {
+  it("la música de la cocina empieza en el primer toque en la casa", () => {
     render(<Casa />);
     expect(musica.tocar).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Jugar" }));
+    entrarCasa();
     expect(musica.tocar).toHaveBeenCalledWith("cocina");
   });
 });

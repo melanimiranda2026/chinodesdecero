@@ -15,7 +15,7 @@ describe("Correo", () => {
   it("la casilla empieza sin marcar", () => {
     render(<Correo origen="pronto" />);
     expect((screen.getByRole("checkbox") as HTMLInputElement).checked).toBe(false);
-    expect(screen.getByText(/Quiero recibir novedades de Chino desde cero/)).toBeTruthy();
+    expect(screen.getByText(/Quiero recibir novedades de Chino con la vaca/)).toBeTruthy();
   });
   it("envía consentimiento:false si no se marca", async () => {
     const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(respuesta(200));

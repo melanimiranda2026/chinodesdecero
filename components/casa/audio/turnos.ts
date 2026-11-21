@@ -1,4 +1,5 @@
 import { sfx } from "./sonido";
+import type { JuegoVoz } from "./motor";
 
 /** Cuánto dura cada efecto (ms) antes de que pueda empezar el mandarín. Ajustar si cambian los archivos de /sfx. */
 export const ESPERA_SFX: Record<string, number> = {
@@ -16,8 +17,12 @@ export const esperaDe = (nombre: string) => ESPERA_SFX[nombre] ?? ESPERA_SFX_DEF
  * El único camino para "efecto + frase": toca el efecto, espera lo que dura y recién entonces habla.
  * Así un efecto nunca queda encima del mandarín.
  */
-export async function efectoYLuegoVoz<T>(nombre: string, decirFn: () => Promise<T>, ms = esperaDe(nombre)): Promise<T> {
-  sfx(nombre);
+export async function efectoYLuegoVoz<T>(
+  nombre: string,
+  decirFn: () => Promise<T>,
+  { ms = esperaDe(nombre), juego }: { ms?: number; juego?: JuegoVoz } = {},
+): Promise<T> {
+  sfx(nombre, juego);
   await new Promise<void>((r) => setTimeout(r, ms));
   return decirFn();
 }

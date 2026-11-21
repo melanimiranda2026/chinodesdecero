@@ -2,17 +2,14 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import styles from "./Casa.module.css";
 
-export type CapaTarjeta = "entrada" | "metodo" | "pronto";
+export type CapaTarjeta = "metodo" | "pronto";
 
 interface Props {
   capa: CapaTarjeta | null;
   /** Pidió que le avisemos (marcó la casilla): la tarjeta "pronto" cambia de texto. */
   anotado: boolean;
-  /** Mensaje del enlace del correo (bueno o vencido): se lee en la tarjeta de entrada. */
-  aviso?: string | null;
   /** Hueco del formulario de correo (lo llena la Task 12). */
   formulario?: ReactNode;
-  alEntrar: () => void;
   alSeguir: () => void;
   alCerrar: () => void;
 }
@@ -21,7 +18,7 @@ interface Props {
  * Las tarjetas son página, no casa: aquí sí hay español. Viven dentro de la ventana del juego
  * (posición absoluta en el marco) y solo tapan el juego, no el resto de la landing.
  */
-export function Tarjetas({ capa, anotado, aviso, formulario, alEntrar, alSeguir, alCerrar }: Props) {
+export function Tarjetas({ capa, anotado, formulario, alSeguir, alCerrar }: Props) {
   const principal = useRef<HTMLButtonElement>(null);
 
   // Los callbacks vienen en línea y cambian en cada render: se guardan en una ref
@@ -34,18 +31,18 @@ export function Tarjetas({ capa, anotado, aviso, formulario, alEntrar, alSeguir,
   useEffect(() => {
     if (!capa) return;
     const previo = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    // La entrada se pinta al cargar la landing: no le roba el foco (ni el scroll) al hero.
-    // Las demás aparecen por algo que se hizo en el juego: el foco va a su botón, sin mover la página.
-    if (capa !== "entrada") principal.current?.focus({ preventScroll: true });
+    // Las tarjetas aparecen por algo que se hizo en el juego: el foco va a su botón, sin mover la página.
+    principal.current?.focus({ preventScroll: true });
     const alTeclear = (e: KeyboardEvent) => {
-      if (e.key !== "Escape" || capa === "entrada") return; // la entrada no se cierra con Escape
+      if (e.key !== "Escape") return;
       if (capa === "metodo") ultimos.current.alSeguir();
       else ultimos.current.alCerrar();
     };
     document.addEventListener("keydown", alTeclear);
     return () => {
       document.removeEventListener("keydown", alTeclear);
-      if (previo?.isConnected) previo.focus(); // al cerrar, el foco vuelve a donde estaba
+      // al cerrar, el foco vuelve a donde estaba (no si quedó en una pestaña oculta)
+      if (previo?.isConnected && !previo.closest("[hidden]")) previo.focus();
     };
   }, [capa]);
 
@@ -53,26 +50,6 @@ export function Tarjetas({ capa, anotado, aviso, formulario, alEntrar, alSeguir,
 
   return (
     <div className={styles.capa} data-capa={capa}>
-      {capa === "entrada" && (
-        <div className={styles.tarjeta} role="dialog" aria-labelledby="t-titulo">
-          <small className={styles.chica}>chino desde cero</small>
-          <div className={styles.grande}>浸</div>
-          <svg width="120" height="34" viewBox="0 0 120 34" aria-hidden="true" className={styles.tonoLinea}>
-            <path d="M8 6 L112 28" stroke="#3A6FD6" strokeWidth="6" strokeLinecap="round" fill="none" />
-          </svg>
-          <h2 id="t-titulo">Método Jìn</h2>
-          <p>Sumérgete. Toca, arrastra, escucha.</p>
-          {aviso && (
-            <p role="status" className={styles.avisoEntrada}>
-              {aviso}
-            </p>
-          )}
-          <button ref={principal} type="button" className={styles.principal} onClick={alEntrar}>
-            <span aria-hidden="true">▶ </span>Jugar
-          </button>
-        </div>
-      )}
-
       {capa === "metodo" && (
         <div className={styles.tarjeta} role="dialog" aria-modal="true" aria-labelledby="t-titulo">
           <div className={styles.grande} style={{ fontSize: 56 }}>

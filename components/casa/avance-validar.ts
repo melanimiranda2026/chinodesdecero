@@ -1,4 +1,4 @@
-import { ESTADO_INICIAL, type EstadoCocina } from "./cocina/datos";
+import { ACOPLADOS, ESTADO_INICIAL, VALORES, type EstadoCocina, type ObjetoId } from "./cocina/datos";
 import { estadosAlcanzables } from "./cocina/acciones";
 import { bytes, MAX_CUERPO } from "@/lib/limite";
 
@@ -25,21 +25,26 @@ export const avanceInicial = (): Avance => ({
 export const esObjeto = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 
-const claveEstado = (e: Record<string, unknown>) =>
-  Object.keys(ESTADO_INICIAL)
-    .map((k) => String(e[k]))
-    .join("|");
+const claveEstado = (e: Record<string, unknown>) => ACOPLADOS.map((k) => String(e[k])).join("|");
 let alcanzables: Set<string> | null = null;
 
-/** El estado guardado solo vale si tiene exactamente las llaves y es uno de los estados alcanzables; si no, el inicial. */
+/**
+ * Los 8 objetos de siempre solo valen si son un estado alcanzable (se validan juntos; si no, el inicial de los 8).
+ * Cada objeto nuevo vale si su valor está en VALORES, si no vuelve a su inicial. Llaves desconocidas se descartan;
+ * un avance de antes (solo los 8) conserva su estado y los nuevos toman el inicial.
+ */
 export function estadoValido(v: unknown): EstadoCocina {
-  if (!esObjeto(v)) return { ...ESTADO_INICIAL };
-  const claves = Object.keys(ESTADO_INICIAL);
-  if (Object.keys(v).length !== claves.length) return { ...ESTADO_INICIAL };
-  for (const k of claves) if (typeof v[k] !== "string") return { ...ESTADO_INICIAL };
-  alcanzables ??= new Set(estadosAlcanzables().map(claveEstado));
-  if (!alcanzables.has(claveEstado(v))) return { ...ESTADO_INICIAL };
-  return { ...(v as EstadoCocina) };
+  const e: EstadoCocina = { ...ESTADO_INICIAL };
+  if (!esObjeto(v)) return e;
+  if (ACOPLADOS.every((k) => typeof v[k] === "string")) {
+    alcanzables ??= new Set(estadosAlcanzables().map(claveEstado));
+    if (alcanzables.has(claveEstado(v))) for (const k of ACOPLADOS) e[k] = v[k] as string;
+  }
+  for (const k of Object.keys(ESTADO_INICIAL) as ObjetoId[]) {
+    if (ACOPLADOS.includes(k)) continue;
+    if (typeof v[k] === "string" && VALORES[k].includes(v[k])) e[k] = v[k];
+  }
+  return e;
 }
 
 /** Normaliza cualquier cosa leída del disco o del servidor; lo desconocido se descarta. */

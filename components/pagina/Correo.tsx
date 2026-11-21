@@ -115,7 +115,7 @@ export function Correo({ origen, boton = "Avísame", listo: textoListo }: { orig
       <label className={styles.casilla}>
         <input type="checkbox" checked={acepta} onChange={(e) => setAcepta(e.target.checked)} />
         <span>
-          Quiero recibir novedades de Chino desde cero (cuartos nuevos, material y ofertas). Puedo darme de baja cuando
+          Quiero recibir novedades de Chino con la vaca (cuartos nuevos, material y ofertas). Puedo darme de baja cuando
           quiera.
         </span>
       </label>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Nunito, Silkscreen } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
+import { Menu } from "@/components/pagina/Menu";
 import { Filtros } from "@/components/casa/arte/placeholders/Filtros";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -18,7 +19,7 @@ const hanzi = localFont({
 const texto = Nunito({ weight: ["700", "900"], subsets: ["latin"], variable: "--f-texto", display: "swap" });
 const pixel = Silkscreen({ weight: ["400", "700"], subsets: ["latin"], variable: "--f-pixel", display: "swap" });
 
-const TITULO = "Chino desde cero";
+const TITULO = "Chino con la vaca";
 const DESCRIPCION =
   "Tus primeras palabras en chino, jugando en una cocina: escuchas a la vaca, tocas, arrastras y las reconoces de oído.";
 
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="es" className={`${hanzi.variable} ${texto.variable} ${pixel.variable}`}>
       <body>
         <Filtros />
+        <Menu />
         {children}
         <Analytics />
         <SpeedInsights />

@@ -1,0 +1,15 @@
+/* Botón suelto (página del puzzle): mismo tamaño de toque que el resto. */
+.mudo {
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
+  border: 3px solid var(--tinta);
+  border-radius: 12px;
+  background: var(--papel);
+  color: var(--tinta);
+  font: 900 20px/1 var(--f-texto), system-ui, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--tinta);
+}
+.mudo:active { translate: 0 2px; box-shadow: 0 1px 0 var(--tinta); }
+.mudo:focus-visible { outline: 3px dashed var(--t4); outline-offset: 3px; }

@@ -16,20 +16,8 @@
   text-align: center;
   min-width: 0;
 }
-.marca {
-  display: inline-block;
-  margin: 0;
-  padding: 4px 12px;
-  border-radius: 999px;
-  background: var(--tinta);
-  color: var(--papel);
-  font-size: 13px;
-  font-weight: 900;
-  letter-spacing: 0.04em;
-  transform: rotate(-2deg);
-}
 .h1 {
-  margin: 8px 0 6px;
+  margin: 0 0 6px;
   font-weight: 900;
   font-size: clamp(26px, 7.4vw, 56px);
   line-height: 1.06;
@@ -37,47 +25,7 @@
   text-wrap: balance;
 }
 .subtitulo { margin: 0; font-size: 15px; line-height: 1.35; text-wrap: balance; }
-/* en celular, una sola línea: la segunda frase aparece desde tablet */
-.sub2 { display: none; }
-.jin {
-  position: relative;
-  display: inline-block;
-  font-family: var(--f-hanzi), sans-serif;
-  font-weight: 400;
-  font-size: 1.45em;
-  line-height: 1;
-  color: var(--t4);
-  padding-bottom: 0.18em;
-}
-.jinLinea { position: absolute; left: 0; bottom: -0.08em; width: 100%; height: 0.3em; }
-
-.botones {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px 8px;
-  margin-top: 12px;
-}
-.jugar,
-.como {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35em;
-  min-height: 48px;
-  padding: 0.5em 0.85em;
-  border: 3px solid var(--tinta);
-  border-radius: 999px;
-  font: 900 15px/1.1 var(--f-texto), system-ui, sans-serif;
-  text-decoration: none;
-  white-space: nowrap;
-  cursor: pointer;
-  box-shadow: 0 4px 0 var(--tinta);
-}
-.jugar { background: #e2574e; color: #fff; }
-.como { background: var(--papel); color: var(--tinta); }
-.jugar:active, .como:active { translate: 0 3px; box-shadow: 0 1px 0 var(--tinta); }
-.jugar:focus-visible, .como:focus-visible, .pantalla:focus-visible { outline: 3px dashed var(--t4); outline-offset: 3px; }
+.pantalla:focus-visible { outline: 3px dashed var(--t4); outline-offset: 3px; }
 .confianza { margin: 8px 0 0; font-size: 12px; opacity: 0.75; }
 
 /* ---- ventana del juego ---- */
@@ -117,6 +65,27 @@
   line-height: 1;
   white-space: nowrap;
 }
+.pestanas { flex: 1; min-width: 0; display: flex; align-items: stretch; justify-content: center; gap: 4px; height: 100%; }
+.pestana {
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 0 10px;
+  border: 0;
+  border-bottom: 4px solid transparent;
+  background: transparent;
+  color: var(--tinta);
+  font-family: var(--f-hanzi), sans-serif;
+  font-size: 18px;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: 0.65;
+}
+.pestana.activa { opacity: 1; border-bottom-color: var(--t4); }
+.pestana:focus-visible { outline: 3px dashed var(--t4); outline-offset: -3px; }
+.panel { position: absolute; inset: 0; }
+.panel[hidden] { display: none; }
+.panelPuzzle { overflow-y: auto; background: var(--papel); }
 .py { font-family: var(--f-texto), system-ui, sans-serif; font-weight: 900; font-size: 12px; opacity: 0.7; }
 .pantalla {
   flex: none;
@@ -153,8 +122,15 @@
 }
 .ventana.grande .barra { padding-top: env(safe-area-inset-top); height: calc(47px + env(safe-area-inset-top)); }
 
+/* teléfono angosto: sin los puntos de la ventana; el pinyin va bajo el hanzi para que quepan las dos pestañas y el 全屏 */
+@media (max-width: 419px) {
+  .puntos { display: none; }
+  .pestana { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 2px; padding: 0 6px; min-height: 44px; }
+  .pestana > span:first-child { display: none; } /* el emoji sobra: el hanzi y el pinyin ya dicen cuál es */
+  .pestana .py { font-size: 11px; }
+}
+
 @media (min-width: 600px) {
-  .sub2 { display: inline; }
   .subtitulo { font-size: 18px; }
   .jugar, .como { font-size: 18px; padding: 0.5em 1.3em; }
 }
@@ -165,7 +141,7 @@
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: 40px;
-    min-height: 100svh;
+    min-height: calc(100svh - var(--alto-menu));
     padding: 32px 32px;
   }
   .texto { text-align: left; padding: 32px 32px 28px; }
@@ -177,3 +153,7 @@
   .marco { flex: none; aspect-ratio: 1; }
   .ventana.grande .marco { flex: 1; aspect-ratio: auto; }
 }
+
+/* 🔊/🔇 al lado del 全屏, mismo alto; papel en vez de amarillo para que no compitan */
+.mudo { background: var(--papel); width: 48px; font-size: 20px; }
+.mudo[aria-pressed="true"] { background: #f3d9d4; }

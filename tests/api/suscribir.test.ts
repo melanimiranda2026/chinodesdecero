@@ -79,7 +79,7 @@ describe("POST /api/suscribir", () => {
   it("con consentimiento guarda la versión del texto y la hora, sin confirmarlo (doble opt-in)", async () => {
     await pedir({ email: "a@b.cl", consentimiento: true });
     const f = fila("a@b.cl")!;
-    expect(f.texto_consentimiento).toBe("v1-2026-11");
+    expect(f.texto_consentimiento).toBe("v2-2026-11");
     expect(typeof f.consentido_en).toBe("string");
     expect(f.consentimiento_confirmado).toBeUndefined(); // solo /auth/callback lo confirma
   });

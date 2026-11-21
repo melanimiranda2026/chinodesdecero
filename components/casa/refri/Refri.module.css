@@ -1,0 +1,131 @@
+/* ====== el refri por dentro (contenedor e iris: .pp de PrimerPlano.module.css) ====== */
+.refri {
+  background-color: #e6f4fb;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.9) 12%, transparent 14%);
+  background-size: 40px 40px;
+  touch-action: manipulation;
+}
+
+/* el interior de frente: cuadrado, estantes en y 28 %, 50 % y 70 % del dibujo */
+.caja {
+  position: absolute;
+  left: 50%;
+  top: 15%;
+  width: min(94%, 64cqh);
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+}
+.estante {
+  position: absolute;
+  left: 9%;
+  right: 9%;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: flex-end;
+}
+.estante[data-estante="0"] { top: 9%; height: 19%; }
+.estante[data-estante="1"] { top: 31%; height: 19%; }
+.estante[data-estante="2"] { top: 52%; height: 18%; }
+
+.comida {
+  position: relative;
+  flex: 0 0 18%;
+  min-width: 44px;
+  min-height: 44px;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.comida:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 2px; border-radius: 12px; }
+.dibujo { position: absolute; inset: 0; display: block; transform-origin: 50% 100%; }
+.rebota { animation: rebota 0.5s cubic-bezier(0.3, 1.6, 0.5, 1); }
+@keyframes rebota {
+  0% { scale: 1 1; }
+  30% { scale: 1.15 0.85; translate: 0 0; }
+  60% { scale: 0.92 1.1; translate: 0 -14%; }
+  100% { scale: 1 1; translate: 0 0; }
+}
+
+/* el cajón 水果: el rótulo está en el dibujo; el botón lo cubre y el pinyin va debajo */
+.cajon {
+  position: absolute;
+  left: 39%;
+  top: 81.2%;
+  width: 22%;
+  height: 11.4%;
+  min-width: 44px;
+  min-height: 44px;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 0 1%;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: 900 12px/1 var(--f-texto), sans-serif;
+  color: var(--tinta);
+  -webkit-tap-highlight-color: transparent;
+}
+.cajon:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 2px; border-radius: 12px; }
+.cajon:active { translate: 0 2px; }
+
+/* escarcha: copos lentos que caen del estante de arriba (solo CSS) */
+.escarcha { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.escarcha i {
+  position: absolute;
+  top: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 4px rgba(150, 200, 230, 0.9);
+  opacity: 0;
+  animation: copo 6s linear infinite;
+}
+@keyframes copo {
+  0% { opacity: 0; translate: 0 0; }
+  20% { opacity: 0.9; }
+  100% { opacity: 0; translate: 8px 90%; }
+}
+
+/* ✋ 拿 y 👋 关上: abajo, a la derecha de la vaca */
+.acciones {
+  position: absolute;
+  left: 28%;
+  right: 3%;
+  bottom: 3%;
+  z-index: 7;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.boton {
+  min-width: 44px;
+  min-height: 52px;
+  padding: 4px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 4px solid var(--tinta);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--tinta);
+  font: 900 18px/1.1 var(--f-texto), sans-serif;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--tinta);
+}
+.boton:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 3px; }
+.boton:active { translate: 0 2px; box-shadow: 0 2px 0 var(--tinta); }
+.hz { font-family: var(--f-hanzi), sans-serif; font-weight: 400; font-size: 22px; }
+.py { font-size: 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rebota { animation: none; }
+  .escarcha i { animation: none; opacity: 0.6; translate: 0 40%; }
+}

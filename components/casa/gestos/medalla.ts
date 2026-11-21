@@ -13,6 +13,8 @@ export const GESTO_DE: Partial<Record<Anim, TipoGesto>> = {
   llenar: "llenar",
   servirTe: "llenar",
   beber: "beber",
-  cocinar: "girar",
   comer: "morder",
 };
+
+/** 做饭 no es un gesto suelto: lo hace la receta (echar 米 + 水 + 胡萝卜 y revolver con `crearGirar`). */
+export const esReceta = (anim: Anim) => anim === "cocinar";

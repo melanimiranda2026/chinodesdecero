@@ -1,4 +1,5 @@
 :root {
+  --alto-menu: 48px;
   --tinta: #4a2a1c;
   --papel: #fff6e6;
   --t1: #e0473c;
@@ -17,6 +18,9 @@ body {
   margin: 0;
   padding: 0;
 }
+
+/* El menú es fijo arriba: los saltos (#juegos, #metodo, secciones) quedan justo debajo de él. */
+html { scroll-padding-top: var(--alto-menu); }
 
 @media (prefers-reduced-motion: no-preference) {
   html { scroll-behavior: smooth; }

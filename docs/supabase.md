@@ -11,7 +11,7 @@ Aplicar en orden `supabase/migrations/0001_inicial.sql` y `supabase/migrations/0
 `0002` agrega:
 
 - **Límites de uso** (tabla `limites` + función `consumir_limite`, solo para el service role): `/api/suscribir` acepta 5 por hora por IP y 3 por hora por correo; `/api/eventos`, 120 lotes por minuto por IP. Pasado el límite responde 429. Las claves nunca guardan la IP ni el correo en claro (`ip:<hmac-sha256>`, `email:<sha256>`). Si la función no existe o falla, las rutas dejan pasar (registran el error).
-- **Doble opt-in** en `suscriptores`: `consentimiento` es lo que la persona *pidió* al marcar la casilla (con `consentido_en` y `texto_consentimiento`, la versión del texto, hoy `v1-2026-11`). `consentimiento_confirmado` se pone en `true` recién cuando abre el enlace del correo (`/auth/callback`), es decir, cuando demostró que el correo es suyo.
+- **Doble opt-in** en `suscriptores`: `consentimiento` es lo que la persona *pidió* al marcar la casilla (con `consentido_en` y `texto_consentimiento`, la versión del texto, hoy `v2-2026-11`). `consentimiento_confirmado` se pone en `true` recién cuando abre el enlace del correo (`/auth/callback`), es decir, cuando demostró que el correo es suyo.
 - **Avance entre dispositivos**: el formulario manda el avance del navegador; queda en `suscriptores.avance_pendiente`. Al abrir el enlace, si la cuenta no tiene avance o tiene menos escuchadas, se copia a `avance` y se borra el pendiente. Luego el navegador lo trae con la sincronización normal.
 - **Baja**: `token_baja` (uuid único por correo). `GET /baja?e=<token_baja>` pone `consentimiento` y `consentimiento_confirmado` en `false`.
 

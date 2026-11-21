@@ -13,11 +13,16 @@ vi.mock("@/components/casa/audio/sonido", () => ({
 const registrar = vi.fn();
 vi.mock("@/components/casa/eventos", () => ({ registrar: (...a: unknown[]) => registrar(...a) }));
 
-import { decir } from "@/components/casa/audio/voz";
+import { decir, desbloquearAudio } from "@/components/casa/audio/voz";
 import { Puzzle } from "@/components/puzzle/Puzzle";
 import { CLAVE_PUZZLE } from "@/components/puzzle/avance";
 import { TEMAS } from "@/components/puzzle/datos";
+import { nombrePieza } from "@/components/puzzle/Pieza";
+import { FormaPieza } from "@/components/puzzle/FormaPieza";
+import { renderToString } from "react-dom/server";
 import { EVENTO_AVANCE } from "@/components/casa/avance";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 const avanzar = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
 const vasos = () => Number(screen.getByTestId("vasos").getAttribute("data-vasos"));
@@ -42,11 +47,76 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe("Puzzle listo para jugar", () => {
+  it("abre directo en la primera ronda", async () => {
+    render(<Puzzle />);
+    await avanzar(0);
+    expect(screen.getByLabelText("Piezas")).toBeTruthy();
+    for (let p = 0; p < TEMAS[0].frases[0].piezas.length; p++) {
+      expect(document.querySelector(`button[data-pieza="${p}"]`)).toBeTruthy();
+    }
+    expect(screen.queryByText(TEMAS[0].regla)).toBeNull();
+  });
+
+  it("con los 18 niveles ganados abre el mapa", async () => {
+    const ganados = TEMAS.flatMap((t) => [1, 2, 3].map((e) => `${t.id}-${e}`));
+    localStorage.setItem(CLAVE_PUZZLE, JSON.stringify({ ganados, perfectos: [], vasos: { vasos: 5, desde: Date.now() }, correoLleno: false }));
+    render(<Puzzle />);
+    await avanzar(0);
+    expect(screen.getByText(/Armaste todos los niveles/)).toBeTruthy();
+  });
+
+  it("abrir directo en la ronda registra el inicio del nivel, igual que elegirlo en el mapa", async () => {
+    render(<Puzzle />);
+    await avanzar(0);
+    expect(registrar).toHaveBeenCalledWith("puzzle_nivel_inicio", { nivel: "orden-1", repaso: false });
+    expect(registrar.mock.calls.filter((c) => c[0] === "puzzle_nivel_inicio")).toHaveLength(1);
+  });
+
+  it("con teclado (click sin pointerdown) también se desbloquea el audio, una sola vez", async () => {
+    vi.mocked(desbloquearAudio).mockClear();
+    render(<Puzzle />);
+    await avanzar(0);
+    fireEvent.click(document.querySelector<HTMLButtonElement>('button[data-pieza="0"]')!);
+    fireEvent.click(document.querySelector<HTMLButtonElement>('button[data-pieza="1"]')!);
+    expect(desbloquearAudio).toHaveBeenCalledTimes(1);
+  });
+
+  it("en la ventana no ocupa toda la pantalla y abrir un nivel vuelve arriba del panel", async () => {
+    const { container } = render(
+      <div data-panel>
+        <Puzzle ventana />
+      </div>,
+    );
+    await avanzar(0);
+    const panel = container.querySelector<HTMLElement>("[data-panel]")!;
+    const raiz = panel.firstElementChild as HTMLElement;
+    expect(raiz.className).not.toMatch(/enPagina/);
+    const css = readFileSync(join(process.cwd(), "components/puzzle/Puzzle.module.css"), "utf8");
+    const regla = (sel: string) => css.match(new RegExp(`(^|\\n)${sel.replace(".", "\\.")}\\s*\\{([^}]*)\\}`))?.[2] ?? "";
+    expect(regla(".juego")).not.toMatch(/100svh/); // en la ventana: solo lo que ocupa
+    expect(regla(".cargando")).not.toMatch(/100svh/);
+    expect(regla(".enPagina")).toMatch(/min-height:\s*100svh/); // en su página: toda la pantalla
+    Object.defineProperty(panel, "scrollTop", { value: 300, writable: true, configurable: true });
+    fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
+    expect(panel.scrollTop).toBe(0);
+  });
+
+  it("en modo ventana no hay enlace Volver al inicio", async () => {
+    render(<Puzzle ventana />);
+    await avanzar(0);
+    expect(screen.queryByRole("link", { name: "Volver al inicio" })).toBeNull();
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+  });
+});
+
 describe("Puzzle", () => {
   it("parte en el mapa con un solo nivel abierto y 5 vasos", async () => {
     render(<Puzzle />);
     await avanzar(0);
     expect(vasos()).toBe(5);
+    fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
     const piedras = screen.getAllByRole("button", { name: /El orden|Preguntas|Sí o no|Ya pasó|No lo hice|Mañana/ });
     expect(piedras.filter((b) => !(b as HTMLButtonElement).disabled)).toHaveLength(1);
   });
@@ -54,6 +124,7 @@ describe("Puzzle", () => {
   it("en la etapa 1 muestra la regla, después la frase en español, y armarla hace hablar a la vaca", async () => {
     render(<Puzzle />);
     await avanzar(0);
+    fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
     fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
     expect(screen.getByText(TEMAS[0].regla)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /A armar/ }));
@@ -62,6 +133,8 @@ describe("Puzzle", () => {
     await armar();
     await avanzar(1000);
     expect(vi.mocked(decir).mock.calls.some(([, o]) => o?.src === "/audio/puzzle/wochi_pingguo.mp3")).toBe(true);
+    // toda frase del puzzle dice de qué juego es (en la portada, la pestaña oculta no suena)
+    expect(vi.mocked(decir).mock.calls.every(([, o]) => o?.juego === "puzzle")).toBe(true);
     expect(screen.getByRole("button", { name: "Siguiente" })).toBeTruthy();
     expect(vasos()).toBe(5);
   });
@@ -69,6 +142,7 @@ describe("Puzzle", () => {
   it("una pieza mal puesta rebota y vacía un vaso", async () => {
     render(<Puzzle />);
     await avanzar(0);
+    fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
     fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
     fireEvent.click(screen.getByRole("button", { name: /A armar/ }));
     // 苹果 (pieza 2) no puede ir en el primer hueco
@@ -79,10 +153,30 @@ describe("Puzzle", () => {
     expect(document.querySelector('button[data-pieza="2"]')).toBeTruthy(); // sigue en la bandeja
   });
 
+  it("sin vasos, en la ventana, 'Jugar en la cocina' cambia a la pestaña de la cocina", async () => {
+    localStorage.setItem(CLAVE_PUZZLE, JSON.stringify({ ganados: [], perfectos: [], vasos: { vasos: 1, desde: Date.now() }, correoLleno: false }));
+    const elegido = vi.fn();
+    window.addEventListener("cdc:juego", elegido);
+    render(<Puzzle ventana />);
+    await avanzar(0);
+    fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
+    fireEvent.click(screen.getByRole("button", { name: /A armar/ }));
+    fireEvent.click(document.querySelector<HTMLButtonElement>('button[data-pieza="2"]')!);
+    await avanzar(10);
+    const cocina = screen.getByRole("link", { name: "Jugar en la cocina" });
+    expect(cocina.getAttribute("href")).toBe("/?juego=cocina#juegos");
+    fireEvent.click(cocina);
+    expect(elegido).toHaveBeenCalledTimes(1);
+    expect((elegido.mock.calls[0][0] as CustomEvent).detail).toBe("cocina");
+    window.removeEventListener("cdc:juego", elegido);
+  });
+
   it("sin vasos aparece el panel, y dejar el correo los llena una sola vez", async () => {
     localStorage.setItem(CLAVE_PUZZLE, JSON.stringify({ ganados: [], perfectos: [], vasos: { vasos: 1, desde: Date.now() }, correoLleno: false }));
     render(<Puzzle />);
     await avanzar(0);
+    fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
     fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
     fireEvent.click(screen.getByRole("button", { name: /A armar/ }));
     fireEvent.click(document.querySelector<HTMLButtonElement>('button[data-pieza="2"]')!);
@@ -102,6 +196,7 @@ describe("Puzzle", () => {
     localStorage.setItem(CLAVE_PUZZLE, JSON.stringify({ ganados: ["orden-1"], perfectos: [], vasos: { vasos: 5, desde: Date.now() }, correoLleno: false }));
     render(<Puzzle />);
     await avanzar(0);
+    fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
     fireEvent.click(screen.getByRole("button", { name: "El orden, Con ayuda, ganado" }));
     fireEvent.click(document.querySelector<HTMLButtonElement>('button[data-pieza="2"]')!);
     await avanzar(10);
@@ -115,6 +210,7 @@ describe("Puzzle", () => {
     );
     render(<Puzzle />);
     await avanzar(0);
+    fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
     fireEvent.click(screen.getByRole("button", { name: "El orden, Solo chino" }));
     await avanzar(600);
     expect(screen.getByTestId("escena")).toBeTruthy();
@@ -123,5 +219,44 @@ describe("Puzzle", () => {
     await armar();
     await avanzar(1500);
     expect(screen.queryByText(TEMAS[0].frases[0].espanol)).toBeNull();
+  });
+});
+
+describe("Puzzle sin ResizeObserver", () => {
+  it("sin ResizeObserver las piezas se ven y se pueden tocar", async () => {
+    const original = globalThis.ResizeObserver;
+    // @ts-expect-error simula un navegador sin ResizeObserver
+    delete globalThis.ResizeObserver;
+    try {
+      render(<Puzzle />);
+      await avanzar(0);
+      fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
+      fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
+      fireEvent.click(screen.getByRole("button", { name: /A armar/ }));
+      const frase = TEMAS[0].frases[0];
+      for (let p = 0; p < frase.piezas.length; p++) {
+        const boton = document.querySelector<HTMLButtonElement>(`button[data-pieza="${p}"]`)!;
+        expect(boton.getAttribute("aria-label")).toBe(nombrePieza(frase.piezas[p]));
+        expect(boton.hasAttribute("data-forma")).toBe(false);
+      }
+    } finally {
+      globalThis.ResizeObserver = original;
+    }
+  });
+});
+
+describe("FormaPieza e hidratación", () => {
+  it("renderiza el mismo svg en servidor y sin ResizeObserver, y no marca data-forma", () => {
+    const original = globalThis.ResizeObserver;
+    // @ts-expect-error simula un navegador sin ResizeObserver
+    delete globalThis.ResizeObserver;
+    try {
+      expect(renderToString(<FormaPieza />)).toContain("<svg");
+      const { container } = render(<div data-padre><FormaPieza /></div>);
+      expect(container.querySelector("svg")).toBeTruthy();
+      expect(container.querySelector("[data-padre]")!.hasAttribute("data-forma")).toBe(false);
+    } finally {
+      globalThis.ResizeObserver = original;
+    }
   });
 });

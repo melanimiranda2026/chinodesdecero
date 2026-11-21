@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { crearQuiz, responder } from "@/components/casa/quiz";
+import { OBJETOS_QUIZ, crearQuiz, responder } from "@/components/casa/quiz";
 import { ESTADO_INICIAL } from "@/components/casa/cocina/datos";
 
 const azarFijo = (valores: number[]) => {
@@ -31,6 +31,18 @@ describe("crearQuiz", () => {
       crearQuiz(ESTADO_INICIAL, azar).rondas.forEach((r) => visto.add(r));
     }
     expect(visto.has("pingguo")).toBe(true);
+  });
+  it("cada ronda sale de OBJETOS_QUIZ y, con el tiempo, salen todos", () => {
+    const visto = new Set<string>();
+    for (let s = 0; s < 120; s++) {
+      let k = s + 3;
+      const azar = () => ((k = (k * 9301 + 49297) % 233280) / 233280);
+      for (const r of crearQuiz(ESTADO_INICIAL, azar).rondas) {
+        expect(OBJETOS_QUIZ).toContain(r);
+        visto.add(r);
+      }
+    }
+    expect([...visto].sort()).toEqual([...OBJETOS_QUIZ].sort());
   });
 });
 

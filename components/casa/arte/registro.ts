@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import type { ObjetoId } from "../cocina/datos";
+import { COMIDAS, type ComidaId, type ObjetoId } from "../cocina/datos";
 import * as P from "./placeholders/objetos";
 import manifiesto from "./manifiesto-arte.json";
 
@@ -50,15 +50,35 @@ export const ARTE: Record<ObjetoId, ArteObjeto> = {
     visibles: (e) => (e === "lleno" ? ["plato", "jiaozi"] : e === "sucio" ? ["plato", "mugre"] : ["plato"]),
   },
   wan: {
-    capas: capasDe("wan", ["bol", "arroz", "mugre"]),
-    visibles: (e) => (e === "lleno" ? ["bol", "arroz"] : e === "sucio" ? ["bol", "mugre"] : ["bol"]),
+    capas: capasDe("wan", ["bol", "arroz", "zanahoria", "mugre"]),
+    visibles: (e) => (e === "lleno" ? ["bol", "arroz", "zanahoria"] : e === "sucio" ? ["bol", "mugre"] : ["bol"]),
   },
   guo: {
-    capas: capasDe("guo", ["olla", "arroz", "mugre"]),
-    visibles: (e) => (e === "cocido" ? ["olla", "arroz"] : e === "sucio" ? ["olla", "mugre"] : ["olla"]),
+    capas: capasDe("guo", ["olla", "arroz", "zanahoria", "mugre"]),
+    visibles: (e) => (e === "cocido" ? ["olla", "arroz", "zanahoria"] : e === "sucio" ? ["olla", "mugre"] : ["olla"]),
   },
   chahu: { capas: capasDe("chahu", ["tetera"]), visibles: () => ["tetera"] },
   kuaizi: { capas: capasDe("kuaizi", ["palillos"]), visibles: () => ["palillos"] },
+  // objetos nuevos (Entrega 2)
+  kafeibei: {
+    capas: capasDe("kafeibei", ["taza", "cafe", "mugre"]),
+    visibles: (e) => (e === "cafe" ? ["taza", "cafe"] : e === "sucio" ? ["taza", "mugre"] : ["taza"]),
+  },
+  deng: {
+    capas: capasDe("deng", ["lampara", "luz"]),
+    visibles: (e) => (e === "apagada" ? ["lampara"] : ["lampara", "luz"]),
+  },
+  chuanghu: {
+    capas: capasDe("chuanghu", ["marco", "vidrio", "abierta", "pajaro"]),
+    visibles: (e) => (e === "abierta" ? ["marco", "abierta"] : ["marco", "vidrio"]),
+  },
+  lajitong: { capas: capasDe("lajitong", ["tarro", "tapa"]), visibles: () => ["tarro", "tapa"] },
+  yizi: { capas: capasDe("yizi", ["silla"]), visibles: () => ["silla"] },
+  // zhuozi_zona es una zona de toque invisible (no se dibuja nada)
+  zhuozi: { capas: capasDe("zhuozi", ["zona"]), visibles: () => ["zona"] },
+  shouji: { capas: capasDe("shouji", ["telefono"]), visibles: () => ["telefono"] },
+  // escondido se ve solo la cola; encontrado (la casa pasa "visto"), el gato entero
+  mao: { capas: capasDe("mao", ["cola", "gato"]), visibles: (e) => (e === "visto" ? ["gato"] : ["cola"]) },
 };
 
 /** Piezas de los minijuegos (mismo encuadre que los objetos). */
@@ -68,6 +88,13 @@ export const ARTE_PRIMER_PLANO: Record<string, Capa> = {
   olla_grande: svg(P.OllaGrande),
   trozos: svg(P.Trozos),
 };
+
+/** Comida del refri en primer plano: de frente (no isométrica), cada una en su cuadro cuadrado (`refri_<id>`). */
+export const ARTE_REFRI = Object.fromEntries(COMIDAS.map((id) => [id, arte(`cocina/refri_${id}`)])) as Record<ComidaId, Capa>;
+/** Lo que la receta agrega a la comida del refri (米 y 胡萝卜 salen de `ARTE_REFRI`): el jarro de 水. */
+export const ARTE_RECETA = { jarro: arte("cocina/refri_jarro") };
+/** Fondo del primer plano del refri: estantes de frente y el cajón rotulado 水果. */
+export const ARTE_REFRI_FONDO: Capa = arte("cocina/refri_interior");
 
 /** El cuarto completo (isométrico) en una sola capa de 1000x1000 unidades, sin los objetos. */
 export const FONDO_CUARTO: Record<"cocina", Capa> = { cocina: arte("cocina/cuarto_cocina") };

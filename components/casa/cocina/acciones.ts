@@ -1,9 +1,10 @@
 import { S, type Silaba } from "@/lib/silabas";
-import { ESTADO_INICIAL, type EstadoCocina, type ObjetoId } from "./datos";
+import { ACOPLADOS, ESTADO_INICIAL, type EstadoCocina, type ObjetoId } from "./datos";
 
 export type Anim =
   | "llenar" | "servirTe" | "beber" | "tomar" | "comer" | "lavar"
-  | "abrir" | "cerrar" | "cortar" | "cocinar" | "servirArroz" | "sacar";
+  | "abrir" | "cerrar" | "cortar" | "cocinar" | "servirArroz" | "sacar"
+  | "servirCafe" | "encender" | "apagar" | "abrirVentana" | "cerrarVentana" | "abrirTarro" | "sentarse" | "llamar";
 
 export interface Accion {
   verbo: Silaba[];
@@ -14,9 +15,11 @@ export interface Accion {
   objeto?: ObjetoId;
   sfx: string;
   cambia?: Partial<EstadoCocina>;
+  /** Usa la animación de la casa aunque `GESTO_DE[anim]` exista (sin primer plano). */
+  sinGesto?: true;
 }
 
-type Extra = Partial<Pick<Accion, "lugar" | "objeto" | "cambia">> & { sfx: string };
+type Extra = Partial<Pick<Accion, "lugar" | "objeto" | "cambia" | "sinGesto">> & { sfx: string };
 const A = (verbo: Silaba[], icono: string, frase: Silaba[], anim: Anim, extra: Extra): Accion => ({
   verbo, icono, frase, anim, ...extra,
 });
@@ -26,7 +29,15 @@ const NA = S("拿", "ná", "2");
 const CHI = S("吃", "chī", "1");
 const HE = S("喝", "hē", "1");
 
-export function acciones(id: ObjetoId, E: EstadoCocina): Accion[] {
+/** Qué se come según la hora: 5–10 desayuno, 11–15 almuerzo, el resto cena. */
+export const comidaDeLaHora = (h: number) => (h >= 5 && h < 11 ? "早饭" : h >= 11 && h < 16 ? "午饭" : "晚饭");
+const FRASE_COMIDA: Record<string, Silaba[]> = {
+  "早饭": S("我吃早饭", "wǒ chī zǎo fàn", "3134"),
+  "午饭": S("我吃午饭", "wǒ chī wǔ fàn", "3134"),
+  "晚饭": S("我吃晚饭", "wǒ chī wǎn fàn", "3134"),
+};
+
+export function acciones(id: ObjetoId, E: EstadoCocina, hora = 12): Accion[] {
   const e = E[id];
   switch (id) {
     case "beizi":
@@ -48,9 +59,9 @@ export function acciones(id: ObjetoId, E: EstadoCocina): Accion[] {
       if (e === "vacio")
         return E.guo === "cocido"
           ? [A(S("盛饭", "chéng fàn", "24"), "🍚", S("我盛饭", "wǒ chéng fàn", "324"), "servirArroz", { sfx: "whoosh", cambia: { wan: "lleno", guo: "sucio" } })]
-          : [A(NA, "✋", S("我拿碗", "wǒ ná wǎn", "323"), "tomar", { sfx: "whoosh" })];
+          : [A(NA, "✋", S("我拿着碗", "wǒ ná zhe wǎn", "3253"), "tomar", { sfx: "whoosh" })];
       if (e === "lleno")
-        return [A(S("吃饭", "chī fàn", "14"), "😋", S("我吃饭", "wǒ chī fàn", "314"), "comer", { sfx: "nam", cambia: { wan: "sucio" } })];
+        return [A(S("吃饭", "chī fàn", "14"), "😋", FRASE_COMIDA[comidaDeLaHora(hora)], "comer", { sfx: "nam", cambia: { wan: "sucio" } })];
       return [A(XI, "🫧", S("我洗碗", "wǒ xǐ wǎn", "333"), "lavar", { lugar: "fregadero", sfx: "pop-burbuja", cambia: { wan: "vacio" } })];
     case "guo":
       if (e === "vacio")
@@ -65,9 +76,9 @@ export function acciones(id: ObjetoId, E: EstadoCocina): Accion[] {
         return [A(S("吃饺子", "chī jiǎo zi", "135"), "🥟", S("我吃饺子", "wǒ chī jiǎo zi", "3135"), "comer", { sfx: "nam", cambia: { panzi: "sucio" } })];
       if (e === "sucio")
         return [A(XI, "🫧", S("我洗盘子", "wǒ xǐ pán zi", "3325"), "lavar", { lugar: "fregadero", sfx: "pop-burbuja", cambia: { panzi: "limpio" } })];
-      return [A(NA, "✋", S("我拿盘子", "wǒ ná pán zi", "3225"), "tomar", { sfx: "whoosh" })];
+      return [A(NA, "✋", S("我拿着盘子", "wǒ ná zhe pán zi", "32525"), "tomar", { sfx: "whoosh" })];
     case "kuaizi":
-      return [A(NA, "✋", S("我拿筷子", "wǒ ná kuài zi", "3245"), "tomar", { sfx: "whoosh" })];
+      return [A(NA, "✋", S("我拿着筷子", "wǒ ná zhe kuài zi", "32545"), "tomar", { sfx: "whoosh" })];
     case "pingguo":
       if (e === "sucio")
         return [A(XI, "🫧", S("我洗苹果", "wǒ xǐ píng guǒ", "3323"), "lavar", { lugar: "fregadero", sfx: "pop-burbuja", cambia: { pingguo: "limpio" } })];
@@ -90,6 +101,29 @@ export function acciones(id: ObjetoId, E: EstadoCocina): Accion[] {
       l.push(A(S("关上", "guān shang", "15"), "👋", S("我关上冰箱", "wǒ guān shang bīng xiāng", "31511"), "cerrar", { sfx: "golpe", cambia: { bingxiang: "cerrado" } }));
       return l;
     }
+    case "kafeibei":
+      if (e === "vacio")
+        return [A(S("倒咖啡", "dào kā fēi", "411"), "☕", S("我倒咖啡", "wǒ dào kā fēi", "3411"), "servirCafe", { sfx: "tragos", cambia: { kafeibei: "cafe" } })];
+      if (e === "cafe")
+        return [A(S("喝咖啡", "hē kā fēi", "111"), "😋", S("我喝咖啡", "wǒ hē kā fēi", "3111"), "beber", { sfx: "tragos", sinGesto: true, cambia: { kafeibei: "sucio" } })];
+      return [A(XI, "🫧", S("我洗咖啡杯", "wǒ xǐ kā fēi bēi", "33111"), "lavar", { lugar: "fregadero", sfx: "pop-burbuja", cambia: { kafeibei: "vacio" } })];
+    case "deng":
+      return e === "encendida"
+        ? [A(S("关灯", "guān dēng", "11"), "🌙", S("我关灯", "wǒ guān dēng", "311"), "apagar", { sfx: "golpe", cambia: { deng: "apagada" } })]
+        : [A(S("开灯", "kāi dēng", "11"), "💡", S("我开灯", "wǒ kāi dēng", "311"), "encender", { sfx: "brillo", cambia: { deng: "encendida" } })];
+    case "chuanghu":
+      return e === "cerrada"
+        ? [A(S("打开", "dǎ kāi", "31"), "🪟", S("我打开窗户", "wǒ dǎ kāi chuāng hu", "33115"), "abrirVentana", { sfx: "whoosh", cambia: { chuanghu: "abierta" } })]
+        : [A(S("关上", "guān shang", "15"), "👋", S("我关上窗户", "wǒ guān shang chuāng hu", "31515"), "cerrarVentana", { sfx: "golpe", cambia: { chuanghu: "cerrada" } })];
+    case "lajitong":
+      return [A(S("打开", "dǎ kāi", "31"), "🗑️", S("我打开垃圾桶", "wǒ dǎ kāi lā jī tǒng", "331113"), "abrirTarro", { sfx: "whoosh" })];
+    case "yizi":
+      return [A(S("坐", "zuò", "4"), "🪑", S("我坐下", "wǒ zuò xià", "344"), "sentarse", { sfx: "pop" })];
+    case "shouji":
+      return [A(S("打电话", "dǎ diàn huà", "344"), "📞", S("我打电话", "wǒ dǎ diàn huà", "3344"), "llamar", { sfx: "pop" })];
+    case "zhuozi":
+    case "mao":
+      return [];
   }
   return [];
 }
@@ -98,10 +132,10 @@ export function aplicar(e: EstadoCocina, a: Accion): EstadoCocina {
   return { ...e, ...a.cambia };
 }
 
-const OBJETO_IDS = Object.keys(ESTADO_INICIAL) as ObjetoId[];
+const OBJETO_IDS = ACOPLADOS;
 const clave = (e: EstadoCocina) => OBJETO_IDS.map((k) => e[k]).join("|");
 
-/** BFS desde ESTADO_INICIAL aplicando toda acción de todo objeto; sin repetidos. */
+/** BFS desde ESTADO_INICIAL aplicando toda acción de los 8 acoplados (los nuevos quedan en su inicial); sin repetidos. */
 export function estadosAlcanzables(): EstadoCocina[] {
   const vistos = new Map<string, EstadoCocina>([[clave(ESTADO_INICIAL), ESTADO_INICIAL]]);
   const cola: EstadoCocina[] = [ESTADO_INICIAL];

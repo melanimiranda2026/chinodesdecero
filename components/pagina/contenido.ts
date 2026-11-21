@@ -25,16 +25,6 @@ export const METODO: { titulo: string; ideas: Idea[]; fuente?: string } = {
   ],
 };
 
-export type Material = { titulo: string; descripcion: string; estado: "pronto" | { url: string } };
-/** Agregar material nuevo es agregar una tarjeta aquí. */
-export const MATERIAL: Material[] = [
-  {
-    titulo: "Mazos de Anki por bloque de videos",
-    descripcion: "Las palabras de cada 10 videos, con su audio, listas para repasar en tu celular cuando quieras.",
-    estado: "pronto",
-  },
-];
-
 export type VideoTikTok = { titulo: string; miniatura: string; url: string };
 // CONFIRMAR con la dueña el @ exacto
 export const TIKTOK: { nombre: string; url: string; videos: VideoTikTok[] } = {
@@ -45,28 +35,32 @@ export const TIKTOK: { nombre: string; url: string; videos: VideoTikTok[] } = {
 
 /** El hero de la landing (primera pantalla). El 浸 del subtítulo se dibuja aparte, con su línea de tono 4. */
 export const PORTADA = {
-  marca: "chino desde cero",
+  marca: "chino con la vaca",
   h1: "Tus primeras palabras en chino, jugando",
-  /** En celular se ve solo la primera frase (una línea): así la ventana del juego entra en la primera pantalla. */
-  subtitulo: "Toca, arrastra y escucha a la vaca en su cocina.",
-  subtitulo2: "Sin traducir nada: así funciona el Método Jìn",
-  jugar: "Jugar ahora",
-  comoFunciona: "Cómo funciona",
+  subtitulo: "Toca, arrastra, escucha y explora con la vaca.",
   confianza: "Gratis · sin registrarte · funciona en tu celular",
 } as const;
 
-/** El centro de minijuegos (sección de la portada). Agregar un juego = una entrada aquí y su tarjeta. */
-export const MINIJUEGOS = {
-  titulo: "Elige tu juego",
-  bajada: "Cada juego practica algo distinto. Juega uno al día y la vaca hace los repasos por ti.",
-  cocina: {
-    titulo: "La cocina",
-    texto: "Toca los objetos, escucha cómo se llaman y ayuda a la vaca a cocinar. Tus primeras palabras, sin traducir.",
-    boton: "Entrar a la cocina",
-  },
-  puzzle: {
-    titulo: "El puzzle",
-    texto: "El chino es como un puzzle: cada pieza tiene su lugar. Arma frases, preguntas, pasado y futuro. Al final, sin una gota de español.",
-    boton: "Jugar al puzzle",
-  },
+/** Menú de arriba, en todas las páginas. En celular, "corto" reemplaza al texto largo. */
+export const MENU = {
+  etiqueta: "Principal",
+  enlaces: [
+    { clave: "cocina", icono: "🍳", texto: "Cocina", corto: "Cocina", href: "/?juego=cocina#juegos" },
+    { clave: "puzzle", icono: "🧩", texto: "Puzzle", corto: "Puzzle", href: "/?juego=puzzle#juegos" },
+    { clave: "metodo", icono: "浸", texto: "Método", corto: "Método", href: "/sobre#metodo" },
+    { clave: "sobre", icono: "🐄", texto: "Sobre nosotros", corto: "Nosotros", href: "/sobre" },
+  ],
+} as const;
+
+/** Página /sobre (la dueña corrige el texto después). */
+export const SOBRE = {
+  titulo: "Sobre nosotros",
+  p1: "Somos un canal de TikTok que enseña chino mandarín a hispanohablantes. La profe es una vaca dibujada a crayón que solo habla chino.",
+  p2antes: "Aprender chino es fácil si eres estratégico. Por eso usamos el ",
+  p2metodo: "Método Jìn 浸",
+  p2despues: " («sumergirse»): escuchas primero, la imagen te dice qué significa y repasas en días distintos. Aquí hacemos los repasos por ti.",
+  p3: "Nuestra promesa es honesta: ser tus primeras 50 horas de chino y llevarte a practicar fuera de TikTok.",
+  contactoAntes: "¿Ideas o preguntas? Escríbenos a ",
+  jugar: "Jugar ahora",
+  tiktok: "Síguenos en TikTok",
 } as const;

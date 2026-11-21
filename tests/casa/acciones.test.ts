@@ -1,5 +1,5 @@
 import { textoHanzi } from "@/lib/silabas";
-import { ESTADO_INICIAL, type EstadoCocina, type ObjetoId } from "@/components/casa/cocina/datos";
+import { ESTADO_INICIAL, VALORES, type EstadoCocina, type ObjetoId } from "@/components/casa/cocina/datos";
 import { acciones, aplicar, estadosAlcanzables } from "@/components/casa/cocina/acciones";
 
 const hacer = (e: EstadoCocina, id: ObjetoId, verbo: string) => {
@@ -107,4 +107,52 @@ test("toda acción tiene frase que empieza con 我 y verbo sin español", () => 
     }
   }
   expect(total).toBeGreaterThan(0);
+});
+
+test("estadosAlcanzables no crece con los objetos nuevos", () => {
+  expect(estadosAlcanzables().length).toBe(864);
+});
+
+const dice = (id: ObjetoId, v: string, hora?: number) =>
+  acciones(id, { ...ESTADO_INICIAL, [id]: v }, hora).map((a) => [textoHanzi(a.verbo), textoHanzi(a.frase), a.anim] as const);
+
+test("acciones de los objetos nuevos, por estado (verbo, frase, anim)", () => {
+  expect(dice("kafeibei", "vacio")).toEqual([["倒咖啡", "我倒咖啡", "servirCafe"]]);
+  expect(dice("kafeibei", "cafe")).toEqual([["喝咖啡", "我喝咖啡", "beber"]]);
+  expect(dice("kafeibei", "sucio")).toEqual([["洗", "我洗咖啡杯", "lavar"]]);
+  expect(dice("deng", "encendida")).toEqual([["关灯", "我关灯", "apagar"]]);
+  expect(dice("deng", "apagada")).toEqual([["开灯", "我开灯", "encender"]]);
+  expect(dice("chuanghu", "cerrada")).toEqual([["打开", "我打开窗户", "abrirVentana"]]);
+  expect(dice("chuanghu", "abierta")).toEqual([["关上", "我关上窗户", "cerrarVentana"]]);
+  expect(dice("lajitong", "cerrado")).toEqual([["打开", "我打开垃圾桶", "abrirTarro"]]);
+  expect(dice("yizi", "libre")).toEqual([["坐", "我坐下", "sentarse"]]);
+  expect(dice("shouji", "fijo")).toEqual([["打电话", "我打电话", "llamar"]]);
+  expect(dice("zhuozi", "fijo")).toEqual([]);
+  for (const m of ["refri", "mesa", "lajitong", "chuanghu"]) expect(dice("mao", m)).toEqual([]);
+});
+
+test("beber el café no abre primer plano (sinGesto) y lavar usa el fregadero", () => {
+  expect(acciones("kafeibei", { ...ESTADO_INICIAL, kafeibei: "cafe" })[0].sinGesto).toBe(true);
+  expect(acciones("kafeibei", { ...ESTADO_INICIAL, kafeibei: "sucio" })[0].lugar).toBe("fregadero");
+});
+
+test("ninguna acción de un objeto nuevo cambia otro objeto", () => {
+  for (const id of ["kafeibei", "deng", "chuanghu", "lajitong", "yizi", "zhuozi", "shouji", "mao"] as ObjetoId[]) {
+    for (const v of VALORES[id]) {
+      for (const a of acciones(id, { ...ESTADO_INICIAL, [id]: v })) {
+        for (const k of Object.keys(a.cambia ?? {})) expect(k).toBe(id);
+      }
+    }
+  }
+});
+
+test("comer arroz dice la comida de la hora", () => {
+  const lleno = { ...ESTADO_INICIAL, wan: "lleno" };
+  const frase = (h: number) => textoHanzi(acciones("wan", lleno, h)[0].frase);
+  expect(frase(8)).toBe("我吃早饭");
+  expect(frase(13)).toBe("我吃午饭");
+  expect(frase(20)).toBe("我吃晚饭");
+  expect(frase(2)).toBe("我吃晚饭");
+  expect(textoHanzi(acciones("wan", lleno, 8)[0].verbo)).toBe("吃饭");
+  expect(textoHanzi(acciones("panzi", ESTADO_INICIAL, 8)[0].frase)).toBe("我吃饺子");
 });

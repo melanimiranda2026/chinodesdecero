@@ -85,12 +85,40 @@ Archivo: `public/arte/cocina/<objeto>_<capa>.svg` (o tu `.png` / `.webp` con el 
 | panzi | `mugre` | Salsa y migas | sucio |
 | wan (bol) | `bol` | El bol vacío | siempre |
 | wan | `arroz` | El arroz dentro del bol | lleno |
+| wan | `zanahoria` | Trocitos de zanahoria sobre el arroz (la receta de 米饭) | lleno |
 | wan | `mugre` | Granos pegados | sucio |
 | guo (olla) | `olla` | La olla con sus asas | siempre |
 | guo | `arroz` | El arroz cocido asomando | cocido |
+| guo | `zanahoria` | Trocitos de zanahoria en el arroz | cocido |
 | guo | `mugre` | Restos pegados | sucio |
 | chahu (tetera) | `tetera` | La tetera | siempre |
 | kuaizi (palillos) | `palillos` | Los dos palillos | siempre |
+| kafeibei (taza) | `taza` | La taza de café vacía | siempre |
+| kafeibei | `cafe` | El café dentro de la taza | cafe |
+| kafeibei | `mugre` | Restos de café en el fondo | sucio |
+| deng (lámpara) | `lampara` | La lámpara colgando del techo | siempre |
+| deng | `luz` | El brillo de la ampolleta | encendida |
+| chuanghu (ventana) | `marco` | El marco de la ventana | siempre |
+| chuanghu | `vidrio` | Los vidrios cerrados | cerrada |
+| chuanghu | `abierta` | Las hojas abiertas hacia afuera | abierta |
+| chuanghu | `pajaro` | El pájaro que entra y se posa en el marco | abierta, solo durante la animación de 打开 |
+| lajitong (basurero) | `tarro` | El tarro | siempre |
+| lajitong | `tapa` | La tapa (se levanta y baja al abrir) | siempre |
+| yizi (silla) | `silla` | La silla junto a la mesa | siempre |
+| zhuozi (mesa) | `zona` | Zona de toque invisible sobre la mesa (no se dibuja nada) | siempre |
+| shouji (teléfono) | `telefono` | El teléfono, encima del refri | siempre |
+| mao (gato) | `cola` | Solo la cola, asomando en su escondite (refri, mesa o ventana abierta) | escondido |
+| mao | `gato` | El gato entero, con brillos, cuando lo encuentras | encontrado (`visto`) |
+
+## El refri por dentro y la receta (primer plano)
+
+Mismo formato que las capas (cuadrado, `public/arte/cocina/<nombre>.svg`, o tu `.png` / `.webp` con el mismo nombre). Se registran en `ARTE_REFRI`, `ARTE_REFRI_FONDO` y `ARTE_RECETA` (`components/casa/arte/registro.ts`).
+
+| Archivo | Qué muestra |
+|---|---|
+| `refri_interior` | El refri abierto de frente: estantes de vidrio y abajo el cajón 水果. Las comidas se ponen encima, en tres estantes |
+| `refri_<comida>` | Cada comida de frente, en su cuadro: `pingguo`, `xiangjiao`, `xigua`, `caomei`, `huluobo`, `xihongshi`, `tudou`, `xilanhua`, `mogu`, `niunai`, `jidan`, `mianbao`, `mi` |
+| `refri_jarro` | El jarro de 水 de la receta (米 y 胡萝卜 usan `refri_mi` y `refri_huluobo`) |
 
 ## Piezas de los minijuegos (primer plano)
 

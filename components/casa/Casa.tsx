@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as EventoPuntero, type ReactNode, type Ref } from "react";
 import { textoHanzi } from "@/lib/silabas";
 import { OBJETOS, type EstadoCocina, type ObjetoId } from "./cocina/datos";
+import { gatoSeVe, lugarGato } from "./cocina/gato";
 import { aspectoDe, centroBase, encuadrar, encuadreInicial, enPantalla, objetoBajo, transformCSS } from "./camara";
 import { DibujoObjeto } from "./arte/DibujoObjeto";
 import { FondoCuarto } from "./arte/Capa";
@@ -9,6 +10,9 @@ import { Vaca } from "./Vaca";
 import { Globo } from "./Globo";
 import { Opciones } from "./Opciones";
 import { PrimerPlano } from "./primer-plano/PrimerPlano";
+import { Refri } from "./refri/Refri";
+import { Receta } from "./receta/Receta";
+import { esReceta } from "./gestos/medalla";
 import { Minimapa } from "./Minimapa";
 import { Tarjetas, type CapaTarjeta } from "./Tarjetas";
 import { desbloquearAudio } from "./audio/voz";
@@ -35,6 +39,15 @@ type Inicio =
   | { tipo: "obj"; id: ObjetoId; cx: number; cy: number; movio: boolean }
   | { tipo: "vaca"; cx: number; cy: number; x0: number; y0: number; movio: boolean };
 
+/** Clases de las capas que se animan por nombre: la puerta del refri, la tapa del basurero, el pájaro. */
+function claseCapa(id: ObjetoId, estado: EstadoCocina, extra: string[]): ((n: string) => string) | undefined {
+  if (id === "bingxiang") return (n) => (n === "puerta" ? cx(styles.puerta, estado.bingxiang === "abierto" && styles.puertaAbierta) : "");
+  if (id === "lajitong") return (n) => (n === "tapa" ? cx(styles.tapa, extra.includes("tapa") && styles.tapaAbierta) : "");
+  if (id === "chuanghu") return (n) => (n === "pajaro" ? styles.pajaro : "");
+  if (id === "mao") return (n) => (n === "gato" ? styles.gatoSale : "");
+  return undefined;
+}
+
 const llegaALaVaca = (p: Punto, vaca: Punto) => Math.hypot(p.x - vaca.x, p.y - (vaca.y - 100)) < RADIO_VACA;
 
 const CONOCIDOS = new Set<string>(NOMBRES_EVENTO);
@@ -45,11 +58,11 @@ const GUARDAR_MS = 500;
 
 /** Lo que la página puede pedirle a la casa desde afuera (el "▶ Jugar ahora" del hero). */
 export interface ControlCasa {
-  /** Igual que el botón de la tarjeta de entrada; llamarlo dentro del clic (iOS). No hace nada si ya entró. */
+  /** Igual que el primer toque en la casa; llamarlo dentro del clic (iOS). No hace nada si ya entró. */
   entrar(): void;
 }
 
-export function Casa({ onEvento, ref }: { onEvento?: AlEvento; ref?: Ref<ControlCasa> }) {
+export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; ref?: Ref<ControlCasa>; activo?: boolean }) {
   const avance = useRef<Avance>(avanceInicial());
   const listo = useRef(false);
   const montado = useRef(false);
@@ -239,8 +252,8 @@ export function Casa({ onEvento, ref }: { onEvento?: AlEvento; ref?: Ref<Control
     };
   }, [restaurar, intentarSync, programar]);
 
-  // El aviso (enlace bueno o vencido) va en la tarjeta de entrada, no encima del cuarto.
-  return <CasaVista ref={ref} casa={casa} anotado={avisado} aviso={aviso} formulario={<Correo origen="pronto" />} />;
+  // El aviso (enlace bueno o vencido) se muestra arriba, dentro de la casa.
+  return <CasaVista ref={ref} casa={casa} activo={activo} anotado={avisado} aviso={aviso} formulario={<Correo origen="pronto" />} />;
 }
 
 /** La vista de la casa: recibe el estado del hook y traduce los punteros a sus funciones. */
@@ -250,23 +263,33 @@ export function CasaVista({
   aviso = null,
   formulario,
   ref,
+  activo = true,
 }: {
   casa: CasaApi;
+  /** false = su pestaña está oculta: las tarjetas esperan (sin ver_metodo ni foco) hasta que vuelva a verse. */
+  activo?: boolean;
   ref?: Ref<ControlCasa>;
   /** Pidió que le avisemos cuando abran los cuartos. */
   anotado?: boolean;
-  /** Mensaje del enlace del correo (se muestra en la tarjeta de entrada). */
+  /** Mensaje del enlace del correo (se muestra arriba, dentro de la casa). */
   aviso?: string | null;
   formulario?: ReactNode;
 }) {
-  const { estado, camara, vaca, cara, globo, opciones, ocupado, posiciones, clases, particulas } = casa;
+  const { estado, camara, vaca, cara, globo, opciones, ocupado, posiciones, clases, particulas, gatoVisto } = casa;
   const mundoRef = useRef<HTMLDivElement>(null);
   const ini = useRef<Inicio | null>(null);
   const sinClick = useRef(false);
   const [arrObj, setArrObj] = useState<{ id: ObjetoId; x: number; y: number } | null>(null);
   const [arrVaca, setArrVaca] = useState<Punto | null>(null);
-  // La entrada se pinta ya en el servidor; solo el botón toca el audio (en el cliente).
+  // Ya no hay tarjeta de entrada: el primer toque en la casa (o "Jugar ahora") desbloquea el audio.
   const [entrada, setEntrada] = useState(true);
+  // El aviso del enlace se ve arriba y se cierra con ✕ o solo a los 8 s.
+  const [avisoCerrado, setAvisoCerrado] = useState<string | null>(null);
+  useEffect(() => {
+    if (!aviso) return;
+    const id = setTimeout(() => setAvisoCerrado(aviso), 8000);
+    return () => clearTimeout(id);
+  }, [aviso]);
   const [pronto, setPronto] = useState(false);
   // Tamaño real del escenario: en celular vertical deja de ser cuadrado y la cámara se encuadra con zoom y paneo.
   const escenarioRef = useRef<HTMLDivElement>(null);
@@ -277,6 +300,8 @@ export function CasaVista({
     if (!el) return;
     const medir = () => {
       const r = el.getBoundingClientRect();
+      // oculta (pestaña del puzzle: display none) mide 0×0: se ignora, así al volver no se repite el encuadre
+      if (!r.width || !r.height) return;
       setTam((t) => (t.w === r.width && t.h === r.height ? t : { w: r.width, h: r.height }));
     };
     medir();
@@ -306,6 +331,8 @@ export function CasaVista({
   const piso = useRef<{ cx: number; cy: number; x0: number; y0: number; movio: boolean } | null>(null);
   const [paneando, setPaneando] = useState(false);
   const quiz = casa.quiz;
+  // lámpara apagada: el cuarto se oscurece, salvo durante el 玩 (se juega a luz normal)
+  const oscura = estado.deng === "apagada" && !quiz;
   const entrar = () => {
     if (!entrada) return;
     registrar("entrar");
@@ -315,13 +342,19 @@ export function CasaVista({
     casa.saludar();
   };
   useImperativeHandle(ref, () => ({ entrar }));
-  const capa: CapaTarjeta | null = entrada
-    ? "entrada"
-    : quiz?.fase === "fin"
-      ? "metodo"
-      : pronto
-        ? "pronto"
-        : null;
+  const capa: CapaTarjeta | null = !activo ? null : quiz?.fase === "fin" ? "metodo" : pronto ? "pronto" : null;
+
+  // Pestaña oculta con el refri abierto: se sale sin aplicar nada (y la casa no queda trabada).
+  const { refri, cerrarRefri } = casa;
+  useEffect(() => {
+    if (!activo && refri) cerrarRefri();
+  }, [activo, refri, cerrarRefri]);
+  // 做饭 se hace en la receta (no en el primer plano de girar); con la pestaña oculta se sale sin cocinar.
+  const receta = casa.primerPlano && esReceta(casa.primerPlano.accion.anim) ? casa.primerPlano : null;
+  const { cancelarPrimerPlano } = casa;
+  useEffect(() => {
+    if (!activo && receta) cancelarPrimerPlano();
+  }, [activo, receta, cancelarPrimerPlano]);
 
   // La tarjeta del método aparece una vez al terminar el 玩.
   useEffect(() => {
@@ -466,12 +499,22 @@ export function CasaVista({
     <div
       className={styles.casa}
       data-casa
+      onPointerDownCapture={entrar}
+      onClickCapture={entrar} // teclado y switch: Enter/Espacio dan click sin pointerdown
       data-vertical={vertical || undefined}
       data-ocupado={ocupado || undefined}
       data-primer-plano={casa.primerPlano ? `${casa.primerPlano.objeto}:${casa.primerPlano.accion.anim}` : undefined}
     >
+      {aviso && avisoCerrado !== aviso && (
+        <div className={styles.aviso}>
+          <p role="status">{aviso}</p>
+          <button type="button" aria-label="Cerrar" onClick={() => setAvisoCerrado(aviso)}>
+            ✕
+          </button>
+        </div>
+      )}
       <div className={styles.interior} inert={capa !== null}>
-      <div ref={escenarioRef} className={styles.escenario} data-medido={medido || undefined}>
+      <div ref={escenarioRef} className={styles.escenario} data-medido={medido || undefined} data-oscura={oscura || undefined}>
         <div
           ref={mundoRef}
           className={cx(styles.mundo, paneando && styles.paneando)}
@@ -485,13 +528,16 @@ export function CasaVista({
 
           {IDS.map((id, i) => {
             const o = OBJETOS[id];
+            const gato = id === "mao";
+            // el gato: solo la cola en su escondite (en el basurero no se ve); encontrado, entero
+            if (gato && !gatoSeVe(estado.mao, estado.chuanghu, gatoVisto)) return null;
             const arrastrado = arrObj?.id === id;
-            const p = arrastrado ? arrObj : posiciones[id] ?? o;
+            const p = arrastrado ? arrObj : posiciones[id] ?? (gato ? lugarGato(estado.mao) : o);
             const extra = clases[id] ?? [];
-            const abierto = estado.bingxiang === "abierto";
             return (
               <button
-                key={id}
+                // el gato cambia de escondite sin cruzar el cuarto
+                key={gato ? `mao:${estado.mao}` : id}
                 type="button"
                 data-objeto={id}
                 aria-label={textoHanzi(o.nombre)}
@@ -517,21 +563,22 @@ export function CasaVista({
                     extra.includes("tiembla") && styles.tiembla,
                     extra.includes("inclina") && styles.inclina,
                     extra.includes("encoge") && styles.encoge,
+                    extra.includes("alza") && styles.alza,
                   )}
                 >
                   <DibujoObjeto
                     id={id}
-                    estado={estado[id]}
-                    claseCapa={
-                      id === "bingxiang"
-                        ? (n) => (n === "puerta" ? cx(styles.puerta, abierto && styles.puertaAbierta) : "")
-                        : undefined
-                    }
+                    estado={gato && gatoVisto ? "visto" : estado[id]}
+                    extras={id === "chuanghu" && estado.chuanghu === "abierta" && extra.includes("pajaro") ? ["pajaro"] : undefined}
+                    claseCapa={claseCapa(id, estado, extra)}
                   />
                 </div>
               </button>
             );
           })}
+
+          {/* lámpara apagada: el cuarto se oscurece; la vaca, las partículas y la UI quedan encima */}
+          {oscura && <div className={styles.oscuro} aria-hidden="true" />}
 
           {particulas.map((q) => {
             const estilo: CSSProperties & Record<string, string | number | undefined> = {
@@ -553,7 +600,7 @@ export function CasaVista({
             type="button"
             aria-label="牛"
             data-vaca
-            className={cx(styles.vaca, arrVaca && styles.vacaArrastrando, vacaEsObjetivo && styles.vacaObjetivo)}
+            className={cx(styles.vaca, arrVaca && styles.vacaArrastrando, vacaEsObjetivo && styles.vacaObjetivo, cara.sentada && styles.vacaSentada)}
             style={{ left: pct(vacaVista.x), top: pct(vacaVista.y) }}
             onPointerDown={vacaAbajo}
             onPointerMove={vacaMueve}
@@ -616,7 +663,7 @@ export function CasaVista({
         )}
 
         {/* El primer plano va encima de todo el escenario y avisa con la medalla al terminar. */}
-        {casa.primerPlano && (
+        {casa.primerPlano && !receta && (
           <PrimerPlano
             key={`${casa.primerPlano.objeto}:${casa.primerPlano.accion.anim}`}
             accion={casa.primerPlano.accion}
@@ -626,15 +673,34 @@ export function CasaVista({
             alCancelar={casa.cancelarPrimerPlano}
           />
         )}
+        {/* la receta: fuera de .mundo, a luz normal aunque la lámpara esté apagada */}
+        {receta && (
+          <Receta
+            key={`${receta.objeto}:${receta.accion.anim}`}
+            accion={receta.accion}
+            alTerminar={casa.terminarPrimerPlano}
+            alCancelar={casa.cancelarPrimerPlano}
+            alEscuchar={casa.escuchar}
+          />
+        )}
+        {/* el refri por dentro: también fuera de .mundo, a luz normal aunque la lámpara esté apagada */}
+        {casa.refri && (
+          <Refri
+            estado={estado}
+            cara={cara}
+            globo={globo}
+            alTocar={(id) => casa.tocarComida(id).catch(registrarFallo)}
+            alElegir={casa.elegirRefri}
+            alCerrar={() => casa.elegirRefri(null)}
+          />
+        )}
       </div>
       </div>
 
       <Tarjetas
         capa={capa}
         anotado={anotado}
-        aviso={aviso}
         formulario={formulario}
-        alEntrar={entrar}
         alSeguir={() => {
           // después del método, la invitación a dejar el correo
           casa.cerrarQuiz();

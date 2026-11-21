@@ -91,7 +91,7 @@
 .idle { animation: respira 3.2s ease-in-out infinite; }
 /* menos movimiento: sin flotar, temblar ni respirar; la cámara salta sin viajar (los fundidos se quedan) */
 @media (prefers-reduced-motion: reduce) {
-  .idle, .tiembla { animation: none; }
+  .idle, .tiembla, .pajaro, .gatoSale { animation: none; }
   .opcion { animation: aparece 0.2s ease-out backwards; }
   .mundo { transition: none; }
 }
@@ -113,6 +113,9 @@
 }
 .inclina { transform: rotate(-35deg); }
 .encoge { transform: scale(0.7); }
+/* sostener (我拿着…): el objeto se muestra en alto, más grande, y se mece en la mano */
+.alza { transform: scale(1.35); animation: alza 0.9s ease-in-out 2; }
+@keyframes alza { 50% { transform: scale(1.35) translateY(-18%) rotate(-4deg); } }
 .tiembla { animation: tiembla 0.12s linear 8; }
 
 /* capa "puerta" del refri: gira sobre su bisagra (el borde del fondo), a 80.4 % del ancho del cuadro
@@ -123,6 +126,34 @@
 }
 .puertaAbierta { transform: scaleX(-1); }
 
+/* capa "tapa" del basurero: se levanta y vuelve a bajar */
+.tapa { transition: transform 0.35s ease; transform-origin: 30% 40%; }
+.tapaAbierta { transform: translateY(-14%) rotate(-14deg); }
+
+/* capa "pajaro" de la ventana: entra volando desde arriba a la derecha, da una vuelta y se queda posado en el
+   marco mientras la ventana siga abierta (al cerrarla se va; al volver a abrirla la capa se monta de nuevo) */
+.pajaro { animation: pajaro 2.2s ease-in-out both; }
+@keyframes pajaro {
+  0% { transform: translate(120%, -90%) scale(0.7); opacity: 0; }
+  20% { opacity: 1; }
+  55% { transform: translate(-25%, -45%) scale(0.9); }
+  80% { transform: translate(10%, -60%) scale(1) rotate(-10deg); }
+  100% { transform: translate(0, 0) scale(1); opacity: 1; }
+}
+
+/* el gato encontrado salta afuera */
+.gatoSale { animation: gatoSale 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both; transform-origin: 50% 80%; }
+@keyframes gatoSale { from { transform: translateY(20%) scale(0.4); } }
+
+/* lámpara apagada: encima del cuarto y los objetos, debajo de la vaca (z 30), las partículas y la UI */
+.oscuro {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 20, 50, 0.55);
+  pointer-events: none;
+  z-index: 25;
+}
+
 @keyframes tiembla { 50% { transform: translateX(3px) rotate(2deg); } }
 @keyframes respira {
   0%, 100% { translate: 0 0; }
@@ -132,6 +163,7 @@
 /* ---------- partículas (unidades del cuarto → %) ---------- */
 .brillo {
   position: absolute;
+  z-index: 41; /* encima de la cocina oscura */
   pointer-events: none;
   color: #ffe36b;
   font-size: clamp(10px, 2cqmin, 18px);
@@ -215,6 +247,8 @@
 .vaca:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 2px; border-radius: 16px; }
 .vacaArrastrando { transition: none; cursor: grabbing; z-index: 60; }
 .vacaObjetivo { filter: drop-shadow(0 0 8px #ffe36b) drop-shadow(0 0 4px #fff); }
+/* sentada en la silla: un poco achatada desde las patas */
+.vacaSentada { transform: translate(-50%, -92%) scaleY(0.86); transform-origin: 50% 92%; }
 .sombra {
   position: absolute;
   left: 26%;
@@ -431,8 +465,6 @@
 .tarjeta h2 { margin: 0.1em 0 0.2em; font-weight: 900; font-size: clamp(26px, 6cqw, 38px); }
 .tarjeta p { font-size: clamp(15px, 3.4cqmin, 17px); line-height: 1.45; margin: 0.6em 0; }
 .grande { font-family: var(--f-hanzi), sans-serif; font-size: clamp(56px, 15cqmin, 84px); line-height: 1; color: #3a6fd6; }
-.chica { display: block; opacity: 0.6; margin: 0 0 6px; }
-.tonoLinea { display: block; margin: 0 auto; }
 .principal {
   font: 900 18px var(--f-texto), system-ui, sans-serif;
   min-height: 44px;
@@ -448,7 +480,14 @@
 .principal:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 3px; }
 
 /* Aviso breve fuera de la casa (en español). */
-.avisoEntrada {
-  margin: 4px 0 0; padding: 10px 12px; border-radius: 12px; background: #fff;
+.aviso {
+  position: absolute; top: 8px; left: 8px; right: 8px; z-index: 20;
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 10px 12px; border-radius: 12px; background: #fff;
   border: 2px dashed #4a2a1c; font-weight: 900; font-size: 15px; line-height: 1.35;
+}
+.aviso p { margin: 0; flex: 1; }
+.aviso button {
+  flex: none; min-width: 32px; min-height: 32px; border: 0; background: transparent;
+  font: inherit; font-weight: 900; cursor: pointer; color: #4a2a1c;
 }

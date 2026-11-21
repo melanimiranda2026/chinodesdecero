@@ -7,9 +7,65 @@ import { TEMAS } from "../components/puzzle/datos";
 const raiz = process.cwd();
 const pinyin = (s: Silaba[]) => s.map(([, p]) => p).join(" ");
 
+/** Tomas de la cocina que un nativo debe escuchar (eleven_v3, Yating, 16 nov. 2026). */
+const REVISAR_COCINA: Record<string, string> = {
+  wo3_na2_zhe5_wan3: "nueva: 碗 tiene que bajar y subir (3.er tono)",
+  wo3_na2_zhe5_pan2_zi5: "nueva: 盘 tiene que subir",
+  wo3_na2_zhe5_kuai4_zi5: "nueva",
+  zhuo1_zi5: "nueva (17 nov. 2026)",
+  ka1_fei1_bei1: "nueva (17 nov. 2026)",
+  shou3_ji1: "nueva (17 nov. 2026)",
+  chuang1_hu5: "nueva (17 nov. 2026)",
+  la1_ji1_tong3: "nueva (17 nov. 2026)",
+  yi3_zi5: "nueva (17 nov. 2026)",
+  zhe4_shi4_zhuo1_zi5: "nueva (17 nov. 2026)",
+  zhe4_shi4_ka1_fei1_bei1: "nueva (17 nov. 2026)",
+  zhe4_shi4_shou3_ji1: "nueva (17 nov. 2026)",
+  zhe4_shi4_chuang1_hu5: "nueva (17 nov. 2026)",
+  zhe4_shi4_la1_ji1_tong3: "nueva (17 nov. 2026)",
+  zhe4_shi4_yi3_zi5: "nueva (17 nov. 2026)",
+  gei3_wo3_ka1_fei1_bei1: "nueva (17 nov. 2026)",
+  gei3_wo3_shou3_ji1: "nueva (17 nov. 2026)",
+  dao4_ka1_fei1: "nueva (17 nov. 2026)",
+  wo3_dao4_ka1_fei1: "nueva (17 nov. 2026)",
+  da3_dian4_hua4: "nueva (17 nov. 2026)",
+  wo3_da3_dian4_hua4: "nueva (17 nov. 2026)",
+  guan1_deng1: "nueva (17 nov. 2026)",
+  wo3_guan1_deng1: "nueva (17 nov. 2026)",
+  wo3_da3_kai1_chuang1_hu5: "nueva (17 nov. 2026)",
+  wo3_da3_kai1_la1_ji1_tong3: "nueva (17 nov. 2026)",
+  wo3_zuo4_xia4: "nueva (17 nov. 2026)",
+  wo3_chi1_wu3_fan4: "nueva (17 nov. 2026)",
+  he1_ka1_fei1: "nueva (17 nov. 2026)",
+  wo3_he1_ka1_fei1: "nueva (17 nov. 2026)",
+  wo3_xi3_ka1_fei1_bei1: "nueva (17 nov. 2026)",
+  kai1_deng1: "nueva (17 nov. 2026)",
+  wo3_kai1_deng1: "nueva (17 nov. 2026)",
+  wo3_guan1_shang5_chuang1_hu5: "nueva (17 nov. 2026)",
+  wo3_chi1_zao3_fan4: "nueva (17 nov. 2026)",
+  wo3_chi1_wan3_fan4: "nueva (17 nov. 2026)",
+  niu2_nai3: "nueva (17 nov. 2026)",
+  ji1_dan4: "nueva (17 nov. 2026)",
+  hen3_re4: "nueva (17 nov. 2026)",
+  hen2_leng3: "nueva (17 nov. 2026)",
+  wei2: "nueva (17 nov. 2026)",
+  wo3_zuo4_hao3_fan4_le5: "nueva (17 nov. 2026)",
+  zuo4: "nueva (17 nov. 2026)",
+  shui3: "nueva (17 nov. 2026)",
+  shui3_guo3: "nueva (17 nov. 2026)",
+  mi3: "nueva (17 nov. 2026)",
+  deng1: "nueva: 灯 sale plano (stability 0.7)",
+  zhe4_shi4_deng1: "nueva: 灯 sube un poco (302→333 Hz)",
+  mao1: "nueva: 猫 sube un poco (286→327 Hz)",
+  zhe4_shi4_mao1: "nueva: cortada de 这是猫，那是猫",
+  mian4_bao1: "nueva: 包 sube un poco al final",
+  cao3_mei2: "nueva: cortada (traía 1,6 s de silencio)",
+};
 const filas = frasesUsadas().map((f) => {
-  const archivo = `public/audio/cocina/${idAudio(f)}.mp3`;
-  return { archivo, hanzi: textoHanzi(f), pinyin: pinyin(f), existe: existsSync(join(raiz, archivo)) };
+  const id = idAudio(f);
+  const archivo = `public/audio/cocina/${id}.mp3`;
+  const nota = REVISAR_COCINA[id] ? ` (? nativo: ${REVISAR_COCINA[id]})` : "";
+  return { archivo, hanzi: textoHanzi(f), pinyin: pinyin(f) + nota, existe: existsSync(join(raiz, archivo)) };
 });
 
 // El puzzle: audios copiados del banco del proyecto padre (nombres del banco, no idAudio).

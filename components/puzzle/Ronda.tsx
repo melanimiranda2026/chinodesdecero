@@ -8,6 +8,7 @@ import type { Etapa, Frase } from "./datos";
 import { Escena, type CaraVaca } from "./Escena";
 import { Flecha, Parlante } from "./Dibujos";
 import { cabe, completa, desordenar, primerLibre, type Fila } from "./logica";
+import { FormaPieza } from "./FormaPieza";
 import { CaraPieza, estiloPieza, nombrePieza } from "./Pieza";
 import styles from "./Puzzle.module.css";
 
@@ -66,7 +67,7 @@ export function Ronda({ frase, etapa, pausada, onError, onCompleta, onSiguiente,
   const hablar = useCallback(
     async (audio: string) => {
       setHablando(true);
-      await decir([], { src: `/audio/puzzle/${audio}.mp3`, alBoca: boca });
+      await decir([], { src: `/audio/puzzle/${audio}.mp3`, alBoca: boca, juego: "puzzle" });
       if (vivo.current) setHablando(false);
     },
     [boca],
@@ -81,7 +82,7 @@ export function Ronda({ frase, etapa, pausada, onError, onCompleta, onSiguiente,
 
   const terminar = useCallback(async () => {
     setFase("diciendo");
-    sfx("ding");
+    sfx("ding", "puzzle");
     await espera(380);
     if (!vivo.current) return;
     setCara({ ojos: "felices", hocico: "sonrisa", orejas: "arriba", salta: true });
@@ -91,7 +92,7 @@ export function Ronda({ frase, etapa, pausada, onError, onCompleta, onSiguiente,
       await espera(250);
       if (!vivo.current) return;
       setResponde(true);
-      await decir([], { src: `/audio/puzzle/${frase.respuesta.audio}.mp3`, alBoca: boca });
+      await decir([], { src: `/audio/puzzle/${frase.respuesta.audio}.mp3`, alBoca: boca, juego: "puzzle" });
       if (!vivo.current) return;
     }
     setCara({ ojos: "felices", hocico: "sonrisa", orejas: "arriba" });
@@ -104,7 +105,7 @@ export function Ronda({ frase, etapa, pausada, onError, onCompleta, onSiguiente,
     (hueco: number, pieza: number): boolean => {
       const actual = filaRef.current;
       if (hueco < 0 || !cabe(frase, actual, hueco, pieza)) {
-        sfx("boing");
+        sfx("boing", "puzzle");
         setRebota(pieza);
         setCara((c) => ({ ...c, ojos: "sorpresa", orejas: "normales", salta: false }));
         setTimeout(() => vivo.current && setCara((c) => ({ ...c, ojos: "abiertos" })), 700);
@@ -116,7 +117,7 @@ export function Ronda({ frase, etapa, pausada, onError, onCompleta, onSiguiente,
       nueva[hueco] = pieza;
       filaRef.current = nueva;
       setFila(nueva);
-      sfx("pop");
+      sfx("pop", "puzzle");
       if (completa(nueva)) void terminar();
       return true;
     },
@@ -270,6 +271,7 @@ export function Ronda({ frase, etapa, pausada, onError, onCompleta, onSiguiente,
             data-hueco={i}
             style={{ animationDelay: armada ? `${i * 60}ms` : undefined }}
           >
+            {p === null && <FormaPieza hueco />}
             {p !== null && (
               <div className={cx(styles.pieza, styles.encajada, frase.piezas[p].pregunta && styles.esPregunta)} style={estiloPieza(frase.piezas[p])}>
                 <CaraPieza pieza={frase.piezas[p]} etapa={etapa} />

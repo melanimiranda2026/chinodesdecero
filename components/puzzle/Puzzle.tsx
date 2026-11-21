@@ -8,6 +8,8 @@ import { registrar } from "@/components/casa/eventos";
 import { Vaca } from "@/components/casa/Vaca";
 import { TAI_BANG_LE, HEN_HAO } from "@/components/casa/cocina/frases";
 import { Correo } from "@/components/pagina/Correo";
+import { BotonMudo } from "@/components/pagina/BotonMudo";
+import { elegirJuego } from "@/components/pagina/juego";
 import { COLOR_TONO } from "@/lib/tonos";
 import { ETAPAS, idNivel, TEMAS, type Etapa } from "./datos";
 import { cargarAvancePuzzle, guardarAvancePuzzle, type AvancePuzzle } from "./avance";
@@ -25,6 +27,18 @@ type Pantalla =
   | { tipo: "ronda"; tema: number; etapa: Etapa; frase: number; errores: number; gratis: boolean }
   | { tipo: "fin"; tema: number; etapa: Etapa; perfecto: boolean; gratis: boolean };
 
+/** Una ronda desde su primera frase. */
+const rondaDe = (tema: number, etapa: Etapa, gratis: boolean): Pantalla => ({ tipo: "ronda", tema, etapa, frase: 0, errores: 0, gratis });
+
+/**
+ * Empieza un nivel (desde el mapa, el fin o al abrir el puzzle): registra su inicio y devuelve la pantalla.
+ * Con `nota`, la etapa 1 nueva pasa antes por la regla.
+ */
+function abrirRonda(tema: number, etapa: Etapa, { gratis = false, nota = false }: { gratis?: boolean; nota?: boolean } = {}): Pantalla {
+  registrar("puzzle_nivel_inicio", { nivel: idNivel(TEMAS[tema].id, etapa), repaso: gratis });
+  return nota ? { tipo: "nota", tema } : rondaDe(tema, etapa, gratis);
+}
+
 /** Reloj que avanza cada 20 s (la cuenta regresiva de los vasos). */
 function useAhora(): number {
   const [ahora, setAhora] = useState(() => Date.now());
@@ -35,17 +49,22 @@ function useAhora(): number {
   return ahora;
 }
 
-export function Puzzle() {
+export function Puzzle({ ventana = false }: { ventana?: boolean } = {}) {
   const [avance, setAvance] = useState<AvancePuzzle | null>(null);
   const [pantalla, setPantalla] = useState<Pantalla>({ tipo: "mapa" });
   const [correoGuardado, setCorreoGuardado] = useState(false);
   const [gasto, setGasto] = useState(0); // para animar el vaso que se vacía
   const ahora = useAhora();
   const audioListo = useRef(false);
+  const raiz = useRef<HTMLDivElement>(null);
 
   // El avance vive en el navegador: se lee al montar (no en el render del servidor).
   useEffect(() => {
-    setAvance(cargarAvancePuzzle());
+    const a = cargarAvancePuzzle();
+    setAvance(a);
+    // Abre listo para jugar: directo a la ronda que toca (sin la Nota); si ya ganó todo, el mapa.
+    const sig = siguienteNivel(new Set(a.ganados));
+    setPantalla(sig ? abrirRonda(sig.tema, sig.etapa) : { tipo: "mapa" });
     setCorreoGuardado(!!cargarAvance().correo);
   }, []);
 
@@ -76,10 +95,10 @@ export function Puzzle() {
 
   useEffect(() => () => {
     callar();
-    musica.parar();
-  }, []);
+    if (!ventana) musica.parar();
+  }, [ventana]);
 
-  if (!avance) return <div className={styles.cargando} aria-busy="true" />;
+  if (!avance) return <div className={cx(styles.cargando, !ventana && styles.enPagina)} aria-busy="true" />;
 
   const ganados = new Set(avance.ganados);
   const vasos = recargar(avance.vasos, ahora);
@@ -95,10 +114,10 @@ export function Puzzle() {
   const jugar = (tema: number, etapa: Etapa) => {
     entrarAudio();
     const gratis = ganados.has(idNivel(TEMAS[tema].id, etapa));
-    registrar("puzzle_nivel_inicio", { nivel: idNivel(TEMAS[tema].id, etapa), repaso: gratis });
-    if (etapa === 1 && !gratis) setPantalla({ tipo: "nota", tema });
-    else setPantalla({ tipo: "ronda", tema, etapa, frase: 0, errores: 0, gratis });
-    window.scrollTo?.({ top: 0 });
+    setPantalla(abrirRonda(tema, etapa, { gratis, nota: etapa === 1 && !gratis }));
+    // arriba del nivel: en su página, la pantalla; en la ventana de la portada, el panel que lo envuelve
+    if (!ventana) window.scrollTo?.({ top: 0 });
+    else if (raiz.current?.parentElement) raiz.current.parentElement.scrollTop = 0;
   };
 
   const llenarConCorreo = () => {
@@ -109,19 +128,30 @@ export function Puzzle() {
   const sigue = siguienteNivel(ganados);
 
   return (
-    <div className={styles.juego}>
+    <div
+      ref={raiz}
+      className={cx(styles.juego, !ventana && styles.enPagina)}
+      onPointerDown={entrarAudio}
+      onClickCapture={entrarAudio} // teclado y switch: Enter/Espacio dan click sin pointerdown
+    >
       <header className={styles.barra}>
-        <Link href="/" className={styles.volver} aria-label="Volver al inicio">
-          <Flecha atras className={styles.icono} />
-        </Link>
-        <h1 className={styles.titulo}>
-          <PiezaIcono className={styles.tituloIcono} />
-          <span>El puzzle</span>
-          <span className={styles.tituloZh} lang="zh">
-            拼图 <span className={styles.tituloPy}>pīn tú</span>
-          </span>
-        </h1>
+        {!ventana && (
+          <>
+            <Link href="/" className={styles.volver} aria-label="Volver al inicio">
+              <Flecha atras className={styles.icono} />
+            </Link>
+            <h1 className={styles.titulo}>
+              <PiezaIcono className={styles.tituloIcono} />
+              <span className={styles.tituloTexto}>El puzzle</span>
+              <span className={styles.tituloZh} lang="zh">
+                拼图 <span className={styles.tituloPy}>pīn tú</span>
+              </span>
+            </h1>
+          </>
+        )}
         <Vasos vasos={vasos.vasos} espera={espera} gratis={pantalla.tipo === "ronda" && pantalla.gratis} gasto={gasto} />
+        {/* en la portada el 🔊 va en la barra de la ventana; en su página, aquí */}
+        {!ventana && <BotonMudo />}
       </header>
 
       {pantalla.tipo === "mapa" && (
@@ -136,7 +166,7 @@ export function Puzzle() {
       {pantalla.tipo === "nota" && (
         <Nota
           tema={pantalla.tema}
-          onSeguir={() => setPantalla({ tipo: "ronda", tema: pantalla.tema, etapa: 1, frase: 0, errores: 0, gratis: false })}
+          onSeguir={() => setPantalla(rondaDe(pantalla.tema, 1, false))}
           onMapa={() => setPantalla({ tipo: "mapa" })}
         />
       )}
@@ -202,6 +232,7 @@ export function Puzzle() {
                 hayGanados={ganados.size > 0}
                 onLlenar={llenarConCorreo}
                 onMapa={() => setPantalla({ tipo: "mapa" })}
+                ventana={ventana}
               />
             )}
           </section>
@@ -344,7 +375,7 @@ function Nota({ tema, onSeguir, onMapa }: { tema: number; onSeguir: () => void; 
   const [boca, setBoca] = useState(false);
   useEffect(() => {
     const id = setTimeout(() => {
-      void decir([], { src: `/audio/puzzle/${ejemplo.audio}.mp3`, alBoca: (a) => setBoca(a > 0.22) });
+      void decir([], { src: `/audio/puzzle/${ejemplo.audio}.mp3`, alBoca: (a) => setBoca(a > 0.22), juego: "puzzle" });
     }, 500);
     return () => {
       clearTimeout(id);
@@ -395,8 +426,8 @@ function Fin({
   const frase = perfecto ? TAI_BANG_LE : HEN_HAO;
   const [boca, setBoca] = useState(false);
   useEffect(() => {
-    sfx("brillo");
-    const id = setTimeout(() => void decir(frase, { alBoca: (a) => setBoca(a > 0.22) }), 450);
+    sfx("brillo", "puzzle");
+    const id = setTimeout(() => void decir(frase, { alBoca: (a) => setBoca(a > 0.22), juego: "puzzle" }), 450);
     return () => {
       clearTimeout(id);
       callar();
@@ -454,7 +485,7 @@ function Fin({
 }
 
 function SinVasos({
-  espera, correoGuardado, correoLleno, hayGanados, onLlenar, onMapa,
+  espera, correoGuardado, correoLleno, hayGanados, onLlenar, onMapa, ventana,
 }: {
   espera: number | null;
   correoGuardado: boolean;
@@ -462,10 +493,11 @@ function SinVasos({
   hayGanados: boolean;
   onLlenar: () => void;
   onMapa: () => void;
+  ventana: boolean;
 }) {
   useEffect(() => {
     callar();
-    sfx("tragos");
+    sfx("tragos", "puzzle");
   }, []);
   return (
     <div className={styles.sinVasos} role="dialog" aria-modal="true" aria-labelledby="sin-vasos-titulo">
@@ -487,7 +519,16 @@ function SinVasos({
               Repasar un nivel ganado
             </button>
           )}
-          <Link href="/" className={styles.botonSuave}>
+          <Link
+            href="/?juego=cocina#juegos"
+            className={styles.botonSuave}
+            onClick={(ev) => {
+              // en la ventana de la portada ya estamos en "/": cambiar de pestaña en vez de navegar
+              if (!ventana || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+              ev.preventDefault();
+              elegirJuego("cocina");
+            }}
+          >
             Jugar en la cocina
           </Link>
         </div>

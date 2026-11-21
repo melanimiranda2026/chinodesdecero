@@ -197,9 +197,9 @@ describe("PrimerPlano", () => {
   });
 
   it("al desmontarse vuelve la música de la cocina", async () => {
-    const { unmount } = montar("guo", "vacio", "cocinar");
+    const { unmount } = montar("pingguo", "limpio", "cortar");
     await entrar();
-    expect(musica.tocar).toHaveBeenCalledWith("g-girar");
+    expect(musica.tocar).toHaveBeenCalledWith("g-cortar");
     unmount();
     expect(musica.tocar).toHaveBeenLastCalledWith("cocina");
   });

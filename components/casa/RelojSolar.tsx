@@ -28,14 +28,15 @@ function cielo(hora: number): string {
 // Arco elíptico en un lienzo de 120 x 44: de (10, 40) a (110, 40), cima en (60, 8).
 const CX = 60, CY = 40, RX = 50, RY = 32;
 
-export function RelojSolar({ hora }: { hora: number }) {
+/** `className`: ajuste de lugar o tamaño en un cuarto (en la cocina, angosto para no pisar ⤢ ni el minimapa). */
+export function RelojSolar({ hora, className }: { hora: number; className?: string }) {
   const { astro, t } = posicionAstro(hora);
   const ang = Math.PI * (1 - t);
   const x = CX + RX * Math.cos(ang);
   const y = CY - RY * Math.sin(ang);
   const arco = `M ${CX - RX} ${CY} A ${RX} ${RY} 0 0 1 ${CX + RX} ${CY}`;
   return (
-    <div className={styles.reloj} role="img" aria-label={franja(hora)}>
+    <div className={className ? `${styles.reloj} ${className}` : styles.reloj} role="img" aria-label={franja(hora)}>
       <svg className={styles.svg} viewBox="0 0 120 44" aria-hidden="true">
         <path className={styles.cielo} d={`${arco} Z`} style={{ fill: cielo(hora) }} />
         <path className={styles.arco} d={arco} />

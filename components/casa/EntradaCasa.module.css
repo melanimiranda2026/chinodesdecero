@@ -1,0 +1,64 @@
+/* La casa entera: llena el escenario y se salta con un toque (todo el escenario es el botón). */
+.entrada {
+  position: absolute;
+  inset: 0;
+  z-index: 95;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  overflow: hidden;
+  background: #f8e7cc;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.entrada:focus-visible { outline: 3px solid #3a6fd6; outline-offset: -3px; }
+
+.mundo {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  transform-origin: 0 0;
+  transition: transform var(--zoom-ms) cubic-bezier(0.45, 0.05, 0.25, 1);
+}
+
+/* la vaca a la mitad de su tamaño en los cuartos (la casa es el cuarto achicado a la mitad) */
+.vaca {
+  position: absolute;
+  display: block;
+  width: 8.5%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -92%);
+  pointer-events: none;
+  animation: camina var(--camina-ms) ease-in-out both;
+}
+@keyframes camina {
+  from { left: var(--x0); top: var(--y0); }
+}
+.sombra {
+  position: absolute;
+  display: block;
+  left: 26%;
+  width: 48%;
+  bottom: 1%;
+  height: 6%;
+  border-radius: 50%;
+  background: rgba(40, 25, 10, 0.25);
+}
+
+/* movimiento reducido: sin caminata ni zoom, la casa se desvanece */
+.entrada[data-fase="fundido"] { animation: desvanece var(--fundido-ms) ease-out forwards; }
+.entrada[data-fase="fundido"] .vaca { animation: none; }
+.entrada[data-fase="fundido"] .mundo { transition: none; }
+@keyframes desvanece { to { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .vaca { animation: none; }
+  .mundo { transition: none; }
+}

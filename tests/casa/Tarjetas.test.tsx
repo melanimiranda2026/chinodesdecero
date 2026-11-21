@@ -30,6 +30,25 @@ describe("Tarjetas", () => {
     fireEvent.keyDown(document, { key: "Escape" });
     expect(alCerrar).toHaveBeenCalled();
   });
+  it("salida: título corto, el formulario de correo (origen salida_living) y Cerrar; el foco va al correo", async () => {
+    const alCerrar = vi.fn();
+    const fetch = vi.fn(() => Promise.resolve(new Response(null, { status: 200 })));
+    vi.stubGlobal("fetch", fetch);
+    render(<Tarjetas {...base} alCerrar={alCerrar} capa="salida" />);
+    expect(screen.getByRole("heading", { name: "Guarda tu avance para seguir a la cocina" })).toBeTruthy();
+    const correo = screen.getByRole("textbox");
+    expect(document.activeElement).toBe(correo);
+    fireEvent.change(correo, { target: { value: "vaca@ejemplo.com" } });
+    fireEvent.submit(correo.closest("form")!);
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalled());
+    const cuerpo = JSON.parse((fetch.mock.calls[0] as unknown as [string, RequestInit])[1].body as string);
+    expect(cuerpo.origen).toBe("salida_living");
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(alCerrar).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar" }));
+    expect(alCerrar).toHaveBeenCalledTimes(2);
+    vi.unstubAllGlobals();
+  });
   it("metodo: texto y botón seguir", () => {
     const alSeguir = vi.fn();
     render(<Tarjetas {...base} alSeguir={alSeguir} capa="metodo" />);

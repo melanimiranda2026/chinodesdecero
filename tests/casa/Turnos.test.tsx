@@ -1,4 +1,4 @@
-import { entrarCasa } from "./entrar";
+import { entrarCasa, guardarEnCocina, pasarEntrada } from "./entrar";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { MutableRefObject } from "react";
@@ -198,8 +198,9 @@ describe("primer plano: ✕", () => {
 describe("escuchadas y música", () => {
   it("una frase que no sonó no cuenta como escuchada", async () => {
     decirMock.mockImplementation(() => Promise.resolve(false));
+    guardarEnCocina();
     render(<Casa />);
-    await avanzar(10);
+    await pasarEntrada();
     entrarCasa();
     fireEvent.click(screen.getByRole("button", { name: "杯子" }));
     await avanzar(3000);
@@ -207,8 +208,9 @@ describe("escuchadas y música", () => {
   });
 
   it("una frase que sonó sí cuenta", async () => {
+    guardarEnCocina();
     render(<Casa />);
-    await avanzar(10);
+    await pasarEntrada();
     entrarCasa();
     await avanzar(3000);
     expect(cargarAvance().escuchadas).toContain("ni2_hao3");

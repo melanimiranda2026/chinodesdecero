@@ -1,4 +1,4 @@
-import { entrarCasa } from "./entrar";
+import { entrarCasa, guardarEnCocina, pasarEntrada } from "./entrar";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
@@ -38,9 +38,10 @@ afterEach(() => {
 
 describe("Casa con avance", () => {
   it("restaura el estado guardado y lo ignora si la forma es desconocida", async () => {
-    localStorage.setItem(CLAVE_AVANCE, JSON.stringify({ estado: { ...ESTADO_INICIAL, pingguo: "limpio" }, medallas: {}, escuchadas: [] }));
+    // con correo y el living completo: tras la entrada se ve la cocina
+    guardarEnCocina({ estado: { ...ESTADO_INICIAL, pingguo: "limpio" }, medallas: {}, escuchadas: [] });
     const { unmount } = render(<Casa />);
-    await avanzar(10);
+    await pasarEntrada();
     expect(document.querySelector('[data-objeto="pingguo"]')).toBeTruthy();
     // guardado sin cambios: el estado restaurado sigue ahí tras el debounce
     await avanzar(600);
@@ -53,8 +54,9 @@ describe("Casa con avance", () => {
   });
 
   it("cuenta lo que dice la vaca, sin repetir, y guarda tras ~500 ms", async () => {
+    guardarEnCocina();
     render(<Casa />);
-    await avanzar(10);
+    await pasarEntrada();
     entrarCasa();
     fireEvent.click(screen.getByRole("button", { name: "杯子" }));
     await avanzar(100);
@@ -103,6 +105,7 @@ describe("Casa con avance", () => {
 
   it("la tarjeta pronto lleva el formulario de correo", async () => {
     render(<Casa />);
+    await pasarEntrada();
     entrarCasa();
     fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
     expect(screen.getByRole("button", { name: "Avísame" })).toBeTruthy();
@@ -117,7 +120,7 @@ describe("Casa con avance", () => {
     };
     const tile = () => screen.getByTestId("mesa").querySelector<HTMLElement>(`[data-palabra="${id}"]`)!;
     const { unmount } = render(<Casa />);
-    await avanzar(10);
+    await pasarEntrada();
     entrarCasa();
     await abrirMesa();
     fireEvent.click(tile());
@@ -131,7 +134,7 @@ describe("Casa con avance", () => {
     unmount();
 
     render(<Casa />);
-    await avanzar(10);
+    await pasarEntrada();
     entrarCasa();
     await abrirMesa();
     expect(tile().dataset.abierta).toBe("true");
@@ -140,7 +143,7 @@ describe("Casa con avance", () => {
   it("tocar 桌子 en el living guarda el cuarto y la ficha; al recargar sigue tocado (abrir una palabra no suma fichas)", async () => {
     const zhuozi = fichaId(S("桌子", "zhuō zi", "15"));
     const { unmount } = render(<Casa />);
-    await avanzar(10);
+    await pasarEntrada();
     entrarCasa();
     fireEvent.click(document.querySelector('[data-cuarto="living"]') as HTMLElement);
     fireEvent.click(document.querySelector('[data-objeto="zhuozi"]') as HTMLElement);
@@ -153,7 +156,7 @@ describe("Casa con avance", () => {
     unmount();
 
     render(<Casa />);
-    await avanzar(10);
+    await pasarEntrada();
     entrarCasa();
     fireEvent.click(document.querySelector('[data-cuarto="living"]') as HTMLElement);
     // ya tocado: la bandeja lo muestra ganado

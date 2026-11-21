@@ -4,7 +4,9 @@ import { fireEvent, render, screen } from "@testing-library/react";
 vi.mock("@/components/casa/audio/sonido", () => ({ sfx: vi.fn() }));
 
 import { sfx } from "@/components/casa/audio/sonido";
-import { CUARTOS_ABIERTOS, Minimapa, type Cuarto } from "@/components/casa/Minimapa";
+import { cuartosAbiertos, Minimapa, type Cuarto } from "@/components/casa/Minimapa";
+
+const CUARTOS_ABIERTOS = cuartosAbiertos(true, true);
 
 function montar(cuartoActual: Cuarto) {
   const alCambiar = vi.fn();
@@ -14,8 +16,11 @@ function montar(cuartoActual: Cuarto) {
 }
 
 describe("Minimapa", () => {
-  it("abre cocina y living", () => {
-    expect(CUARTOS_ABIERTOS).toEqual(["cocina", "living"]);
+  it("el living siempre está abierto; la cocina, solo con el living completo y el correo", () => {
+    expect(cuartosAbiertos(false, false)).toEqual(["living"]);
+    expect(cuartosAbiertos(true, false)).toEqual(["living"]);
+    expect(cuartosAbiertos(false, true)).toEqual(["living"]);
+    expect(cuartosAbiertos(true, true)).toEqual(["cocina", "living"]);
   });
 
   it("desde la cocina, 客厅 está abierto y cambia de cuarto", () => {

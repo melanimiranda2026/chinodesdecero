@@ -21,6 +21,7 @@ import { CLAVE_JUEGO, EVENTO_JUEGO } from "@/components/pagina/juego";
 import { musica } from "@/components/casa/audio/sonido";
 import { Portada } from "@/components/pagina/Portada";
 import { PORTADA } from "@/components/pagina/contenido";
+import { guardarEnCocina, pasarEntrada } from "../casa/entrar";
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -51,12 +52,16 @@ describe("Portada: hero", () => {
   });
 
   it("el primer toque dentro de la ventana del juego arranca, sin tarjeta de entrada", async () => {
+    // con correo y el living completo: tras la casa entera se ve la cocina (con su 玩)
+    guardarEnCocina();
     const { container } = render(<Portada />);
     const ventana = container.querySelector<HTMLElement>("[data-ventana]")!;
     expect(within(ventana).queryByRole("dialog")).toBeNull();
     expect(within(ventana).queryByRole("button", { name: "Jugar" })).toBeNull();
     fireEvent.pointerDown(ventana.querySelector("[data-casa]")!);
     expect(desbloquearAudio).toHaveBeenCalledTimes(1);
+    await pasarEntrada();
+    localStorage.clear();
     // el minimapa y el 玩 también están dentro
     expect(within(ventana).getByRole("button", { name: "玩" })).toBeTruthy();
     fireEvent.click(within(ventana).getByRole("button", { name: "卧室 🔒" }));

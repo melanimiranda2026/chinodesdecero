@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useRef, type ReactNode } from "react";
+import { Correo } from "@/components/pagina/Correo";
 import styles from "./Casa.module.css";
 
-export type CapaTarjeta = "metodo" | "pronto";
+export type CapaTarjeta = "metodo" | "pronto" | "salida";
 
 interface Props {
   capa: CapaTarjeta | null;
@@ -20,6 +21,7 @@ interface Props {
  */
 export function Tarjetas({ capa, anotado, formulario, alSeguir, alCerrar }: Props) {
   const principal = useRef<HTMLButtonElement>(null);
+  const caja = useRef<HTMLDivElement>(null);
 
   // Los callbacks vienen en línea y cambian en cada render: se guardan en una ref
   // para que el foco y el teclado dependan solo de la capa.
@@ -32,7 +34,9 @@ export function Tarjetas({ capa, anotado, formulario, alSeguir, alCerrar }: Prop
     if (!capa) return;
     const previo = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     // Las tarjetas aparecen por algo que se hizo en el juego: el foco va a su botón, sin mover la página.
-    principal.current?.focus({ preventScroll: true });
+    // en "salida" lo que se hace es escribir el correo: el foco va al campo
+    const campo = capa === "salida" ? caja.current?.querySelector<HTMLInputElement>('input[type="email"]') : null;
+    (campo ?? principal.current)?.focus({ preventScroll: true });
     const alTeclear = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       if (capa === "metodo") ultimos.current.alSeguir();
@@ -49,7 +53,7 @@ export function Tarjetas({ capa, anotado, formulario, alSeguir, alCerrar }: Prop
   if (!capa) return null;
 
   return (
-    <div className={styles.capa} data-capa={capa}>
+    <div ref={caja} className={styles.capa} data-capa={capa}>
       {capa === "metodo" && (
         <div className={styles.tarjeta} role="dialog" aria-modal="true" aria-labelledby="t-titulo">
           <div className={styles.grande} style={{ fontSize: 56 }}>
@@ -79,6 +83,20 @@ export function Tarjetas({ capa, anotado, formulario, alSeguir, alCerrar }: Prop
               : "Este cuarto abre pronto. Deja tu correo y marca la casilla: te avisamos."}
           </p>
           {!anotado && formulario}
+          <button ref={principal} type="button" className={styles.principal} onClick={alCerrar}>
+            Cerrar
+          </button>
+        </div>
+      )}
+
+      {/* la puerta del living completo sin correo: al dejarlo, la casa cierra esto y pasa a la cocina */}
+      {capa === "salida" && (
+        <div className={styles.tarjeta} role="dialog" aria-modal="true" aria-labelledby="t-titulo">
+          <div style={{ fontSize: 54 }} aria-hidden="true">
+            🚪
+          </div>
+          <h2 id="t-titulo">Guarda tu avance para seguir a la cocina</h2>
+          <Correo origen="salida_living" boton="Guardar y seguir" />
           <button ref={principal} type="button" className={styles.principal} onClick={alCerrar}>
             Cerrar
           </button>

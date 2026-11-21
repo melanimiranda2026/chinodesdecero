@@ -1,4 +1,4 @@
-import { entrarCasa } from "./entrar";
+import { entrarCasa, guardarEnCocina, LIVING_COMPLETO, pasarEntrada } from "./entrar";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { MutableRefObject } from "react";
@@ -22,6 +22,8 @@ import { acciones } from "@/components/casa/cocina/acciones";
 import { ESTADO_INICIAL } from "@/components/casa/cocina/datos";
 import { NI_HAO } from "@/components/casa/cocina/frases";
 import { textoHanzi } from "@/lib/silabas";
+import { CLAVE_AVANCE, EVENTO_AVANCE, avanceInicial, type Avance } from "@/components/casa/avance";
+import { reiniciarEventos } from "@/components/casa/eventos";
 
 const decirMock = vi.mocked(decir);
 
@@ -41,6 +43,7 @@ const avanzar = (ms: number) => act(async () => { await vi.advanceTimersByTimeAs
 
 beforeEach(() => {
   vi.useFakeTimers();
+  localStorage.clear();
   decirMock.mockReset();
   decirMock.mockImplementation(() => Promise.resolve(true));
 });
@@ -50,7 +53,9 @@ afterEach(() => {
 
 describe("Casa", () => {
   it("tocar 杯子 dice su nombre y el globo muestra 杯 y bēi", async () => {
+    guardarEnCocina();
     render(<Casa />);
+    await pasarEntrada();
     entrarCasa();
     await avanzar(4000); // pasa el saludo
     decirMock.mockClear();
@@ -161,7 +166,9 @@ describe("Casa", () => {
 
   it("<Casa/> atiende el rechazo de una secuencia (no queda sin atender)", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    guardarEnCocina();
     render(<Casa onEvento={(n) => { if (n === "tocar_objeto") throw new Error("analítica caída"); }} />);
+    await pasarEntrada();
     fireEvent.click(screen.getByRole("button", { name: "杯子" }));
     await avanzar(10);
     expect(error).toHaveBeenCalledWith("[casa]", expect.any(Error));
@@ -324,7 +331,9 @@ describe("Casa: quiz, guardas y tarjetas", () => {
   });
 
   it("primer click (teclado) en 杯子: gana el objeto, el saludo se salta", async () => {
+    guardarEnCocina();
     render(<Casa />);
+    await pasarEntrada();
     fireEvent.click(screen.getByRole("button", { name: "杯子" }));
     await avanzar(1000);
     const llamadas = decirMock.mock.calls.map((c) => c[0]);
@@ -338,7 +347,9 @@ describe("Casa: quiz, guardas y tarjetas", () => {
   });
 
   it("primer toque (pointerdown + click en el mismo instante) en 杯子: gana el objeto", async () => {
+    guardarEnCocina();
     render(<Casa />);
+    await pasarEntrada();
     const o = screen.getByRole("button", { name: "杯子" });
     fireEvent.pointerDown(o);
     fireEvent.click(o);
@@ -350,7 +361,9 @@ describe("Casa: quiz, guardas y tarjetas", () => {
   });
 
   it("primer toque en el piso vacío: la vaca saluda 你好", async () => {
+    guardarEnCocina();
     render(<Casa />);
+    await pasarEntrada();
     entrarCasa();
     await avanzar(1000);
     expect(decirMock.mock.calls[0][0]).toEqual(NI_HAO);
@@ -549,5 +562,121 @@ describe("Casa: objetos nuevos", () => {
     await avanzar(4000);
     expect(api().cara.sentada).toBe(false);
     expect(api().ocupado).toBe(false);
+  });
+});
+
+describe("Casa: la entrada y la puerta del living", () => {
+  const enLiving = () => document.querySelector("[data-living]") !== null;
+  const enCocina = () => document.querySelector('[data-objeto="beizi"]') !== null;
+  /** La puerta del living (el minimapa también tiene un 厨房). */
+  const puerta = () => document.querySelector<HTMLElement>("[data-puerta]")!;
+  const guardar = (a: Partial<Avance>) => localStorage.setItem(CLAVE_AVANCE, JSON.stringify({ ...avanceInicial(), ...a }));
+  const LIVING_SIN_UNA_SILLA = { tocados: LIVING_COMPLETO.tocados, logros: LIVING_COMPLETO.logros.filter((l) => l !== "zuo@yizi") };
+  /** Hace 坐 en la silla: lo único que le falta a LIVING_SIN_UNA_SILLA. */
+  const sentarseEnLaSilla = async () => {
+    fireEvent.click(screen.getByRole("button", { name: "椅子" }));
+    await avanzar(400);
+    fireEvent.click(screen.getByRole("button", { name: "坐" }));
+    await avanzar(5000);
+  };
+
+  beforeEach(() => {
+    localStorage.clear();
+    reiniciarEventos();
+  });
+
+  it("sin avance: primero la casa entera, luego el living; en el minimapa la cocina está cerrada", async () => {
+    render(<Casa />);
+    expect(document.querySelector("[data-entrada]")).not.toBeNull();
+    expect(enLiving()).toBe(false);
+    expect(enCocina()).toBe(false);
+    await pasarEntrada();
+    expect(document.querySelector("[data-entrada]")).toBeNull();
+    expect(enLiving()).toBe(true);
+    expect(document.querySelector('[data-cuarto="cocina"]')!.getAttribute("data-bloqueado")).toBe("true");
+    expect(document.querySelector('[data-cuarto="living"]')!.getAttribute("aria-current")).toBe("true");
+    // el reloj solar del living (lo pone el motor)
+    expect(document.querySelectorAll('[role="img"][aria-label="早上"]').length).toBe(1);
+  });
+
+  it("avance antiguo con correo y el living completo: tras la entrada, la cocina con su reloj a mediodía (Review Focus 1)", async () => {
+    guardarEnCocina();
+    render(<Casa />);
+    await pasarEntrada();
+    expect(enCocina()).toBe(true);
+    expect(enLiving()).toBe(false);
+    expect(document.querySelector('[data-cuarto="cocina"]')!.getAttribute("data-bloqueado")).toBeNull();
+    expect(screen.getByRole("img", { name: "中午" })).toBeTruthy();
+  });
+
+  it("avance antiguo con correo y el living vacío: living; al completarlo la puerta lleva a la cocina sin pedir correo (Review Focus 1)", async () => {
+    guardar({ correo: "vaca@ejemplo.com", cuartos: { living: LIVING_SIN_UNA_SILLA } });
+    const eventos: string[] = [];
+    render(<Casa onEvento={(n) => { eventos.push(n); }} />);
+    await pasarEntrada();
+    expect(enLiving()).toBe(true);
+    // a medio living la cocina sigue cerrada en el minimapa
+    expect(document.querySelector('[data-cuarto="cocina"]')!.getAttribute("data-bloqueado")).toBe("true");
+    await sentarseEnLaSilla();
+    expect(eventos).toContain("cuarto_completo");
+    expect(document.querySelector('[data-cuarto="cocina"]')!.getAttribute("data-bloqueado")).toBeNull();
+    fireEvent.click(puerta());
+    expect(document.querySelector('[data-capa="salida"]')).toBeNull();
+    expect(eventos).toContain("salir_cuarto");
+    expect(eventos).not.toContain("pedir_correo_salida");
+    expect(enCocina()).toBe(true);
+    expect(document.querySelector("[data-fundido]")).not.toBeNull();
+  });
+
+  it("living completo sin correo: la puerta abre la capa salida; al dejar el correo se cierra y pasa a la cocina (Review Focus 4)", async () => {
+    guardar({ cuartos: { living: LIVING_COMPLETO } });
+    const eventos: string[] = [];
+    render(<Casa onEvento={(n) => { eventos.push(n); }} />);
+    await pasarEntrada();
+    expect(enLiving()).toBe(true);
+    fireEvent.click(puerta());
+    expect(eventos).toContain("pedir_correo_salida");
+    const capa = document.querySelector('[data-capa="salida"]')!;
+    expect(capa).not.toBeNull();
+    expect(within(capa as HTMLElement).getByText("Guarda tu avance para seguir a la cocina")).toBeTruthy();
+    expect(within(capa as HTMLElement).getByRole("textbox")).toBeTruthy();
+    expect(enLiving()).toBe(true);
+    // el formulario avisa con el correo apenas el servidor lo acepta, sin esperar que confirme el enlace
+    act(() => { window.dispatchEvent(new CustomEvent(EVENTO_AVANCE, { detail: { correo: "vaca@ejemplo.com" } })); });
+    expect(document.querySelector('[data-capa="salida"]')).toBeNull();
+    expect(enCocina()).toBe(true);
+    expect(enLiving()).toBe(false);
+  });
+
+  it("un toque salta la entrada: es el primer toque (audio) y, si queda en la cocina, la vaca saluda 你好", async () => {
+    vi.mocked(desbloquearAudio).mockClear();
+    guardarEnCocina();
+    render(<Casa />);
+    await avanzar(10);
+    fireEvent.click(document.querySelector<HTMLElement>("[data-entrada]")!);
+    expect(desbloquearAudio).toHaveBeenCalledTimes(1);
+    expect(document.querySelector("[data-entrada]")).toBeNull();
+    expect(enCocina()).toBe(true);
+    await avanzar(1000);
+    expect(decirMock.mock.calls.map((c) => c[0])).toContainEqual(NI_HAO);
+  });
+
+  it("saltar la entrada hacia el living: la vaca de la cocina no saluda", async () => {
+    render(<Casa />);
+    await avanzar(10);
+    fireEvent.click(document.querySelector<HTMLElement>("[data-entrada]")!);
+    expect(enLiving()).toBe(true);
+    await avanzar(1000);
+    expect(decirMock.mock.calls.map((c) => c[0])).not.toContainEqual(NI_HAO);
+  });
+
+  it("la capa salida se puede cerrar sin dejar el correo: se sigue en el living", async () => {
+    guardar({ cuartos: { living: LIVING_COMPLETO } });
+    render(<Casa />);
+    await pasarEntrada();
+    fireEvent.click(puerta());
+    fireEvent.click(within(document.querySelector('[data-capa="salida"]') as HTMLElement).getByRole("button", { name: "Cerrar" }));
+    expect(document.querySelector('[data-capa="salida"]')).toBeNull();
+    expect(enLiving()).toBe(true);
   });
 });

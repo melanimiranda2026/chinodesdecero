@@ -11,8 +11,13 @@ const CUARTOS: { id: Cuarto; icono: string; nombre: string }[] = [
   { id: "bano", icono: "🛁", nombre: "浴室" },
 ];
 
-/** Cuartos que ya se pueden pisar. Los demás están cerrados. */
-export const CUARTOS_ABIERTOS: readonly Cuarto[] = ["cocina", "living"];
+/**
+ * Cuartos que ya se pueden pisar; los demás están cerrados. El living, siempre (es donde se entra); la cocina,
+ * cuando el living está completo y ya dejó su correo (la puerta del living lo pide). Baño y dormitorio, aún no.
+ */
+export function cuartosAbiertos(livingCompleto: boolean, conCorreo: boolean): Cuarto[] {
+  return livingCompleto && conCorreo ? ["cocina", "living"] : ["living"];
+}
 
 /**
  * Minimapa 2×2: el cuarto actual brilla, los abiertos se pueden tocar y los demás están cerrados.

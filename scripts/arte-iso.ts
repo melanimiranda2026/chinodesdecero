@@ -1,5 +1,5 @@
 /**
- * Genera el arte isométrico de la cocina como archivos SVG en public/arte/cocina/.
+ * Genera el arte isométrico de la casa como archivos SVG en public/arte/ (cocina/, living/ y casa/: la casa entera).
  * Correr con `npm run arte:generar`. Cada capa es un archivo propio para que se pueda abrir y repintar
  * en Krita (ver docs/arte.md). Las posiciones salen de components/casa/cocina/iso.ts y datos.ts.
  *
@@ -11,15 +11,17 @@ import { join } from "node:path";
 import { ISO, MUEBLES, proyectar } from "../components/casa/cocina/iso";
 import { OBJETOS, type ObjetoId } from "../components/casa/cocina/datos";
 import { MUEBLES_LIVING } from "../components/casa/living/lugares";
+import { PUERTA_ENTRADA, transformCuarto } from "../components/casa/casaEntera";
 
 /** Carpeta de cada cuarto en public/arte/. */
-const carpeta = (cuarto: "cocina" | "living") => {
+const carpeta = (cuarto: "cocina" | "living" | "casa") => {
   const ruta = join(process.cwd(), "public", "arte", cuarto);
   mkdirSync(ruta, { recursive: true });
   return ruta;
 };
 const SALIDA = carpeta("cocina");
 const SALIDA_LIVING = carpeta("living");
+const SALIDA_CASA = carpeta("casa");
 /** Partes del cuarto por separado, solo para armar las capas de Krita (scripts/arte-krita.ts). */
 const PARTES = join(process.cwd(), "arte-krita", "fuentes");
 
@@ -460,6 +462,7 @@ function cuarto() {
 
   archivo("cuarto_cocina", [0, 0, 1000, 1000], 2000, defs, out.join(""));
   escribirPartes("cuarto_cocina", partes, out, defs);
+  return { defs, cuerpo: out.join("") };
 }
 
 // =====================================================================================
@@ -705,6 +708,7 @@ function living() {
 
   archivo("cuarto_living", [0, 0, 1000, 1000], 2000, defs, out.join(""), SALIDA_LIVING);
   escribirPartes("cuarto_living", partes, out, defs);
+  return { defs, cuerpo: out.join("") };
 }
 
 /** La mesa del living vista desde arriba: tablero de madera con veta y borde, sin fichas (las pone el juego). */
@@ -1337,7 +1341,67 @@ function interiorRefri() {
   archivo("refri_interior", [0, 0, 1000, 1000], 2000, [gF], out.join(""));
 }
 
-cuarto();
+// =====================================================================================
+// LA CASA ENTERA (abre la web): los cuatro cuartos en isometría 2×2, en public/arte/casa/
+// =====================================================================================
+type Dibujo = { defs: string[]; cuerpo: string };
+
+/** Un cuarto vacío (baño, dormitorio): solo piso y paredes, en su propio tono. Se llenan en las etapas 3 y 4. */
+function cuartoVacio(t: { piso: string; linea: string; izq: string; der: string; zocalo: string }): string {
+  const out: string[] = [];
+  // losa y piso de baldosas
+  out.push(cara([[0, L, -LOSA], [L, L, -LOSA], [L, L, 0], [0, L, 0]], C.losaIzq));
+  out.push(cara([[L, 0, -LOSA], [L, L, -LOSA], [L, L, 0], [L, 0, 0]], C.losaDer));
+  out.push(cara([[0, 0, 0], [L, 0, 0], [L, L, 0], [0, L, 0]], t.piso));
+  for (let k = 1.25; k < L; k += 1.25) {
+    out.push(linea([0, k, 0], [L, k, 0], t.linea, 1.2));
+    out.push(linea([k, 0, 0], [k, L, 0], t.linea, 1.2));
+  }
+  out.push(cara([[0, 0, 0], [L, 0, 0], [L, L, 0], [0, L, 0]], "none", 2.2));
+  // paredes y zócalo
+  out.push(cara([[0, 0, 0], [0, L, 0], [0, L, H], [0, 0, H]], t.izq));
+  out.push(cara([[0, 0, 0], [L, 0, 0], [L, 0, H], [0, 0, H]], t.der));
+  out.push(rectU(0.001, 0, L, 0, 0.35, t.zocalo, 1.3));
+  out.push(rectV(0.001, 0, L, 0, 0.35, t.zocalo, 1.3));
+  out.push(...cantosParedes());
+  return out.join("");
+}
+
+/** La puerta de entrada del living (pared de adelante a la derecha, u = 10), con escalón, felpudo y camino. */
+function puertaEntrada(): string {
+  const { u, v0, v1, alto } = PUERTA_ENTRADA;
+  const out: string[] = [];
+  // camino de piedras hacia afuera (sobre el pasto, a la altura de la losa)
+  for (const [du, dv] of [[2.2, 0.2], [3.4, 0.9], [4.6, 1.6], [5.8, 2.3]]) out.push(circulo(u + du, (v0 + v1) / 2 + dv, -LOSA, 0.42, "#E9DCC6", 1.4));
+  // escalón y felpudo
+  out.push(caja(u, u + 0.7, v0 - 0.2, v1 + 0.2, -LOSA, -0.05, { a: "#E3D3B8", i: "#CDB894", d: "#B9A27C" }, 1.6));
+  out.push(rectZ(-0.049, u + 0.12, u + 0.62, v0 + 0.1, v1 - 0.1, C.terracota, 1.3));
+  // marco y hoja (cerrada: así no tapa los muebles del living)
+  out.push(rectU(u + 0.002, v0 - 0.18, v1 + 0.18, 0, alto + 0.25, C.madera.d, 1.8));
+  out.push(rectU(u + 0.004, v0, v1, 0, alto, C.madera.i, 1.8));
+  out.push(rectU(u + 0.006, v0 + 0.2, v1 - 0.2, alto * 0.55, alto - 0.3, C.vidrio, 1.4));
+  out.push(rectU(u + 0.006, v0 + 0.2, v1 - 0.2, 0.3, alto * 0.45, C.madera.a, 1.3));
+  out.push(circulo(u + 0.05, v0 + 0.22, alto * 0.5, 0.07, C.oro, 1.2));
+  return out.join("");
+}
+
+/** La casa: pasto, los cuatro cuartos de atrás hacia adelante y la puerta de entrada. Living y cocina son sus dibujos achicados. */
+function casaEntera(cocina: Dibujo, sala: Dibujo) {
+  const defs = [...new Set([...cocina.defs, ...sala.defs])];
+  const g = (c: Parameters<typeof transformCuarto>[0], cuerpo: string) => `<g data-cuarto="${c}" transform="${transformCuarto(c)}">${cuerpo}</g>`;
+  const out: string[] = [];
+  // pasto alrededor de la casa
+  out.push(`<ellipse cx="500" cy="640" rx="490" ry="300" fill="#CFE3B4" ${trazo(2.4)}/>`);
+  out.push(`<ellipse cx="500" cy="660" rx="430" ry="250" fill="#C2DAA4" stroke="none" opacity="0.7"/>`);
+  // de atrás hacia adelante: dormitorio, cocina y baño (a la misma profundidad), living
+  out.push(g("dormitorio", cuartoVacio({ piso: "#E9D2DC", linea: "#D2B3C1", izq: "#F1DDE5", der: "#F7E9EE", zocalo: "#C89AAE" })));
+  out.push(g("cocina", cocina.cuerpo));
+  out.push(g("bano", cuartoVacio({ piso: "#D6E9EE", linea: "#B3D0D8", izq: "#E0EEF1", der: "#EDF6F8", zocalo: "#8FB8C4" })));
+  out.push(g("living", sala.cuerpo + puertaEntrada()));
+  archivo("casa_entera", [0, 0, 1000, 1000], 2000, defs, out.join(""), SALIDA_CASA);
+}
+
+const cocina = cuarto();
 manzana();
 vaso();
 bol();
@@ -1358,5 +1422,6 @@ gato();
 comidaRefri();
 interiorRefri();
 // el living va al final: así los degradados de la cocina conservan sus nombres
-living();
+const sala = living();
 mesaArriba();
+casaEntera(cocina, sala);

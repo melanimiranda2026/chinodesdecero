@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { ARTE, ARTE_MESA, ARTE_PRIMER_PLANO, ARTE_REFRI, ARTE_REFRI_FONDO, ARTE_VACA, FONDO_CUARTO } from "@/components/casa/arte/registro";
+import { ARTE, ARTE_MESA, ARTE_PRIMER_PLANO, ARTE_REFRI, ARTE_REFRI_FONDO, ARTE_VACA, FONDO_CASA, FONDO_CUARTO } from "@/components/casa/arte/registro";
 import { MESA_LIVING, PARADA_VACA } from "@/components/casa/living/lugares";
 import { alPiso } from "@/components/casa/cocina/iso";
 import { Capa, FondoCuarto } from "@/components/casa/arte/Capa";
@@ -190,5 +190,13 @@ describe("arte del living", () => {
     const dx = Math.max(m.x - x, 0, x - (m.x + m.w));
     const dy = Math.max(m.y - y, 0, y - (m.y + m.h));
     expect(Math.hypot(dx, dy)).toBeLessThan(170);
+  });
+});
+
+describe("arte de la casa entera", () => {
+  it("FONDO_CASA sale del manifiesto y el SVG existe en public/arte/casa/, de 1000 x 1000", () => {
+    expect(FONDO_CASA).toBeDefined();
+    esCuadroDeMil(FONDO_CASA, /^\/arte\/casa\/casa_entera\.(svg|png|webp)$/);
+    expect(existsSync(join(process.cwd(), "public", "arte", "casa", "casa_entera.svg"))).toBe(true);
   });
 });

@@ -82,32 +82,17 @@ describe("Puzzle listo para jugar", () => {
     expect(desbloquearAudio).toHaveBeenCalledTimes(1);
   });
 
-  it("en la ventana no ocupa toda la pantalla y abrir un nivel vuelve arriba del panel", async () => {
-    const { container } = render(
-      <div data-panel>
-        <Puzzle ventana />
-      </div>,
-    );
+  it("vive solo en su página: toda la pantalla, enlace Volver al inicio y su título; sin modo ventana", async () => {
+    const { container } = render(<Puzzle />);
     await avanzar(0);
-    const panel = container.querySelector<HTMLElement>("[data-panel]")!;
-    const raiz = panel.firstElementChild as HTMLElement;
-    expect(raiz.className).not.toMatch(/enPagina/);
+    expect((container.firstElementChild as HTMLElement).className).toMatch(/enPagina/);
+    expect(screen.getByRole("link", { name: "Volver al inicio" })).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 1 })).toBeTruthy();
     const css = readFileSync(join(process.cwd(), "components/puzzle/Puzzle.module.css"), "utf8");
     const regla = (sel: string) => css.match(new RegExp(`(^|\\n)${sel.replace(".", "\\.")}\\s*\\{([^}]*)\\}`))?.[2] ?? "";
-    expect(regla(".juego")).not.toMatch(/100svh/); // en la ventana: solo lo que ocupa
-    expect(regla(".cargando")).not.toMatch(/100svh/);
-    expect(regla(".enPagina")).toMatch(/min-height:\s*100svh/); // en su página: toda la pantalla
-    Object.defineProperty(panel, "scrollTop", { value: 300, writable: true, configurable: true });
-    fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
-    fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
-    expect(panel.scrollTop).toBe(0);
-  });
-
-  it("en modo ventana no hay enlace Volver al inicio", async () => {
-    render(<Puzzle ventana />);
-    await avanzar(0);
-    expect(screen.queryByRole("link", { name: "Volver al inicio" })).toBeNull();
-    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+    expect(regla(".enPagina")).toMatch(/min-height:\s*100svh/);
+    const fuente = readFileSync(join(process.cwd(), "components/puzzle/Puzzle.tsx"), "utf8");
+    expect(fuente).not.toMatch(/ventana\s*[=?:]/);
   });
 });
 
@@ -153,11 +138,11 @@ describe("Puzzle", () => {
     expect(document.querySelector('button[data-pieza="2"]')).toBeTruthy(); // sigue en la bandeja
   });
 
-  it("sin vasos, en la ventana, 'Jugar en la cocina' cambia a la pestaña de la cocina", async () => {
+  it("sin vasos, 'Jugar en la cocina' lleva a la casa (/) sin eventos de pestaña", async () => {
     localStorage.setItem(CLAVE_PUZZLE, JSON.stringify({ ganados: [], perfectos: [], vasos: { vasos: 1, desde: Date.now() }, correoLleno: false }));
     const elegido = vi.fn();
     window.addEventListener("cdc:juego", elegido);
-    render(<Puzzle ventana />);
+    render(<Puzzle />);
     await avanzar(0);
     fireEvent.click(screen.getByRole("button", { name: "Salir al mapa" }));
     fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
@@ -165,10 +150,9 @@ describe("Puzzle", () => {
     fireEvent.click(document.querySelector<HTMLButtonElement>('button[data-pieza="2"]')!);
     await avanzar(10);
     const cocina = screen.getByRole("link", { name: "Jugar en la cocina" });
-    expect(cocina.getAttribute("href")).toBe("/?juego=cocina#juegos");
+    expect(cocina.getAttribute("href")).toBe("/");
     fireEvent.click(cocina);
-    expect(elegido).toHaveBeenCalledTimes(1);
-    expect((elegido.mock.calls[0][0] as CustomEvent).detail).toBe("cocina");
+    expect(elegido).not.toHaveBeenCalled();
     window.removeEventListener("cdc:juego", elegido);
   });
 

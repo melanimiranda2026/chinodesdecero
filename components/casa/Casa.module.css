@@ -347,6 +347,9 @@
   padding: 0.3em 0.6em;
   cursor: pointer;
 }
+/* reloj solar de la cocina: angosto y centrado, entre ⤢ (abajo a la izquierda) y el minimapa (abajo a la derecha) */
+.escenario .relojCocina { width: min(38%, calc(100% - 2 * (2% + 124px))); }
+
 .alejar:disabled { opacity: 0.5; cursor: default; }
 .alejar:active { translate: 0 3px; box-shadow: 0 1px 0 #1d130d; }
 

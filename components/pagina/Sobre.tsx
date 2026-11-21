@@ -26,7 +26,7 @@ export function Sobre() {
             {SOBRE.contactoAntes}
             <a href={`mailto:${CONTACTO_PRIVACIDAD}`}>{CONTACTO_PRIVACIDAD}</a>.
           </p>
-          <Link href="/#juegos" className={styles.boton}>
+          <Link href="/" className={styles.boton}>
             {SOBRE.jugar}
           </Link>
           <a className={styles.boton} href={TIKTOK.url} target="_blank" rel="noopener noreferrer">

@@ -1,6 +1,6 @@
 # Audios de la casa y del puzzle
 
-225 de 225 existen. Generado con `npm run audios`; no se edita a mano.
+231 de 231 existen. Generado con `npm run audios`; no se edita a mano.
 
 | Archivo | Hanzi | Pinyin | ¿Existe? |
 |---|---|---|---|
@@ -126,6 +126,12 @@
 | public/audio/cocina/hen2_hao3.mp3 | 很好 | hén hǎo | sí |
 | public/audio/cocina/hao3.mp3 | 好 | hǎo | sí |
 | public/audio/cocina/ni2_hao3.mp3 | 你好 | ní hǎo | sí |
+| public/audio/cocina/sha1_fa1.mp3 | 沙发 | shā fā (? nativo: nueva (20 nov. 2026)) | sí |
+| public/audio/cocina/zhe4_shi4_sha1_fa1.mp3 | 这是沙发 | zhè shì shā fā (? nativo: nueva (20 nov. 2026)) | sí |
+| public/audio/cocina/dian4_shi4.mp3 | 电视 | diàn shì (? nativo: nueva (20 nov. 2026)) | sí |
+| public/audio/cocina/zhe4_shi4_dian4_shi4.mp3 | 这是电视 | zhè shì diàn shì (? nativo: nueva (20 nov. 2026)) | sí |
+| public/audio/cocina/kan4.mp3 | 看 | kàn (? nativo: nueva (20 nov. 2026)) | sí |
+| public/audio/cocina/wo3_kan4_dian4_shi4.mp3 | 我看电视 | wǒ kàn diàn shì (? nativo: nueva: 看 sale plano (276→302 Hz), retoma igual (20 nov. 2026)) | sí |
 | public/audio/puzzle/wochi_pingguo.mp3 | 我吃苹果 | wǒ chī píng guǒ | sí |
 | public/audio/puzzle/wohe_kafei.mp3 | 我喝咖啡 | wǒ hē kā fēi | sí |
 | public/audio/puzzle/wo_jintian_pingguo.mp3 | 我今天在家吃苹果 | wǒ jīn tiān zài jiā chī píng guǒ | sí |

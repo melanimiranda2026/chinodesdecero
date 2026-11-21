@@ -4,6 +4,7 @@ import { acciones, estadosAlcanzables } from "../cocina/acciones";
 import { BU_DUI, DUI, GEI_WO, HAO, HEN_HAO, HEN_HAO_CHI, HEN_LENG, HEN_RE, HU_LUO_BO, MAO, MI, NI_HAO, SHUI, SHUI_GUO, TAI_BANG_LE, WEI, WO_ZUO_HAO_FAN_LE, ZHE_SHI } from "../cocina/frases";
 import type { ObjetoId } from "../cocina/datos";
 import { OBJETOS_QUIZ } from "../quiz";
+import { LIVING } from "../living/cuarto";
 
 /** Todas las frases que la casa puede decir, sin repetidas por idAudio. */
 export function frasesUsadas(): Silaba[][] {
@@ -30,6 +31,10 @@ export function frasesUsadas(): Silaba[][] {
   for (const c of COMIDAS) todas.push(NOMBRES_COMIDA[c]);
   todas.push(HEN_HAO_CHI, HEN_RE, HEN_LENG, WEI, MAO, WO_ZUO_HAO_FAN_LE, MI, SHUI, SHUI_GUO, HU_LUO_BO);
   todas.push(DUI, BU_DUI, TAI_BANG_LE, HEN_HAO, HAO, NI_HAO);
+
+  // el living: cada objeto y su 这是, cada verbo y cada frase
+  for (const o of LIVING.objetos) todas.push(o.nombre, [...ZHE_SHI, ...o.nombre]);
+  for (const a of LIVING.acciones) todas.push(a.verbo, a.frase);
 
   const vistos = new Set<string>();
   return todas.filter((f) => {

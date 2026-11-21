@@ -101,6 +101,8 @@ export const FONDO_CUARTO: Record<"cocina" | "living", Capa> = {
   cocina: arte("cocina/cuarto_cocina"),
   living: arte("living/cuarto_living"),
 };
+/** La casa entera (1000x1000): los cuatro cuartos en isometría 2×2, con la puerta de entrada. Abre la web (`EntradaCasa`). */
+export const FONDO_CASA: Capa = arte("casa/casa_entera");
 /** La mesa del living vista desde arriba (1000x1000): tablero de madera sin fichas; las palabras flotan encima. */
 export const ARTE_MESA: Capa = arte("living/mesa_arriba");
 

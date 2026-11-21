@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type PointerEvent as EventoPuntero, type ReactNode, type Ref } from "react";
+import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type CSSProperties, type PointerEvent as EventoPuntero, type ReactNode, type Ref } from "react";
 import { textoHanzi } from "@/lib/silabas";
 import { OBJETOS, type EstadoCocina, type ObjetoId } from "./cocina/datos";
 import { gatoSeVe, lugarGato } from "./cocina/gato";
@@ -13,15 +13,21 @@ import { PrimerPlano } from "./primer-plano/PrimerPlano";
 import { Refri } from "./refri/Refri";
 import { Receta } from "./receta/Receta";
 import { esReceta } from "./gestos/medalla";
-import { CUARTOS_ABIERTOS, Minimapa, type Cuarto } from "./Minimapa";
+import { cuartosAbiertos, Minimapa, type Cuarto } from "./Minimapa";
 import { Living } from "./living/Living";
+import { LIVING } from "./living/cuarto";
+import { completo, progresoVacio } from "./motor/progreso";
+import { EntradaCasa } from "./EntradaCasa";
+import { RelojSolar } from "./RelojSolar";
+import type { ProgresoCuarto } from "./motor/tipos";
+import type { ControlCuarto } from "./motor/CuartoMotor";
 import { useEscenario } from "./useEscenario";
 import { Tarjetas, type CapaTarjeta } from "./Tarjetas";
 import { desbloquearAudio } from "./audio/voz";
 import { musica } from "./audio/sonido";
 import { useCasa, type AlEvento, type CasaApi, type Punto } from "./useCasa";
 import { NOMBRES_EVENTO, type NombreEvento } from "@/lib/eventos-nombres";
-import { EVENTO_AVANCE, avanceInicial, cargarAviso, cargarAvance, guardarAvance, sincronizar, subirAvance, fusionar, unirPalabras, type Avance, type DetalleAvance } from "./avance";
+import { EVENTO_AVANCE, avanceInicial, cargarAviso, cargarAvance, guardarAvance, sincronizar, subirAvance, fusionar, unirPalabras, unirCuartos, unirFichas, type Avance, type DetalleAvance } from "./avance";
 import { registrar } from "./eventos";
 import { Correo } from "@/components/pagina/Correo";
 import styles from "./Casa.module.css";
@@ -86,7 +92,16 @@ export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; re
   const [aviso, setAviso] = useState<string | null>(null);
   /** Copia en estado de avance.current.palabras, para que la mesa se vuelva a pintar. */
   const [palabras, setPalabras] = useState<readonly string[]>([]);
-  const verPalabras = useCallback(() => setPalabras(avance.current.palabras), []);
+  /** Copia en estado de avance.current.cuartos.living (objeto estable: el motor lo relee cuando cambia). */
+  const [progresoLiving, setProgresoLiving] = useState<ProgresoCuarto>(progresoVacio);
+  /** Ya dejó su correo (avance.current.correo): la puerta del living lleva a la cocina sin pedirlo. */
+  const [conCorreo, setConCorreo] = useState(false);
+  /** Lo guardado (al cargar o tras comparar con la cuenta) llega a la mesa, al living y a la puerta. */
+  const verPalabras = useCallback(() => {
+    setPalabras(avance.current.palabras);
+    setProgresoLiving((p) => avance.current.cuartos.living ?? p);
+    setConCorreo(!!avance.current.correo);
+  }, []);
 
   const guardarYSubir = useCallback(() => {
     guardarAvance(avance.current);
@@ -123,7 +138,12 @@ export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; re
           restaurarRef.current(f.estado);
         }
       } else {
-        avance.current = { ...avance.current, palabras: unirPalabras(r.palabras, avance.current.palabras) };
+        avance.current = {
+          ...avance.current,
+          palabras: unirPalabras(r.palabras, avance.current.palabras),
+          cuartos: unirCuartos(r.cuartos, avance.current.cuartos),
+          fichas: unirFichas(r.fichas, avance.current.fichas),
+        };
       }
       sucio.current = true;
       verPalabras();
@@ -140,7 +160,12 @@ export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; re
       restaurarRef.current(r.avance.estado);
       if (r.subir) guardarYSubir();
     } else {
-      avance.current = { ...avance.current, palabras: unirPalabras(r.palabras, avance.current.palabras) };
+      avance.current = {
+          ...avance.current,
+          palabras: unirPalabras(r.palabras, avance.current.palabras),
+          cuartos: unirCuartos(r.cuartos, avance.current.cuartos),
+          fichas: unirFichas(r.fichas, avance.current.fichas),
+        };
       sucio.current = true;
       guardarYSubir();
     }
@@ -198,6 +223,19 @@ export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; re
     },
     [marcar, verPalabras],
   );
+  /** El living cambió: se guarda su progreso y se suman las fichas recién ganadas. */
+  const alCambiarLiving = useCallback(
+    (p: ProgresoCuarto, nuevas: string[]) => {
+      avance.current = {
+        ...avance.current,
+        cuartos: { ...avance.current.cuartos, living: p },
+        fichas: unirFichas(avance.current.fichas, nuevas),
+      };
+      setProgresoLiving(p);
+      marcar();
+    },
+    [marcar],
+  );
   const casa = useCasa(alEvento, { alEscuchar });
   const { restaurar } = casa;
   useEffect(() => {
@@ -248,6 +286,8 @@ export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; re
       const c = d?.correo;
       if (!c) return;
       avance.current = { ...avance.current, correo: c };
+      // no espera que confirme el enlace: con el correo enviado ya puede seguir a la cocina
+      setConCorreo(true);
       programar();
     };
     const guardarYa = () => {
@@ -274,23 +314,37 @@ export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; re
     };
   }, [restaurar, intentarSync, programar, verPalabras]);
 
+  const livingCompleto = completo(LIVING, progresoLiving);
+  const abiertos = useMemo(() => cuartosAbiertos(livingCompleto, conCorreo), [livingCompleto, conCorreo]);
+
   // El aviso (enlace bueno o vencido) se muestra arriba, dentro de la casa.
+  // Siempre abre con la casa entera; después, el cuarto donde quedó: la cocina solo si ya pasó el living y dejó su correo.
   return (
     <CasaVista
       ref={ref}
       casa={casa}
       activo={activo}
+      entradaCasa
+      cuartoInicial={livingCompleto && conCorreo ? "cocina" : "living"}
+      abiertos={abiertos}
+      conCorreo={conCorreo}
       anotado={avisado}
       aviso={aviso}
       formulario={<Correo origen="pronto" />}
       palabras={palabras}
       alAbrirPalabra={alAbrirPalabra}
+      progresoLiving={progresoLiving}
+      alCambiarLiving={alCambiarLiving}
+      alEvento={alEvento}
     />
   );
 }
 
 const SIN_PALABRAS: readonly string[] = [];
 const nada = () => {};
+const LIVING_VACIO: ProgresoCuarto = progresoVacio();
+/** La vista sola (sin `Casa`, en las pruebas): los dos cuartos abiertos y la puerta del living no pide correo. */
+const TODOS_ABIERTOS = cuartosAbiertos(true, true);
 
 /** La vista de la casa: recibe el estado del hook y traduce los punteros a sus funciones. */
 export function CasaVista({
@@ -302,13 +356,34 @@ export function CasaVista({
   activo = true,
   palabras = SIN_PALABRAS,
   alAbrirPalabra = nada,
+  progresoLiving = LIVING_VACIO,
+  alCambiarLiving = nada,
+  alEvento,
+  entradaCasa = false,
+  cuartoInicial = "cocina",
+  abiertos = TODOS_ABIERTOS,
+  conCorreo = true,
 }: {
   casa: CasaApi;
+  /** Abre con la casa entera (`EntradaCasa`) y recién después muestra `cuartoInicial`. */
+  entradaCasa?: boolean;
+  /** El cuarto que se ve al cargar (con `entradaCasa`, el de cuando termina la entrada). */
+  cuartoInicial?: Cuarto;
+  /** Cuartos que el minimapa deja pisar. */
+  abiertos?: readonly Cuarto[];
+  /** Ya dejó su correo: la puerta del living completo lleva a la cocina; si no, primero lo pide. */
+  conCorreo?: boolean;
   /** Palabras ya abiertas en la mesa del living (avance.palabras). */
   palabras?: readonly string[];
   /** Se tocó una palabra en la mesa (también una ya abierta). */
   alAbrirPalabra?: (id: string) => void;
-  /** false = su pestaña está oculta: las tarjetas esperan (sin ver_metodo ni foco) hasta que vuelva a verse. */
+  /** Progreso guardado del living (avance.cuartos.living). */
+  progresoLiving?: ProgresoCuarto;
+  /** El living cambió: `nuevas` = fichas recién ganadas. */
+  alCambiarLiving?: (p: ProgresoCuarto, nuevas: string[]) => void;
+  /** Eventos del living (ficha_ganada, accion_lograda, cuarto_completo). */
+  alEvento?: AlEvento;
+  /** false = la pestaña del navegador está oculta: las tarjetas esperan (sin ver_metodo ni foco) hasta que vuelva a verse. */
   activo?: boolean;
   ref?: Ref<ControlCasa>;
   /** Pidió que le avisemos cuando abran los cuartos. */
@@ -335,9 +410,15 @@ export function CasaVista({
   const [pronto, setPronto] = useState(false);
   // Tamaño real del escenario: en celular vertical deja de ser cuadrado y la cámara se encuadra con zoom y paneo.
   const { ref: escenarioRef, tam, medido } = useEscenario();
-  // El cuarto a la vista (no se guarda: siempre se entra por la cocina). useCasa sigue montado: la cocina no se pierde.
-  const [cuarto, setCuarto] = useState<Cuarto>("cocina");
+  // La casa entera abre la web; al terminar se ve el cuarto donde quedó (lo decide Casa).
+  const [enCasaEntera, setEnCasaEntera] = useState(entradaCasa);
+  // El cuarto a la vista (no se guarda: sale del avance). useCasa sigue montado: la cocina no se pierde.
+  const [cuarto, setCuarto] = useState<Cuarto>(cuartoInicial);
   const living = cuarto === "living";
+  // La puerta del living completo, sin correo, abre la tarjeta "salida".
+  const [salida, setSalida] = useState(false);
+  /** La puerta del living, para el 厨房 cerrado del minimapa. */
+  const livingCtl = useRef<ControlCuarto>(null);
   /** Cuántas veces se cambió de cuarto: cada cambio monta un fundido nuevo (0 = recién cargado, sin fundido). */
   const [fundidos, setFundidos] = useState(0);
   const aspecto = aspectoDe(tam.w, tam.h);
@@ -370,16 +451,57 @@ export function CasaVista({
     setFundidos((n) => n + 1);
     setCuarto(c);
   };
+  const avisar = (nombre: NombreEvento, datos?: Record<string, unknown>) => (alEvento ? alEvento(nombre, datos) : registrar(nombre, datos));
+  /** La puerta del living (cuarto completo): con correo, a la cocina; sin él, primero lo pide. */
+  const salirDelLivingAhora = () => {
+    if (conCorreo) {
+      avisar("salir_cuarto", { desde: "living", a: "cocina" });
+      cambiarCuarto("cocina");
+      return;
+    }
+    avisar("pedir_correo_salida", { cuarto: "living" });
+    setSalida(true);
+  };
+  // estable para que el living (memo) no se repinte
+  const salirRef = useRef(salirDelLivingAhora);
+  useEffect(() => {
+    salirRef.current = salirDelLivingAhora;
+  });
+  const salirDelLiving = useCallback(() => salirRef.current(), []);
+  // Llegó el correo con la tarjeta "salida" abierta: se cierra y pasa a la cocina, sin esperar que confirme el enlace.
+  useEffect(() => {
+    if (!salida || !conCorreo) return;
+    setSalida(false);
+    salirRef.current();
+  }, [salida, conCorreo]);
+
+  /** El primer toque llegó durante la casa entera: la vaca de la cocina saluda al terminarla, si se queda ahí. */
+  const saludoPendiente = useRef(false);
+  const cuartoInicialRef = useRef(cuartoInicial);
+  useEffect(() => {
+    cuartoInicialRef.current = cuartoInicial;
+  });
+  const { saludar } = casa;
+  const terminarEntrada = useCallback(() => {
+    const c = cuartoInicialRef.current;
+    setEnCasaEntera(false);
+    setCuarto(c);
+    setFundidos((n) => n + 1);
+    if (saludoPendiente.current && c === "cocina") saludar();
+    saludoPendiente.current = false;
+  }, [saludar]);
   const entrar = () => {
     if (!entrada) return;
     registrar("entrar");
     desbloquearAudio(); // dentro del toque: así iOS deja sonar el audio
     musica.tocar("cocina");
     setEntrada(false);
-    casa.saludar();
+    // la vaca de la cocina saluda solo si se la ve: durante la casa entera espera; en el living no
+    if (enCasaEntera) saludoPendiente.current = true;
+    else if (!living) casa.saludar();
   };
   useImperativeHandle(ref, () => ({ entrar }));
-  const capa: CapaTarjeta | null = !activo ? null : quiz?.fase === "fin" ? "metodo" : pronto ? "pronto" : null;
+  const capa: CapaTarjeta | null = !activo ? null : quiz?.fase === "fin" ? "metodo" : salida ? "salida" : pronto ? "pronto" : null;
 
   // Pestaña oculta con el refri abierto: se sale sin aplicar nada (y la casa no queda trabada).
   const { refri, cerrarRefri } = casa;
@@ -552,8 +674,22 @@ export function CasaVista({
       )}
       <div className={styles.interior} inert={capa !== null}>
       <div ref={escenarioRef} className={styles.escenario} data-medido={medido || undefined} data-oscura={oscura || undefined}>
+        {/* la casa entera abre la web: mientras tanto no hay cuarto ni botones */}
+        {enCasaEntera ? (
+          <EntradaCasa alTerminar={terminarEntrada} />
+        ) : (
+        <>
         {living ? (
-          <Living abiertas={palabras} alAbrir={alAbrirPalabra} activo={activo} />
+          <Living
+            abiertas={palabras}
+            alAbrir={alAbrirPalabra}
+            activo={activo}
+            progreso={progresoLiving}
+            alCambiar={alCambiarLiving}
+            alEvento={alEvento}
+            alSalir={salirDelLiving}
+            ref={livingCtl}
+          />
         ) : (
         <div
           ref={mundoRef}
@@ -669,6 +805,8 @@ export function CasaVista({
           <span className={styles.jugarHz}>玩</span>
           <span data-pinyin>wán</span>
         </button>}
+        {/* en el living el reloj lo pone el motor; la cocina queda a mediodía hasta su etapa */}
+        {!living && <RelojSolar hora={12} className={styles.relojCocina} />}
         {!living && quiz && (
           <>
             <div className={styles.marcador} data-testid="marcador" aria-hidden="true">
@@ -681,8 +819,14 @@ export function CasaVista({
             )}
           </>
         )}
-        <Minimapa cuartoActual={cuarto} abiertos={CUARTOS_ABIERTOS} anotado={anotado} alCambiar={cambiarCuarto} alTocarBloqueado={() => {
+        <Minimapa cuartoActual={cuarto} abiertos={abiertos} anotado={anotado} alCambiar={cambiarCuarto} alTocarBloqueado={(c) => {
           registrar("tocar_bloqueado");
+          // la cocina no abre "pronto": se abre completando el living. Igual que su puerta cerrada:
+          // boing (si nada suena) y la bandeja muestra lo que falta; completo y sin correo, la tarjeta salida.
+          if (c === "cocina" && living && livingCtl.current) {
+            livingCtl.current.tocarPuerta();
+            return false;
+          }
           setPronto(true);
         }} />
 
@@ -737,6 +881,8 @@ export function CasaVista({
             alCerrar={() => casa.elegirRefri(null)}
           />
         )}
+        </>
+        )}
       </div>
       </div>
 
@@ -749,7 +895,10 @@ export function CasaVista({
           casa.cerrarQuiz();
           setPronto(true);
         }}
-        alCerrar={() => setPronto(false)}
+        alCerrar={() => {
+          setPronto(false);
+          setSalida(false);
+        }}
       />
     </div>
   );

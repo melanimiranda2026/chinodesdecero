@@ -1,4 +1,4 @@
-import { entrarCasa } from "./entrar";
+import { entrarCasa, guardarEnCocina, LIVING_COMPLETO, pasarEntrada } from "./entrar";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
@@ -72,8 +72,9 @@ describe("sincronizacion con la cuenta", () => {
   });
   it("GET 500: no se sube nada, ni siquiera tras un cambio local", async () => {
     const puts = red(() => json({ error: "servidor" }, 500));
+    guardarEnCocina();
     render(<Casa />);
-    await avanzar(100);
+    await pasarEntrada();
     entrarCasa();
     fireEvent.click(screen.getByRole("button", { name: "杯子" }));
     await avanzar(3000);
@@ -113,8 +114,9 @@ describe("sincronizacion con la cuenta", () => {
   it("un cambio local durante el GET se conserva", async () => {
     let soltar!: () => void;
     red(() => json(remotoCon(["r"])), () => new Promise<void>((r) => (soltar = r)));
+    guardarEnCocina();
     render(<Casa />);
-    await avanzar(10);
+    await pasarEntrada();
     entrarCasa();
     await avanzar(600); // el saludo suma ni2_hao3 mientras el GET sigue pendiente
     await act(async () => {
@@ -131,7 +133,7 @@ describe("sincronizacion con la cuenta", () => {
     let soltar!: () => void;
     red(() => json(remotoCon(["r"])), () => new Promise<void>((r) => (soltar = r)));
     render(<Casa />);
-    await avanzar(10);
+    await pasarEntrada();
     entrarCasa();
     fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
     fireEvent.change(screen.getByLabelText("Tu correo"), { target: { value: "a@b.cl" } });
@@ -183,10 +185,11 @@ describe("palabras abiertas entre dispositivos", () => {
     expect(puts).toEqual([]);
   });
   it("gana lo local: lo que se sube incluye las palabras del servidor", async () => {
-    local({ estado: estadoLimpio, escuchadas: ["a", "b"], palabras: ["ta1_ella"] });
+    // con correo y el living completo: tras la entrada, la cocina
+    local({ estado: estadoLimpio, escuchadas: ["a", "b"], palabras: ["ta1_ella"], correo: "a@b.cl", cuartos: { living: LIVING_COMPLETO } });
     const puts = red(() => json(remotoCon(["a"], estadoLimpio, ["shui2_guo3"])));
     render(<Casa />);
-    await avanzar(10);
+    await pasarEntrada();
     entrarCasa();
     fireEvent.click(screen.getByRole("button", { name: "杯子" }));
     await avanzar(3000);
@@ -198,8 +201,9 @@ describe("palabras abiertas entre dispositivos", () => {
 describe("guardado al desmontar y correo en memoria", () => {
   it("desmontar guarda lo pendiente (<500 ms)", async () => {
     sesion.hay = false;
+    guardarEnCocina();
     const { unmount } = render(<Casa />);
-    await avanzar(10);
+    await pasarEntrada();
     entrarCasa();
     await avanzar(450); // el saludo ya sumo una escuchada, el debounce no vencio
     expect(cargarAvance().escuchadas).toEqual([]);
@@ -216,7 +220,7 @@ describe("guardado al desmontar y correo en memoria", () => {
       throw new Error("bloqueado");
     });
     render(<Casa />);
-    await avanzar(10);
+    await pasarEntrada();
     entrarCasa();
     fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
     fireEvent.change(screen.getByLabelText("Tu correo"), { target: { value: "a@b.cl" } });
@@ -233,7 +237,7 @@ describe("guardado al desmontar y correo en memoria", () => {
     sesion.hay = false;
     vi.spyOn(globalThis, "fetch").mockResolvedValue(json({ ok: true }));
     render(<Casa />);
-    await avanzar(10);
+    await pasarEntrada();
     entrarCasa();
     fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
     fireEvent.change(screen.getByLabelText("Tu correo"), { target: { value: "a@b.cl" } });
@@ -251,7 +255,7 @@ describe("guardado al desmontar y correo en memoria", () => {
     sesion.hay = false;
     vi.spyOn(globalThis, "fetch").mockResolvedValue(json({ ok: true }));
     render(<Casa />);
-    await avanzar(10);
+    await pasarEntrada();
     entrarCasa();
     fireEvent.click(document.querySelector('[data-cuarto="dormitorio"]') as HTMLElement);
     fireEvent.change(screen.getByLabelText("Tu correo"), { target: { value: "a@b.cl" } });

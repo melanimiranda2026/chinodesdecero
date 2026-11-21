@@ -69,6 +69,10 @@ Mismo cuarto, misma proyección y misma paleta que la cocina. Archivos en `publi
 
 Las medidas de los muebles están en `components/casa/living/lugares.ts` (`MUEBLES_LIVING`). De ahí salen también `MESA_LIVING` (el rectángulo del tablero en el cuadro de 1000: zona de toque y centro del zoom) y `PARADA_VACA` (dónde se para la vaca, a la izquierda de la mesa). Si mueves la mesa ahí y corres `npm run arte:generar`, el dibujo y el juego se mueven juntos. Si repintas `cuarto_living` en Krita, deja la mesa donde está.
 
+## La casa entera
+
+`public/arte/casa/casa_entera` (1000 × 1000 unidades, 2000 × 2000 px) es la primera imagen de la web: los cuatro cuartos en isometría 2×2 sobre el pasto. El living va adelante con la puerta de entrada (escalón, felpudo y camino de piedras); la cocina a su izquierda, el baño a su derecha y el dormitorio al fondo. Living y cocina son los mismos dibujos de sus cuartos, achicados a la mitad; baño y dormitorio son cuartos vacíos (piso y paredes de otro color) que se llenan más adelante. Dónde va cada cuarto, la puerta y el zoom final al living salen de `components/casa/casaEntera.ts`: si repintas la casa en Krita, deja el living en su lugar.
+
 ## La vaca
 
 Sus capas están en `public/vaca/` como WebP de 800 x 800 px y se nombran en `ARTE_VACA` (`components/casa/arte/registro.ts`): `cuerpo`, `orejas`, cinco ojos y cinco hocicos. Para cambiar una capa, reemplaza el archivo con el mismo nombre (o cambia la ruta en `ARTE_VACA`). El borde blanco de sticker lo pone el código.

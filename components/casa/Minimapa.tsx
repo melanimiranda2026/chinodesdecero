@@ -11,8 +11,13 @@ const CUARTOS: { id: Cuarto; icono: string; nombre: string }[] = [
   { id: "bano", icono: "🛁", nombre: "浴室" },
 ];
 
-/** Cuartos que ya se pueden pisar. Los demás están cerrados. */
-export const CUARTOS_ABIERTOS: readonly Cuarto[] = ["cocina", "living"];
+/**
+ * Cuartos que ya se pueden pisar; los demás están cerrados. El living, siempre (es donde se entra); la cocina,
+ * cuando el living está completo y ya dejó su correo (la puerta del living lo pide). Baño y dormitorio, aún no.
+ */
+export function cuartosAbiertos(livingCompleto: boolean, conCorreo: boolean): Cuarto[] {
+  return livingCompleto && conCorreo ? ["cocina", "living"] : ["living"];
+}
 
 /**
  * Minimapa 2×2: el cuarto actual brilla, los abiertos se pueden tocar y los demás están cerrados.
@@ -30,7 +35,8 @@ export function Minimapa({
   abiertos: readonly Cuarto[];
   anotado?: boolean;
   alCambiar: (cuarto: Cuarto) => void;
-  alTocarBloqueado: (cuarto: Cuarto) => void;
+  /** Un cerrado: devuelve `false` si el que llama ya decide el sonido (la puerta del living); si no, boing. */
+  alTocarBloqueado: (cuarto: Cuarto) => void | false;
 }) {
   const marca = anotado ? "⏳" : "🔒";
   return (
@@ -56,8 +62,7 @@ export function Minimapa({
                 alCambiar(id);
                 return;
               }
-              sfx("boing", "cocina");
-              alTocarBloqueado(id);
+              if (alTocarBloqueado(id) !== false) sfx("boing", "cocina");
             }}
           >
             {icono}

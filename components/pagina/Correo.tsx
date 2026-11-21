@@ -42,9 +42,13 @@ export function Correo({ origen, boton = "Avísame", listo: textoListo }: { orig
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email: correo.trim(), consentimiento: conAviso, origen, sitio, avance: avanceParaEnviar() }),
       });
-      if (r.ok) {
+      // 502: el servidor guardó el correo (y el consentimiento) pero el enlace no salió: aquí también queda guardado,
+      // así la puerta del living se abre igual; el aviso pide reintentar solo por el enlace.
+      if (r.ok || r.status === 502) {
         guardarCorreo(correo.trim(), conAviso);
         registrar("dejar_correo", { origen, consentimiento: conAviso });
+      }
+      if (r.ok) {
         setResultado(conAviso ? "aviso" : "correo");
       } else {
         setError(

@@ -23,11 +23,12 @@ beforeEach(() => {
 });
 
 describe("POST /api/eventos", () => {
-  it("la lista blanca trae los nombres de la casa y los del puzzle", () => {
+  it("la lista blanca trae los nombres de la casa, los del puzzle y los de los cuartos", () => {
     expect([...NOMBRES_EVENTO]).toEqual([
       "entrar", "tocar_objeto", "abrir_acciones", "gesto_completo", "quiz_inicio", "encontrar_gato", "quiz_completo",
       "ver_metodo", "tocar_bloqueado", "dejar_correo", "clic_tiktok", "descargar_material",
       "abrir_minijuego", "puzzle_nivel_inicio", "puzzle_nivel_completo", "puzzle_sin_vasos", "puzzle_vasos_correo",
+      "accion_lograda", "ficha_ganada", "cuarto_completo", "pedir_correo_salida", "salir_cuarto",
     ]);
   });
   it("lote válido → 204 e inserta", async () => {

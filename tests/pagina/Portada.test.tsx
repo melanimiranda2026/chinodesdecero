@@ -16,11 +16,11 @@ vi.mock("@/components/casa/audio/sonido", () => ({
 const registrar = vi.fn();
 vi.mock("@/components/casa/eventos", () => ({ registrar: (...a: unknown[]) => registrar(...a) }));
 
-import { decir, desbloquearAudio, callar, enfocarJuego } from "@/components/casa/audio/voz";
-import { CLAVE_JUEGO, EVENTO_JUEGO } from "@/components/pagina/juego";
+import { callar, decir, desbloquearAudio, enfocarJuego } from "@/components/casa/audio/voz";
 import { musica } from "@/components/casa/audio/sonido";
 import { Portada } from "@/components/pagina/Portada";
 import { PORTADA } from "@/components/pagina/contenido";
+import { guardarEnCocina, pasarEntrada } from "../casa/entrar";
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -42,7 +42,7 @@ describe("Portada: hero", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Tus primeras palabras en chino, jugando" })).toBeTruthy();
     expect(PORTADA.h1).toBe("Tus primeras palabras en chino, jugando");
     expect(screen.getByTestId("subtitulo").textContent).toBe("Toca, arrastra, escucha y explora con la vaca.");
-    expect(screen.getByText("Gratis · sin registrarte · funciona en tu celular")).toBeTruthy();
+    expect(screen.getByText("Gratis · funciona en tu celular")).toBeTruthy();
     expect(screen.queryByRole("link", { name: "Cómo funciona" })).toBeNull();
     expect(screen.queryByRole("button", { name: /Jugar ahora/ })).toBeNull();
     // venta honesta
@@ -51,12 +51,16 @@ describe("Portada: hero", () => {
   });
 
   it("el primer toque dentro de la ventana del juego arranca, sin tarjeta de entrada", async () => {
+    // con correo y el living completo: tras la casa entera se ve la cocina (con su 玩)
+    guardarEnCocina();
     const { container } = render(<Portada />);
     const ventana = container.querySelector<HTMLElement>("[data-ventana]")!;
     expect(within(ventana).queryByRole("dialog")).toBeNull();
     expect(within(ventana).queryByRole("button", { name: "Jugar" })).toBeNull();
     fireEvent.pointerDown(ventana.querySelector("[data-casa]")!);
     expect(desbloquearAudio).toHaveBeenCalledTimes(1);
+    await pasarEntrada();
+    localStorage.clear();
     // el minimapa y el 玩 también están dentro
     expect(within(ventana).getByRole("button", { name: "玩" })).toBeTruthy();
     fireEvent.click(within(ventana).getByRole("button", { name: "卧室 🔒" }));
@@ -68,7 +72,6 @@ describe("Portada: hero", () => {
     const barra = container.querySelector<HTMLElement>("[data-barra]")!;
     const copia = barra.cloneNode(true) as HTMLElement;
     copia.querySelectorAll("[data-pinyin]").forEach((n) => n.remove());
-    expect(copia.textContent).toContain("厨房");
     expect(copia.textContent ?? "").not.toMatch(/[a-záéíóúñ]{2,}/i);
     for (const el of barra.querySelectorAll("[aria-label]")) expect(el.getAttribute("aria-label")).not.toMatch(/[a-z]{2,}/i);
   });
@@ -81,70 +84,63 @@ describe("Portada: hero", () => {
   });
 });
 
-describe("Portada: pestañas", () => {
-  afterEach(() => window.history.replaceState(null, "", "/"));
-
-  it("hay un tablist con dos pestañas y 厨房 seleccionada", () => {
-    render(<Portada />);
-    const lista = screen.getByRole("tablist");
-    const tabs = within(lista).getAllByRole("tab");
-    expect(tabs).toHaveLength(2);
-    expect(within(lista).getByRole("tab", { name: /厨房/ }).getAttribute("aria-selected")).toBe("true");
-    expect(within(lista).getByRole("tab", { name: /拼图/ }).getAttribute("aria-selected")).toBe("false");
-    expect(document.getElementById("juegos")).toBeTruthy();
-  });
-
-  it("clic en 拼图 muestra el puzzle, deja la casa oculta y calla la voz", () => {
+describe("Portada: la portada es la casa", () => {
+  it("no hay pestañas ni botón del puzzle, y no se monta el puzzle", () => {
     const { container } = render(<Portada />);
+    expect(screen.queryAllByRole("tab")).toHaveLength(0);
+    expect(screen.queryByRole("tablist")).toBeNull();
+    expect(screen.queryByRole("button", { name: /拼图/ })).toBeNull();
     expect(container.querySelector('[data-juego="puzzle"]')).toBeNull();
-    vi.mocked(callar).mockClear();
-    fireEvent.click(screen.getByRole("tab", { name: /拼图/ }));
-    expect(callar).toHaveBeenCalled();
-    expect(screen.getByRole("tab", { name: /拼图/ }).getAttribute("aria-selected")).toBe("true");
-    expect(container.querySelector<HTMLElement>('[data-juego="cocina"]')!.hidden).toBe(true);
-    const panel = container.querySelector<HTMLElement>('[data-juego="puzzle"]')!;
-    expect(panel.hidden).toBe(false);
-    expect(panel.querySelector('[aria-label="Piezas"]')).toBeTruthy();
-    // volver: el puzzle sigue montado pero oculto
-    fireEvent.click(screen.getByRole("tab", { name: /厨房/ }));
-    expect(container.querySelector<HTMLElement>('[data-juego="cocina"]')!.hidden).toBe(false);
-    expect(container.querySelector<HTMLElement>('[data-juego="puzzle"]')!.hidden).toBe(true);
+    expect(container.querySelector("[data-casa]")).toBeTruthy();
   });
 
-  it("la pestaña que se ve es la única que puede sonar: la portada enfoca su juego", () => {
+  it("la marca va antes del juego y el h1 después", () => {
+    const { container } = render(<Portada />);
+    const marca = screen.getByText(PORTADA.marca);
+    const ventana = container.querySelector("[data-ventana]")!;
+    const h1 = screen.getByRole("heading", { level: 1 });
+    const antes = Node.DOCUMENT_POSITION_PRECEDING;
+    expect(ventana.compareDocumentPosition(marca) & antes).toBeTruthy();
+    expect(ventana.compareDocumentPosition(h1) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("la confianza ya no dice 'sin registrarte' y nada visible dice 'chino desde cero'", () => {
+    render(<Portada />);
+    expect(PORTADA.confianza).toBe("Gratis · funciona en tu celular");
+    expect(PORTADA.confianza).not.toMatch(/sin registrarte/i);
+    expect(document.body.textContent ?? "").not.toMatch(/chino desde cero|chino comprensible/i);
+  });
+
+  it("pestaña del navegador oculta: la casa deja de estar activa y la voz se corta; al volver sigue jugable", async () => {
+    let estado: DocumentVisibilityState = "visible";
+    const desc = Object.getOwnPropertyDescriptor(Document.prototype, "visibilityState");
+    Object.defineProperty(document, "visibilityState", { configurable: true, get: () => estado });
+    try {
+      render(<Portada />);
+      await pasarEntrada();
+      fireEvent.click(screen.getByRole("button", { name: "沙发" }));
+      vi.mocked(callar).mockClear();
+      estado = "hidden";
+      act(() => { document.dispatchEvent(new Event("visibilitychange")); });
+      expect(callar).toHaveBeenCalled();
+      estado = "visible";
+      act(() => { document.dispatchEvent(new Event("visibilitychange")); });
+      vi.mocked(decir).mockClear();
+      fireEvent.click(screen.getByRole("button", { name: "椅子" }));
+      await act(async () => { await vi.advanceTimersByTimeAsync(400); });
+      expect(decir).toHaveBeenCalled();
+    } finally {
+      delete (document as { visibilityState?: unknown }).visibilityState;
+      if (desc) Object.defineProperty(Document.prototype, "visibilityState", desc);
+    }
+  });
+
+  it("la casa es el juego enfocado: enfocarJuego('cocina') al montar y null al desmontar", () => {
     vi.mocked(enfocarJuego).mockClear();
     const { unmount } = render(<Portada />);
     expect(enfocarJuego).toHaveBeenLastCalledWith("cocina");
-    fireEvent.click(screen.getByRole("tab", { name: /拼图/ }));
-    expect(enfocarJuego).toHaveBeenLastCalledWith("puzzle");
-    fireEvent.click(screen.getByRole("tab", { name: /厨房/ }));
-    expect(enfocarJuego).toHaveBeenLastCalledWith("cocina");
     unmount();
     expect(enfocarJuego).toHaveBeenLastCalledWith(null);
-    localStorage.removeItem(CLAVE_JUEGO);
-  });
-
-  it("elegir una pestaña la recuerda en localStorage y en la URL", () => {
-    render(<Portada />);
-    fireEvent.click(screen.getByRole("tab", { name: /拼图/ }));
-    expect(localStorage.getItem(CLAVE_JUEGO)).toBe("puzzle");
-    expect(window.location.search).toContain("juego=puzzle");
-    localStorage.removeItem(CLAVE_JUEGO);
-  });
-
-  it("con ?juego=puzzle arranca en el puzzle", () => {
-    window.history.replaceState(null, "", "/?juego=puzzle");
-    const { container } = render(<Portada />);
-    expect(screen.getByRole("tab", { name: /拼图/ }).getAttribute("aria-selected")).toBe("true");
-    expect(container.querySelector<HTMLElement>('[data-juego="cocina"]')!.hidden).toBe(true);
-  });
-
-  it("un CustomEvent EVENTO_JUEGO cambia la pestaña", () => {
-    render(<Portada />);
-    act(() => {
-      window.dispatchEvent(new CustomEvent(EVENTO_JUEGO, { detail: "puzzle" }));
-    });
-    expect(screen.getByRole("tab", { name: /拼图/ }).getAttribute("aria-selected")).toBe("true");
   });
 });
 
@@ -194,16 +190,14 @@ describe("Portada: CSS del marco", () => {
   });
 });
 
-describe("Portada: barra de la ventana en pantallas angostas", () => {
+describe("Portada: CSS de escritorio", () => {
   const css = readFileSync(join(process.cwd(), "components/pagina/portada.module.css"), "utf8");
-  const bloque = css.match(/@media \(max-width: 4\d\d px?\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? css.match(/@media \(max-width: 4\d\dpx\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+  it("la ventana se centra y usa casi todo el alto, sin pestañas", () => {
+    expect(css).toMatch(/min\(92vw, 82svh\)|min\(92vw, 82vh\)/);
+    expect(css).not.toMatch(/\.pestana/);
+  });
 
-  it("bajo ~420 px: sin puntos, pinyin bajo el hanzi y pestañas de al menos 44 px", () => {
-    expect(bloque).toMatch(/\.puntos\s*\{[^}]*display:\s*none/);
-    expect(bloque).toMatch(/\.pestana\s*\{[^}]*display:\s*flex[^}]*flex-direction:\s*column/);
-    expect(bloque).toMatch(/\.pestana\s*\{[^}]*justify-content:\s*center/);
-    expect(bloque).toMatch(/\.pestana\s*\{[^}]*padding:\s*0 6px/);
-    expect(bloque).toMatch(/\.pestana\s*\{[^}]*min-height:\s*44px/);
-    expect(bloque).toMatch(/\.pestana \.py\s*\{[^}]*font-size:\s*11px/);
+  it("sin restos del puzzle en la portada (el puzzle vive solo en /puzzle)", () => {
+    expect(css).not.toMatch(/\.panelPuzzle/);
   });
 });

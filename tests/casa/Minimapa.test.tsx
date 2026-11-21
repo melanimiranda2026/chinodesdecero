@@ -4,7 +4,9 @@ import { fireEvent, render, screen } from "@testing-library/react";
 vi.mock("@/components/casa/audio/sonido", () => ({ sfx: vi.fn() }));
 
 import { sfx } from "@/components/casa/audio/sonido";
-import { CUARTOS_ABIERTOS, Minimapa, type Cuarto } from "@/components/casa/Minimapa";
+import { cuartosAbiertos, Minimapa, type Cuarto } from "@/components/casa/Minimapa";
+
+const CUARTOS_ABIERTOS = cuartosAbiertos(true, true);
 
 function montar(cuartoActual: Cuarto) {
   const alCambiar = vi.fn();
@@ -14,8 +16,11 @@ function montar(cuartoActual: Cuarto) {
 }
 
 describe("Minimapa", () => {
-  it("abre cocina y living", () => {
-    expect(CUARTOS_ABIERTOS).toEqual(["cocina", "living"]);
+  it("el living siempre está abierto; la cocina, solo con el living completo y el correo", () => {
+    expect(cuartosAbiertos(false, false)).toEqual(["living"]);
+    expect(cuartosAbiertos(true, false)).toEqual(["living"]);
+    expect(cuartosAbiertos(false, true)).toEqual(["living"]);
+    expect(cuartosAbiertos(true, true)).toEqual(["cocina", "living"]);
   });
 
   it("desde la cocina, 客厅 está abierto y cambia de cuarto", () => {
@@ -41,5 +46,16 @@ describe("Minimapa", () => {
     fireEvent.click(screen.getByRole("button", { name: "厨房" }));
     expect(alCambiar).toHaveBeenCalledWith("cocina");
     expect(alTocarBloqueado).not.toHaveBeenCalled();
+  });
+
+  it("un cerrado hace boing, salvo que alTocarBloqueado devuelva false (el que llama decide el sonido)", () => {
+    vi.mocked(sfx).mockClear();
+    const alTocarBloqueado = vi.fn((c: Cuarto) => (c === "cocina" ? false : undefined));
+    render(<Minimapa cuartoActual="living" abiertos={["living"]} alCambiar={() => {}} alTocarBloqueado={alTocarBloqueado} />);
+    fireEvent.click(screen.getByRole("button", { name: /厨房/ }));
+    expect(alTocarBloqueado).toHaveBeenCalledWith("cocina");
+    expect(sfx).not.toHaveBeenCalledWith("boing", "cocina");
+    fireEvent.click(screen.getByRole("button", { name: /卧室/ }));
+    expect(sfx).toHaveBeenCalledWith("boing", "cocina");
   });
 });

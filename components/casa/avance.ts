@@ -1,8 +1,9 @@
 import { crearClienteNavegador } from "@/lib/supabase/navegador";
-import { avanceInicial, esObjeto, validarAvance, type Avance, type MedallaGuardada, MAX_ESCUCHADAS, unirPalabras } from "./avance-validar";
+import type { CuartoId } from "./motor/tipos";
+import { avanceInicial, esObjeto, validarAvance, type Avance, type MedallaGuardada, MAX_ESCUCHADAS, unirPalabras, unirFichas } from "./avance-validar";
 
 export {
-  avanceInicial, avancePendiente, estadoValido, unirPalabras, validarAvance, MAX_ESCUCHADAS, MAX_AVANCE_PENDIENTE,
+  avanceInicial, avancePendiente, estadoValido, unirPalabras, unirFichas, validarAvance, MAX_ESCUCHADAS, MAX_AVANCE_PENDIENTE,
   type Avance, type MedallaGuardada,
 } from "./avance-validar";
 
@@ -99,7 +100,7 @@ export type ResultadoSync =
   /** Gana el servidor (también en empate): hay que adoptarlo (con las palabras de ambos). `subir`: lo local aportó palabras que el servidor no tiene. */
   | { tipo: "remoto"; avance: Avance; subir: boolean }
   /** Gana lo local: el servidor está vacío o tiene menos escuchadas. `palabras`: unión de ambos lados. */
-  | { tipo: "subir"; palabras: string[] };
+  | { tipo: "subir"; palabras: string[]; cuartos: Avance["cuartos"]; fichas: string[] };
 
 /**
  * Compara con la cuenta SIN escribir nada. Solo `subir` autoriza a subir, y únicamente si el GET
@@ -112,14 +113,16 @@ export async function sincronizar(a: Avance, sucio = false): Promise<ResultadoSy
     const r = await fetch("/api/avance");
     if (!r.ok) return { tipo: "fallo" };
     const { datos } = (await r.json()) as { datos: unknown };
-    if (!esObjeto(datos)) return { tipo: "subir", palabras: a.palabras }; // servidor vacío
+    if (!esObjeto(datos)) return { tipo: "subir", palabras: a.palabras, cuartos: a.cuartos, fichas: a.fichas }; // servidor vacío
     const remoto = validarAvance(datos);
     const palabras = unirPalabras(remoto.palabras, a.palabras);
-    if (sucio && a.escuchadas.length > remoto.escuchadas.length) return { tipo: "subir", palabras };
+    const cuartos = unirCuartos(remoto.cuartos, a.cuartos);
+    const fichas = unirFichas(remoto.fichas, a.fichas);
+    if (sucio && a.escuchadas.length > remoto.escuchadas.length) return { tipo: "subir", palabras, cuartos, fichas };
     return {
       tipo: "remoto",
-      avance: { ...remoto, palabras, correo: a.correo ?? remoto.correo },
-      subir: palabras.length > remoto.palabras.length,
+      avance: { ...remoto, palabras, cuartos, fichas, correo: a.correo ?? remoto.correo },
+      subir: palabras.length > remoto.palabras.length || fichas.length > remoto.fichas.length || creceCuartos(remoto.cuartos, cuartos),
     };
   } catch {
     return { tipo: "fallo" };
@@ -127,6 +130,26 @@ export async function sincronizar(a: Avance, sucio = false): Promise<ResultadoSy
 }
 
 const ORDEN: Record<MedallaGuardada, number> = { bronce: 1, plata: 2, oro: 3 };
+
+/** true si la unión tiene algún objeto o logro que el remoto no tenía. */
+function creceCuartos(remoto: Avance["cuartos"], union: Avance["cuartos"]): boolean {
+  return (Object.keys(union) as CuartoId[]).some(
+    (id) => union[id]!.tocados.length > (remoto[id]?.tocados.length ?? 0) || union[id]!.logros.length > (remoto[id]?.logros.length ?? 0),
+  );
+}
+
+export function unirCuartos(remoto: Avance["cuartos"], local: Avance["cuartos"]): Avance["cuartos"] {
+  const r: Avance["cuartos"] = {};
+  for (const id of new Set([...Object.keys(remoto), ...Object.keys(local)]) as Set<CuartoId>) {
+    const a = remoto[id];
+    const b = local[id];
+    r[id] = {
+      tocados: [...new Set([...(a?.tocados ?? []), ...(b?.tocados ?? [])])],
+      logros: [...new Set([...(a?.logros ?? []), ...(b?.logros ?? [])])],
+    };
+  }
+  return r;
+}
 
 /**
  * Une lo local con lo del servidor cuando hubo cambios locales durante el GET.
@@ -143,6 +166,8 @@ export function fusionar(local: Avance, remoto: Avance, estadoCambio: boolean): 
     medallas,
     escuchadas: [...new Set([...remoto.escuchadas, ...local.escuchadas])].slice(0, MAX_ESCUCHADAS),
     palabras: unirPalabras(remoto.palabras, local.palabras),
+    cuartos: unirCuartos(remoto.cuartos, local.cuartos),
+    fichas: unirFichas(remoto.fichas, local.fichas),
   };
   const correo = local.correo ?? remoto.correo;
   if (correo) a.correo = correo;

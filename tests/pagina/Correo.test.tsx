@@ -60,6 +60,20 @@ describe("Correo", () => {
     expect(screen.queryByRole("status")).toBeNull();
     await waitFor(() => expect((screen.getByRole("button", { name: "Avísame" }) as HTMLButtonElement).disabled).toBe(false));
   });
+  it("502: el servidor ya guardó el correo, así que se guarda aquí y avisa a la casa (la puerta del living se abre)", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(respuesta(502));
+    const avisos: unknown[] = [];
+    const oir = (e: Event) => avisos.push((e as CustomEvent).detail);
+    window.addEventListener(EVENTO_AVANCE, oir);
+    render(<Correo origen="salida" />);
+    fireEvent.change(screen.getByLabelText("Tu correo"), { target: { value: "a@b.cl" } });
+    fireEvent.click(screen.getByRole("button", { name: "Avísame" }));
+    await screen.findByRole("alert");
+    window.removeEventListener(EVENTO_AVANCE, oir);
+    expect(cargarAvance().correo).toBe("a@b.cl");
+    expect(avisos).toEqual([{ correo: "a@b.cl", avisar: false }]);
+  });
+
   it("dos submit seguidos hacen un solo fetch", () => {
     const f = vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise(() => {}));
     const { container } = render(<Correo origen="pie" />);
@@ -123,7 +137,7 @@ describe("Correo", () => {
     enviar();
     await screen.findByRole("status");
     const cuerpo = JSON.parse((f.mock.calls[0][1] as RequestInit).body as string);
-    expect(cuerpo.avance).toEqual({ estado: ESTADO_INICIAL, medallas: { cortar: "oro" }, escuchadas: ["x"], palabras: [] });
+    expect(cuerpo.avance).toEqual({ estado: ESTADO_INICIAL, medallas: { cortar: "oro" }, escuchadas: ["x"], palabras: [], cuartos: {}, fichas: [] });
   });
 
   it("el campo trampa está oculto y fuera del orden de foco; si se llena, viaja como `sitio`", async () => {

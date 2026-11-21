@@ -1,63 +1,35 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Casa, type ControlCasa } from "@/components/casa/Casa";
-import { callar, enfocarJuego } from "@/components/casa/audio/voz";
-import { Puzzle } from "@/components/puzzle/Puzzle";
-import { CLAVE_JUEGO, EVENTO_JUEGO, juegoInicial, recordarJuego, type Juego } from "./juego";
+import { enfocarJuego } from "@/components/casa/audio/voz";
 import { PORTADA } from "./contenido";
 import { BotonMudo } from "./BotonMudo";
 import styles from "./portada.module.css";
 
-const PESTAÑAS: { id: Juego; icono: string; hanzi: string; pinyin: string }[] = [
-  { id: "cocina", icono: "🍳", hanzi: "厨房", pinyin: "chú fáng" },
-  { id: "puzzle", icono: "🧩", hanzi: "拼图", pinyin: "pīn tú" },
-];
+/** La pestaña del navegador se ve: si se oculta, la casa deja de estar activa (se corta la voz). */
+function suscribirVisible(aviso: () => void) {
+  document.addEventListener("visibilitychange", aviso);
+  return () => document.removeEventListener("visibilitychange", aviso);
+}
+const pestanaVisible = () => document.visibilityState !== "hidden";
+const visibleEnServidor = () => true;
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(" ");
 
 /**
- * Primera pantalla de la landing: el texto de venta y, al lado (o abajo en celular), la casa jugable
- * dentro de una ventana. Dentro de la ventana no hay español: la barra lleva 🍳 厨房 y el botón 全屏.
+ * Primera pantalla de la landing: la marca pequeña arriba, la casa jugable grande y al centro dentro de una
+ * ventana, y debajo el h1 y la línea de confianza. Dentro de la ventana no hay español: la barra lleva 🔊 y 全屏.
  */
 export function Portada() {
   const casa = useRef<ControlCasa>(null);
-  const ventana = useRef<HTMLDivElement>(null);
   const [grande, setGrande] = useState(false);
-  const [juego, setJuego] = useState<Juego>("cocina");
-  const [puzzleMontado, setPuzzleMontado] = useState(false);
+  const visible = useSyncExternalStore(suscribirVisible, pestanaVisible, visibleEnServidor);
 
-  // pestaña inicial (?juego= o la última guardada) y cambios desde las tarjetas de "Elige tu juego"
+  // la casa es el único juego de la portada: su canal de audio es el enfocado
   useEffect(() => {
-    let guardado: string | null = null;
-    try {
-      guardado = localStorage.getItem(CLAVE_JUEGO);
-    } catch {
-      /* sin almacenamiento */
-    }
-    const inicial = juegoInicial(window.location.search, guardado);
-    enfocarJuego(inicial);
-    if (inicial === "puzzle") {
-      setPuzzleMontado(true);
-      setJuego("puzzle");
-    }
-    const alCambiar = (e: Event) => {
-      const j = (e as CustomEvent<Juego>).detail;
-      if (j === "cocina" || j === "puzzle") cambiar(j);
-    };
-    window.addEventListener(EVENTO_JUEGO, alCambiar);
-    return () => {
-      window.removeEventListener(EVENTO_JUEGO, alCambiar);
-      enfocarJuego(null);
-    };
+    enfocarJuego("cocina");
+    return () => enfocarJuego(null);
   }, []);
-
-  const cambiar = (j: Juego) => {
-    // la pestaña oculta se calla: la frase que sonaba se corta y lo que su juego siga pidiendo ya no suena
-    callar();
-    enfocarJuego(j);
-    if (j === "puzzle") setPuzzleMontado(true);
-    setJuego(j);
-  };
 
   // 全屏: la ventana llena la pantalla (CSS, sin la API de pantalla completa: iOS) y la página no se mueve debajo.
   useEffect(() => {
@@ -74,45 +46,16 @@ export function Portada() {
 
   return (
     <section className={styles.hero} aria-labelledby="hero-titulo">
-      <div className={styles.texto}>
-        <h1 id="hero-titulo" className={styles.h1}>
-          {PORTADA.h1}
-        </h1>
-        <p className={styles.subtitulo} data-testid="subtitulo">
-          {PORTADA.subtitulo}
-        </p>
-        <p className={styles.confianza}>{PORTADA.confianza}</p>
-      </div>
+      <p className={styles.marca}>{PORTADA.marca}</p>
 
-      <div ref={ventana} id="juegos" className={cx(styles.ventana, grande && styles.grande)} data-ventana data-grande={grande || undefined}>
+      <div className={cx(styles.ventana, grande && styles.grande)} data-ventana data-grande={grande || undefined}>
         <div className={styles.barra} data-barra>
           <span className={styles.puntos} aria-hidden="true">
             <i />
             <i />
             <i />
           </span>
-          <div className={styles.pestanas} role="tablist">
-            {PESTAÑAS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                role="tab"
-                id={`pestana-${p.id}`}
-                aria-selected={juego === p.id}
-                aria-controls={`juego-${p.id}`}
-                className={cx(styles.pestana, juego === p.id && styles.activa)}
-                onClick={() => {
-                  cambiar(p.id);
-                  recordarJuego(p.id);
-                }}
-              >
-                <span aria-hidden="true">{p.icono}</span> <span lang="zh">{p.hanzi}</span>{" "}
-                <span className={styles.py} data-pinyin>
-                  {p.pinyin}
-                </span>
-              </button>
-            ))}
-          </div>
+          <span className={styles.relleno} aria-hidden="true" />
           <BotonMudo className={cx(styles.pantalla, styles.mudo)} />
           <button
             type="button"
@@ -129,15 +72,20 @@ export function Portada() {
           </button>
         </div>
         <div className={styles.marco}>
-          <div id="juego-cocina" role="tabpanel" aria-labelledby="pestana-cocina" data-juego="cocina" className={styles.panel} hidden={juego !== "cocina"}>
-            <Casa ref={casa} activo={juego === "cocina"} />
+          <div className={styles.panel} data-juego="cocina">
+            <Casa ref={casa} activo={visible} />
           </div>
-          {puzzleMontado && (
-            <div id="juego-puzzle" role="tabpanel" aria-labelledby="pestana-puzzle" data-juego="puzzle" className={cx(styles.panel, styles.panelPuzzle)} hidden={juego !== "puzzle"}>
-              <Puzzle ventana />
-            </div>
-          )}
         </div>
+      </div>
+
+      <div className={styles.texto}>
+        <h1 id="hero-titulo" className={styles.h1}>
+          {PORTADA.h1}
+        </h1>
+        <p className={styles.subtitulo} data-testid="subtitulo">
+          {PORTADA.subtitulo}
+        </p>
+        <p className={styles.confianza}>{PORTADA.confianza}</p>
       </div>
     </section>
   );

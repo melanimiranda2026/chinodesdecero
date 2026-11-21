@@ -196,4 +196,8 @@ describe("Portada: CSS de escritorio", () => {
     expect(css).toMatch(/min\(92vw, 82svh\)|min\(92vw, 82vh\)/);
     expect(css).not.toMatch(/\.pestana/);
   });
+
+  it("sin restos del puzzle en la portada (el puzzle vive solo en /puzzle)", () => {
+    expect(css).not.toMatch(/\.panelPuzzle/);
+  });
 });

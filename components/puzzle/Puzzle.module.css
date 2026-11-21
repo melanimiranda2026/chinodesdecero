@@ -12,7 +12,7 @@
   gap: 14px;
 }
 .juego ::selection { background: #ffd24a; color: var(--tinta); }
-/* En su propia página ocupa toda la pantalla; en la ventana de la portada, solo lo que necesita. */
+/* Su página ocupa toda la pantalla. */
 .enPagina { min-height: 100svh; }
 /* En su propia página el menú fijo va arriba: la barra se pega justo debajo. */
 .enPagina .barra { top: calc(var(--alto-menu, 0px) + 8px); }

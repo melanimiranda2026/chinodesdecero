@@ -58,9 +58,15 @@
   from { transform: rotateY(0deg); }
   to { transform: rotateY(720deg); }
 }
-/* sin giro: solo aparece y se desvanece (misma duración) */
+/* sin giro ni escala: solo aparece y se desvanece (misma duración) */
+@keyframes ganadaFundido {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { opacity: 0; }
+}
 @media (prefers-reduced-motion: reduce) {
-  .ganada { animation: ganadaVida 1.6s linear both; }
+  .ganada { animation: ganadaFundido 1.6s linear both; }
   .ganada .gira { animation: none; }
 }
 

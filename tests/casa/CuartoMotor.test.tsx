@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 vi.mock("@/components/casa/audio/voz", () => ({
   decir: vi.fn(() => Promise.resolve(true)),
@@ -392,5 +394,15 @@ describe("CuartoMotor", () => {
     expect(container.querySelector('[role="img"][aria-label="早上"]')).not.toBeNull();
     expect(container.querySelectorAll("[data-bandeja] [data-silueta]").length).toBe(3);
     expect(container.querySelectorAll("[data-bandeja] [data-hanzi]").length).toBe(1);
+  });
+
+  it("movimiento reducido: la ficha ganada solo aparece y se desvanece (sin escala)", () => {
+    const css = readFileSync(join(process.cwd(), "components/casa/motor/Motor.module.css"), "utf8");
+    const reducido = [...css.matchAll(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/g)].map((m) => m[1]).join("\n");
+    const nombre = reducido.match(/\.ganada \{ animation: (\w+)/)?.[1];
+    expect(nombre).toBeTruthy();
+    const frames = css.match(new RegExp(`@keyframes ${nombre} \\{([\\s\\S]*?)\\n\\}`))?.[1] ?? "";
+    expect(frames).toMatch(/opacity/);
+    expect(frames).not.toMatch(/scale|transform/);
   });
 });

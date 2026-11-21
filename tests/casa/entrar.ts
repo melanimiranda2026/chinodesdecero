@@ -13,10 +13,16 @@ export function entrarCasa() {
 }
 
 /**
- * Deja pasar la entrada de la casa (casa entera → puerta → zoom) esperando, sin tocar: así el primer toque
- * de la prueba sigue siendo el primero. Con relojes falsos.
+ * Toca el Play de la casa entera (es el primer toque: desbloquea el audio) y deja pasar la entrada
+ * (puerta → zoom). Si la entrada ya empezó (otro toque antes), solo espera. Con relojes falsos.
  */
 export async function pasarEntrada() {
+  if (!document.querySelector("[data-entrada]")) throw new Error("no hay casa entera");
+  const play = document.querySelector("[data-entrada] [data-play]");
+  if (play) {
+    fireEvent.pointerDown(play);
+    fireEvent.click(play);
+  }
   await act(async () => { await vi.advanceTimersByTimeAsync(ENTRADA_MS); });
 }
 

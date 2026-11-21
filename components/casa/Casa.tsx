@@ -398,7 +398,8 @@ export function CasaVista({
   const sinClick = useRef(false);
   const [arrObj, setArrObj] = useState<{ id: ObjetoId; x: number; y: number } | null>(null);
   const [arrVaca, setArrVaca] = useState<Punto | null>(null);
-  // Ya no hay tarjeta de entrada: el primer toque en la casa (o "Jugar ahora") desbloquea el audio.
+  // Ya no hay tarjeta de entrada: el primer toque en la casa (el Play de la casa entera, o "Jugar ahora")
+  // desbloquea el audio; con la casa entera, recién ahí empieza la entrada.
   const [entrada, setEntrada] = useState(true);
   // El aviso del enlace se ve arriba y se cierra con ✕ o solo a los 8 s.
   const [avisoCerrado, setAvisoCerrado] = useState<string | null>(null);
@@ -676,7 +677,7 @@ export function CasaVista({
       <div ref={escenarioRef} className={styles.escenario} data-medido={medido || undefined} data-oscura={oscura || undefined}>
         {/* la casa entera abre la web: mientras tanto no hay cuarto ni botones */}
         {enCasaEntera ? (
-          <EntradaCasa alTerminar={terminarEntrada} />
+          <EntradaCasa alTerminar={terminarEntrada} empezada={!entrada} />
         ) : (
         <>
         {living ? (

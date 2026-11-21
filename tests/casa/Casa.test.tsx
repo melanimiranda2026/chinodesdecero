@@ -1,7 +1,7 @@
 import { entrarCasa, guardarEnCocina, LIVING_COMPLETO, pasarEntrada } from "./entrar";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import type { MutableRefObject } from "react";
+import { createRef, type MutableRefObject } from "react";
 
 vi.mock("@/components/casa/audio/voz", () => ({
   decir: vi.fn(() => Promise.resolve(true)),
@@ -15,7 +15,8 @@ vi.mock("@/components/casa/audio/sonido", () => ({
 
 import { sfx } from "@/components/casa/audio/sonido";
 import { decir, desbloquearAudio } from "@/components/casa/audio/voz";
-import { Casa, CasaVista } from "@/components/casa/Casa";
+import { Casa, CasaVista, type ControlCasa } from "@/components/casa/Casa";
+import { ENTRADA_MS } from "@/components/casa/EntradaCasa";
 import { useCasa, type AlEvento, type CasaApi, type OpcionesCasa } from "@/components/casa/useCasa";
 import { ANCLAS, FREGADERO, OBJETOS, junto } from "@/components/casa/cocina/datos";
 import { acciones } from "@/components/casa/cocina/acciones";
@@ -330,7 +331,7 @@ describe("Casa: quiz, guardas y tarjetas", () => {
     expect(decirMock.mock.calls.some((c) => c[0] === OBJETOS.beizi.nombre)).toBe(true);
   });
 
-  it("primer click (teclado) en 杯子: gana el objeto, el saludo se salta", async () => {
+  it("click (teclado) en 杯子 apenas entra tras Play: gana el objeto, el saludo se salta", async () => {
     guardarEnCocina();
     render(<Casa />);
     await pasarEntrada();
@@ -346,7 +347,7 @@ describe("Casa: quiz, guardas y tarjetas", () => {
     expect(decirMock.mock.calls.map((c) => c[0])).not.toContainEqual(NI_HAO);
   });
 
-  it("primer toque (pointerdown + click en el mismo instante) en 杯子: gana el objeto", async () => {
+  it("toque (pointerdown + click) en 杯子 apenas entra tras Play: gana el objeto", async () => {
     guardarEnCocina();
     render(<Casa />);
     await pasarEntrada();
@@ -360,7 +361,7 @@ describe("Casa: quiz, guardas y tarjetas", () => {
     expect(within(screen.getByTestId("globo")).getByText("杯")).toBeTruthy();
   });
 
-  it("primer toque en el piso vacío: la vaca saluda 你好", async () => {
+  it("tras Play, en la cocina la vaca saluda 你好", async () => {
     guardarEnCocina();
     render(<Casa />);
     await pasarEntrada();
@@ -666,12 +667,64 @@ describe("Casa: la entrada y la puerta del living", () => {
     f.mockRestore();
   });
 
-  it("un toque salta la entrada: es el primer toque (audio) y, si queda en la cocina, la vaca saluda 你好", async () => {
+  it("la casa entera espera el Play: sin tocarlo no entra ni suena nada", async () => {
+    vi.mocked(desbloquearAudio).mockClear();
+    render(<Casa />);
+    const entrada = document.querySelector<HTMLElement>("[data-entrada]")!;
+    expect(entrada.getAttribute("data-fase")).toBe("espera");
+    expect(within(entrada).getByRole("button", { name: "开始" })).toBeTruthy();
+    await avanzar(10_000);
+    expect(document.querySelector("[data-entrada]")).not.toBeNull();
+    expect(entrada.getAttribute("data-fase")).toBe("espera");
+    expect(desbloquearAudio).not.toHaveBeenCalled();
+    expect(decirMock).not.toHaveBeenCalled();
+  });
+
+  it("Play es el primer toque: desbloquea el audio una vez, la vaca camina y después el cuarto", async () => {
+    vi.mocked(desbloquearAudio).mockClear();
+    const eventos: string[] = [];
+    render(<Casa onEvento={(n) => { eventos.push(n); }} />);
+    const play = screen.getByRole("button", { name: "开始" });
+    fireEvent.pointerDown(play);
+    fireEvent.click(play);
+    expect(desbloquearAudio).toHaveBeenCalledTimes(1);
+    const entrada = document.querySelector<HTMLElement>("[data-entrada]")!;
+    expect(entrada.getAttribute("data-fase")).toBe("camina");
+    expect(screen.queryByRole("button", { name: "开始" })).toBeNull();
+    await avanzar(ENTRADA_MS);
+    expect(document.querySelector("[data-entrada]")).toBeNull();
+    expect(enLiving()).toBe(true);
+    expect(desbloquearAudio).toHaveBeenCalledTimes(1);
+  });
+
+  it("con teclado (click sin pointerdown) Play también entra, una sola vez", () => {
+    vi.mocked(desbloquearAudio).mockClear();
+    render(<Casa />);
+    fireEvent.click(screen.getByRole("button", { name: "开始" }));
+    expect(desbloquearAudio).toHaveBeenCalledTimes(1);
+    expect(document.querySelector("[data-entrada]")!.getAttribute("data-fase")).toBe("camina");
+  });
+
+  it("ControlCasa.entrar() desde afuera también empieza la entrada", async () => {
+    const ref = createRef<ControlCasa>();
+    render(<Casa ref={ref} />);
+    act(() => ref.current!.entrar());
+    expect(document.querySelector("[data-entrada]")!.getAttribute("data-fase")).toBe("camina");
+    await avanzar(ENTRADA_MS);
+    expect(enLiving()).toBe(true);
+  });
+
+  it("un toque durante la caminata la salta y, si queda en la cocina, la vaca saluda 你好", async () => {
     vi.mocked(desbloquearAudio).mockClear();
     guardarEnCocina();
     render(<Casa />);
-    await avanzar(10);
-    fireEvent.click(document.querySelector<HTMLElement>("[data-entrada]")!);
+    const play = screen.getByRole("button", { name: "开始" });
+    fireEvent.pointerDown(play);
+    fireEvent.click(play);
+    await avanzar(100);
+    const entrada = document.querySelector<HTMLElement>("[data-entrada]")!;
+    fireEvent.pointerDown(entrada);
+    fireEvent.click(entrada);
     expect(desbloquearAudio).toHaveBeenCalledTimes(1);
     expect(document.querySelector("[data-entrada]")).toBeNull();
     expect(enCocina()).toBe(true);
@@ -681,6 +734,7 @@ describe("Casa: la entrada y la puerta del living", () => {
 
   it("saltar la entrada hacia el living: la vaca de la cocina no saluda", async () => {
     render(<Casa />);
+    fireEvent.click(screen.getByRole("button", { name: "开始" }));
     await avanzar(10);
     fireEvent.click(document.querySelector<HTMLElement>("[data-entrada]")!);
     expect(enLiving()).toBe(true);

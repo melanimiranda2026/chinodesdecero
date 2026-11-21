@@ -10,11 +10,11 @@ import { Globo } from "../Globo";
 import { RelojSolar } from "../RelojSolar";
 import type { AlEvento } from "../useCasa";
 import { useEscenario } from "../useEscenario";
-import { Vaca } from "../Vaca";
+import { Vaca, VacaSentada } from "../Vaca";
 import { Bandeja } from "./Bandeja";
 import { FichaGanada } from "./FichaGanada";
 import { completo, fichaId, fichasDe, horaDe, todasLasFichas } from "./progreso";
-import { PASO_MS, silabasDeFichas, useCuarto } from "./useCuarto";
+import { silabasDeFichas, useCuarto } from "./useCuarto";
 import type { CuartoId, DefCuarto, ProgresoCuarto } from "./tipos";
 import cs from "../Casa.module.css";
 import styles from "./Motor.module.css";
@@ -107,7 +107,7 @@ export function CuartoMotor({
   const estiloVaca: CSSProperties = {
     left: pct(c.vaca.x),
     top: pct(c.vaca.y),
-    transition: `left ${PASO_MS}ms ease-in-out, top ${PASO_MS}ms ease-in-out`,
+    transition: `left ${c.pasoMs}ms ease-in-out, top ${c.pasoMs}ms ease-in-out`,
   };
 
   return (
@@ -156,16 +156,20 @@ export function CuartoMotor({
           data-pose={c.pose ?? undefined}
           role="img"
           aria-label="牛"
-          className={cx(cs.vaca, styles.vaca, c.pose === "sentada" && cs.vacaSentada)}
+          className={cx(cs.vaca, styles.vaca)}
           style={estiloVaca}
         >
           <div className={cs.sombra} />
-          <Vaca
-            ojos={sorpresa ? "sorpresa" : c.pose === "mira" ? "izquierda" : "abiertos"}
-            hocico={c.hocico}
-            orejas={sorpresa ? "arriba" : "normales"}
-            salta={sorpresa}
-          />
+          {c.pose === "sentada" ? (
+            <VacaSentada />
+          ) : (
+            <Vaca
+              ojos={sorpresa ? "sorpresa" : c.pose === "mira" ? "izquierda" : "abiertos"}
+              hocico={c.hocico}
+              orejas={sorpresa ? "arriba" : "normales"}
+              salta={sorpresa}
+            />
+          )}
         </div>
       </div>
 

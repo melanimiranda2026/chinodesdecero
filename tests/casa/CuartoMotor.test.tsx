@@ -17,6 +17,8 @@ vi.mock("@/components/casa/audio/sonido", () => ({
 import { callar, decir } from "@/components/casa/audio/voz";
 import { sfx } from "@/components/casa/audio/sonido";
 import { CuartoMotor } from "@/components/casa/motor/CuartoMotor";
+import { ARTE_VACA_SENTADA } from "@/components/casa/arte/registro";
+import { BORDE } from "@/components/casa/Vaca";
 import { PASO_MS, POSE_MS } from "@/components/casa/motor/useCuarto";
 import { fichaId, progresoVacio } from "@/components/casa/motor/progreso";
 import type { DefCuarto, ProgresoCuarto } from "@/components/casa/motor/tipos";
@@ -34,7 +36,7 @@ const DEF: DefCuarto = {
   hora: [7, 11],
   salida: "cocina",
   objetos: [
-    { id: "shafa", nombre: SOFA, zona: { x: 500, y: 300, w: 200, h: 120 }, pie: { x: 560, y: 520 }, acciones: ["zuo"] },
+    { id: "shafa", nombre: SOFA, zona: { x: 500, y: 300, w: 200, h: 120 }, pie: { x: 560, y: 520 }, asiento: { x: 600, y: 380 }, acciones: ["zuo"] },
     { id: "yizi", nombre: SILLA, zona: { x: 420, y: 650, w: 100, h: 100 }, pie: { x: 470, y: 820 }, acciones: ["zuo"] },
     { id: "zhuozi", nombre: MESA, zona: { x: 380, y: 450, w: 250, h: 150 }, pie: { x: 330, y: 700 }, acciones: [], abre: "mesa" },
   ],
@@ -431,4 +433,59 @@ describe("CuartoMotor", () => {
     const reducido = [...css.matchAll(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/g)].map((m) => m[1]).join("\n");
     expect(reducido).toMatch(/\.zona\[data-pista\]::after \{ animation: none/);
   });
+  it("sentada: después de la frase la vaca se sube al asiento con el dibujo sentado y luego vuelve al pie, de pie", async () => {
+    let terminar: (v: boolean) => void = () => {};
+    vi.mocked(decir).mockImplementation((s) =>
+      textoHanzi(s) === "我坐下" ? new Promise<boolean>((r) => { terminar = r; }) : Promise.resolve(true),
+    );
+    const { container } = montar();
+    const sentada = () => container.querySelector<HTMLImageElement>("[data-vaca] img[data-vaca-sentada]");
+    const dePie = () => container.querySelector("[data-vaca] [data-capa=cuerpo]");
+    fireEvent.click(zona("沙发"));
+    await avanzar(400);
+    fireEvent.click(pildora());
+    await avanzar(PASO_MS + 100);
+    // durante la frase: de pie, en el pie del sofá
+    expect(parseFloat(vaca(container).style.left)).toBeCloseTo(56, 2);
+    expect(sentada()).toBeNull();
+    await act(async () => { terminar(true); });
+    // la pose: en el asiento y con el dibujo de la vaca sentada (borde de sticker), sin las capas de pie
+    expect(parseFloat(vaca(container).style.left)).toBeCloseTo(60, 2);
+    expect(parseFloat(vaca(container).style.top)).toBeCloseTo(38, 2);
+    expect(sentada()!.getAttribute("src")).toBe(ARTE_VACA_SENTADA);
+    const borde = sentada()!.parentElement!.style.filter;
+    expect(borde.match(/drop-shadow/g)?.length).toBe(BORDE.match(/drop-shadow/g)!.length);
+    expect(dePie()).toBeNull();
+    await avanzar(POSE_MS + 100);
+    expect(vaca(container).getAttribute("data-pose")).toBeNull();
+    expect(parseFloat(vaca(container).style.left)).toBeCloseTo(56, 2);
+    expect(parseFloat(vaca(container).style.top)).toBeCloseTo(52, 2);
+    expect(sentada()).toBeNull();
+    expect(dePie()).not.toBeNull();
+  });
+
+  it("sentada sin asiento en los datos: se sienta donde está (dibujo sentado en el pie)", async () => {
+    const { container } = montar();
+    fireEvent.click(zona("椅子"));
+    await avanzar(400);
+    fireEvent.click(pildora());
+    await avanzar(PASO_MS + 100);
+    expect(vaca(container).getAttribute("data-pose")).toBe("sentada");
+    expect(parseFloat(vaca(container).style.left)).toBeCloseTo(47, 2);
+    expect(container.querySelector("[data-vaca] img[data-vaca-sentada]")).not.toBeNull();
+  });
+
+  it("pestaña oculta con la vaca sentada en el asiento: baja de pie al pie del objeto", async () => {
+    const { container, desactivar } = montar();
+    fireEvent.click(zona("沙发"));
+    await avanzar(400);
+    fireEvent.click(pildora());
+    await avanzar(PASO_MS + 100);
+    expect(vaca(container).getAttribute("data-pose")).toBe("sentada");
+    desactivar();
+    expect(vaca(container).getAttribute("data-pose")).toBeNull();
+    expect(parseFloat(vaca(container).style.left)).toBeCloseTo(56, 2);
+    expect(parseFloat(vaca(container).style.top)).toBeCloseTo(52, 2);
+  });
+
 });

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { ARTE_VACA } from "./arte/registro";
+import { ARTE_VACA, ARTE_VACA_SENTADA } from "./arte/registro";
 
 export type Ojos = keyof typeof ARTE_VACA.ojos;
 export type Hocico = keyof typeof ARTE_VACA.hocico;
@@ -11,6 +11,18 @@ const HOCICOS = Object.keys(ARTE_VACA.hocico) as Hocico[];
 /** Borde blanco de sticker en dos pasadas (antes eran cinco drop-shadow: caro de pintar en celulares). */
 export const BORDE = "drop-shadow(0 0 2px #fff) drop-shadow(0 0 2px #fff)";
 const capa = { position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" } as const;
+
+/** La vaca sentada (pose 坐): una sola imagen, mismo cuadrado y mismo borde de sticker que la de pie. */
+export function VacaSentada() {
+  return (
+    <div style={{ position: "relative", width: "100%", aspectRatio: "1" }}>
+      <div style={{ position: "absolute", inset: 0, filter: BORDE }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={ARTE_VACA_SENTADA} alt="" draggable={false} data-vaca-sentada style={capa} />
+      </div>
+    </div>
+  );
+}
 
 /** La vaca: todas las capas montadas, solo cambia la opacidad. */
 export function Vaca({

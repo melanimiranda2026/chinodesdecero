@@ -35,7 +35,8 @@ export function Minimapa({
   abiertos: readonly Cuarto[];
   anotado?: boolean;
   alCambiar: (cuarto: Cuarto) => void;
-  alTocarBloqueado: (cuarto: Cuarto) => void;
+  /** Un cerrado: devuelve `false` si el que llama ya decide el sonido (la puerta del living); si no, boing. */
+  alTocarBloqueado: (cuarto: Cuarto) => void | false;
 }) {
   const marca = anotado ? "⏳" : "🔒";
   return (
@@ -61,8 +62,7 @@ export function Minimapa({
                 alCambiar(id);
                 return;
               }
-              sfx("boing", "cocina");
-              alTocarBloqueado(id);
+              if (alTocarBloqueado(id) !== false) sfx("boing", "cocina");
             }}
           >
             {icono}

@@ -20,6 +20,7 @@ import { completo, progresoVacio } from "./motor/progreso";
 import { EntradaCasa } from "./EntradaCasa";
 import { RelojSolar } from "./RelojSolar";
 import type { ProgresoCuarto } from "./motor/tipos";
+import type { ControlCuarto } from "./motor/CuartoMotor";
 import { useEscenario } from "./useEscenario";
 import { Tarjetas, type CapaTarjeta } from "./Tarjetas";
 import { desbloquearAudio } from "./audio/voz";
@@ -416,6 +417,8 @@ export function CasaVista({
   const living = cuarto === "living";
   // La puerta del living completo, sin correo, abre la tarjeta "salida".
   const [salida, setSalida] = useState(false);
+  /** La puerta del living, para el 厨房 cerrado del minimapa. */
+  const livingCtl = useRef<ControlCuarto>(null);
   /** Cuántas veces se cambió de cuarto: cada cambio monta un fundido nuevo (0 = recién cargado, sin fundido). */
   const [fundidos, setFundidos] = useState(0);
   const aspecto = aspectoDe(tam.w, tam.h);
@@ -685,6 +688,7 @@ export function CasaVista({
             alCambiar={alCambiarLiving}
             alEvento={alEvento}
             alSalir={salirDelLiving}
+            ref={livingCtl}
           />
         ) : (
         <div
@@ -815,8 +819,14 @@ export function CasaVista({
             )}
           </>
         )}
-        <Minimapa cuartoActual={cuarto} abiertos={abiertos} anotado={anotado} alCambiar={cambiarCuarto} alTocarBloqueado={() => {
+        <Minimapa cuartoActual={cuarto} abiertos={abiertos} anotado={anotado} alCambiar={cambiarCuarto} alTocarBloqueado={(c) => {
           registrar("tocar_bloqueado");
+          // la cocina no abre "pronto": se abre completando el living. Igual que su puerta cerrada:
+          // boing (si nada suena) y la bandeja muestra lo que falta; completo y sin correo, la tarjeta salida.
+          if (c === "cocina" && living && livingCtl.current) {
+            livingCtl.current.tocarPuerta();
+            return false;
+          }
           setPronto(true);
         }} />
 

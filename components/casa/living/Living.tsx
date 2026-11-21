@@ -1,10 +1,10 @@
 "use client";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState, type Ref } from "react";
 import { COLOR_TONO } from "@/lib/tonos";
 import { callar } from "../audio/voz";
 import { sfx } from "../audio/sonido";
 import { apuntar } from "../camara";
-import { CuartoMotor } from "../motor/CuartoMotor";
+import { CuartoMotor, type ControlCuarto } from "../motor/CuartoMotor";
 import type { ProgresoCuarto } from "../motor/tipos";
 import type { AlEvento } from "../useCasa";
 import { LIVING } from "./cuarto";
@@ -74,7 +74,7 @@ const DECORADO = (
  * desde arriba. Abrir una palabra en la mesa no cuenta como ficha ganada.
  */
 export const Living = memo(function Living({
-  abiertas, alAbrir, activo, progreso, alCambiar, alEvento, alSalir,
+  abiertas, alAbrir, activo, progreso, alCambiar, alEvento, alSalir, ref,
 }: {
   abiertas: readonly string[];
   /** Se tocó una palabra en la mesa (también una ya abierta). */
@@ -87,6 +87,8 @@ export const Living = memo(function Living({
   alEvento?: AlEvento;
   /** Tocar la puerta con el cuarto completo. */
   alSalir: () => void;
+  /** La puerta, para el 厨房 cerrado del minimapa. */
+  ref?: Ref<ControlCuarto>;
 }) {
   const [fase, setFase] = useState<Fase>("cuarto");
   const faseRef = useRef<Fase>("cuarto");
@@ -137,6 +139,7 @@ export const Living = memo(function Living({
         alEvento={alEvento}
         alSalir={alSalir}
         alAbrir={entrarALaMesa}
+        ref={ref}
         camara={entra ? CAMARA_MESA : undefined}
         sorpresa={entra}
         decorado={DECORADO}

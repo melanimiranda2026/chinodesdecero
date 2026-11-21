@@ -47,4 +47,15 @@ describe("Minimapa", () => {
     expect(alCambiar).toHaveBeenCalledWith("cocina");
     expect(alTocarBloqueado).not.toHaveBeenCalled();
   });
+
+  it("un cerrado hace boing, salvo que alTocarBloqueado devuelva false (el que llama decide el sonido)", () => {
+    vi.mocked(sfx).mockClear();
+    const alTocarBloqueado = vi.fn((c: Cuarto) => (c === "cocina" ? false : undefined));
+    render(<Minimapa cuartoActual="living" abiertos={["living"]} alCambiar={() => {}} alTocarBloqueado={alTocarBloqueado} />);
+    fireEvent.click(screen.getByRole("button", { name: /厨房/ }));
+    expect(alTocarBloqueado).toHaveBeenCalledWith("cocina");
+    expect(sfx).not.toHaveBeenCalledWith("boing", "cocina");
+    fireEvent.click(screen.getByRole("button", { name: /卧室/ }));
+    expect(sfx).toHaveBeenCalledWith("boing", "cocina");
+  });
 });

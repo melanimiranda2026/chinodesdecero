@@ -679,4 +679,47 @@ describe("Casa: la entrada y la puerta del living", () => {
     expect(document.querySelector('[data-capa="salida"]')).toBeNull();
     expect(enLiving()).toBe(true);
   });
+
+  const cocinaMapa = () => document.querySelector<HTMLElement>('[data-cuarto="cocina"]')!;
+  const TEXTO_PRONTO = "Este cuarto abre pronto. Deja tu correo y marca la casilla: te avisamos.";
+
+  it("厨房 cerrado en el minimapa desde el living: boing y la bandeja parpadea, sin tarjeta pronto", async () => {
+    render(<Casa />);
+    await pasarEntrada();
+    entrarCasa();
+    vi.mocked(sfx).mockClear();
+    fireEvent.click(cocinaMapa());
+    expect(screen.queryByText(TEXTO_PRONTO)).toBeNull();
+    expect(vi.mocked(sfx).mock.calls.filter(([n]) => n === "boing").length).toBe(1);
+    expect(document.querySelector("[data-parpadea]")).not.toBeNull();
+    expect(enLiving()).toBe(true);
+  });
+
+  it("厨房 cerrado en el minimapa mientras suena el nombre: sin boing, la bandeja parpadea igual", async () => {
+    render(<Casa />);
+    await pasarEntrada();
+    entrarCasa();
+    fireEvent.click(screen.getByRole("button", { name: "沙发" }));
+    vi.mocked(sfx).mockClear();
+    fireEvent.click(cocinaMapa());
+    expect(vi.mocked(sfx).mock.calls.filter(([n]) => n === "boing").length).toBe(0);
+    expect(document.querySelector("[data-parpadea]")).not.toBeNull();
+    expect(screen.queryByText(TEXTO_PRONTO)).toBeNull();
+  });
+
+  it("living completo sin correo: 厨房 en el minimapa abre la capa salida, no la de pronto", async () => {
+    guardar({ cuartos: { living: LIVING_COMPLETO } });
+    render(<Casa />);
+    await pasarEntrada();
+    fireEvent.click(cocinaMapa());
+    expect(document.querySelector('[data-capa="salida"]')).not.toBeNull();
+    expect(screen.queryByText(TEXTO_PRONTO)).toBeNull();
+  });
+
+  it("卧室 y 浴室 cerrados desde el living siguen abriendo la tarjeta pronto", async () => {
+    render(<Casa />);
+    await pasarEntrada();
+    fireEvent.click(screen.getByRole("button", { name: "卧室 🔒" }));
+    expect(screen.getByText(TEXTO_PRONTO)).toBeTruthy();
+  });
 });

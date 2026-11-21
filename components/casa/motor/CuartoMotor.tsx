@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
 import { textoHanzi } from "@/lib/silabas";
 import { sfx } from "../audio/sonido";
 import { FondoCuarto } from "../arte/Capa";
@@ -37,10 +37,16 @@ export const PUERTA = (() => {
   return { x: Math.round(c.x) - 35, y: Math.round(c.y) - 45, w: 70, h: 90 };
 })();
 
+/** Lo que la casa puede pedirle al cuarto desde afuera (el minimapa). */
+export interface ControlCuarto {
+  /** Lo mismo que tocar la puerta: cerrada, boing (si nada suena) y la bandeja parpadea; completa, `alSalir`. */
+  tocarPuerta(): void;
+}
+
 const tieneFondo = (id: CuartoId): id is keyof typeof FONDO_CUARTO => id in FONDO_CUARTO;
 
 export function CuartoMotor({
-  def, progreso: progresoGuardado, activo, alCambiar, alEvento, alSalir, alAbrir, hijos, camara = VER_TODO, sorpresa = false, decorado,
+  def, progreso: progresoGuardado, activo, alCambiar, alEvento, alSalir, alAbrir, hijos, camara = VER_TODO, sorpresa = false, decorado, ref,
 }: {
   def: DefCuarto;
   progreso: ProgresoCuarto;
@@ -59,6 +65,7 @@ export function CuartoMotor({
   sorpresa?: boolean;
   /** Dibujos sobre los muebles, dentro del mundo (el zoom los lleva); debajo de las zonas de toque. */
   decorado?: ReactNode;
+  ref?: Ref<ControlCuarto>;
 }) {
   const c = useCuarto(def, { progreso: progresoGuardado, alCambiar, alEvento, activo, alAbrir });
   const { ref: raiz, tam, medido } = useEscenario();
@@ -78,6 +85,7 @@ export function CuartoMotor({
     clearTimeout(parpadeoT.current);
     parpadeoT.current = setTimeout(() => setParpadeo(0), PARPADEO_MS);
   };
+  useImperativeHandle(ref, () => ({ tocarPuerta }));
 
   const sil = silabasDeFichas(def);
   const todas = todasLasFichas(def).map((id) => ({ id, silabas: sil.get(id)! }));

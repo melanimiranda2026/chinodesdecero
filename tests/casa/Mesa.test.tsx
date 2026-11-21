@@ -34,7 +34,7 @@ beforeEach(() => {
 });
 
 describe("Mesa vista desde arriba", () => {
-  it("muestra las 50 palabras, cada una con hanzi y pinyin; el nombre es el hanzi", () => {
+  it("muestra las 50 palabras como fichas de mahjong: solo el hanzi, sin pinyin; el nombre es el hanzi", () => {
     montar();
     const lista = [...fichas()];
     expect(lista).toHaveLength(50);
@@ -44,7 +44,7 @@ describe("Mesa vista desde arriba", () => {
       expect(b.tagName).toBe("BUTTON");
       expect(b.getAttribute("aria-label")).toBe(hz);
       expect(b.textContent).toContain(hz);
-      expect(b.textContent).toContain(p.s.map(([, py]) => py).join(""));
+      expect(b.textContent).toBe(hz);
     });
   });
 

@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { textoHanzi } from "@/lib/silabas";
-import { COLOR_TONO } from "@/lib/tonos";
 import { callar, decir } from "../audio/voz";
 import { ARTE_MESA } from "../arte/registro";
 import { Capa, VISTA_CUARTO } from "../arte/Capa";
@@ -129,14 +128,9 @@ export function Mesa({
                 style={desfase(i)}
                 onClick={(e) => tocar(p, e.currentTarget)}
               >
-                <span className={styles.tejaHz} data-hanzi-teja data-largo={[...hz].length}>{hz}</span>
-                <span className={styles.tejaPy}>
-                  {/* cada sílaba entera (inline-block, sin cortes): si no cabe, la línea se parte entre sílabas */}
-                  {p.s.map(([, py, t], j) => (
-                    <span key={j} data-silaba className={styles.tejaSil} style={{ color: COLOR_TONO[t] }}>
-                      {py}
-                    </span>
-                  ))}
+                {/* ficha de mahjong: solo el hanzi (el pinyin vive en la ficha abierta); 2-3 caracteres van en columna */}
+                <span className={styles.tejaCara}>
+                  <span className={styles.tejaHz} data-hanzi-teja data-largo={[...hz].length}>{hz}</span>
                 </span>
               </button>
             );

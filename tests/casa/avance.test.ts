@@ -12,7 +12,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe("avance", () => {
   it("sin nada guardado devuelve el inicial", () => {
-    expect(cargarAvance()).toEqual({ estado: ESTADO_INICIAL, medallas: {}, escuchadas: [] });
+    expect(cargarAvance()).toEqual({ estado: ESTADO_INICIAL, medallas: {}, escuchadas: [], palabras: [] });
   });
   it("si localStorage.getItem lanza, devuelve el inicial; guardar no lanza", () => {
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
@@ -131,5 +131,36 @@ describe("fusionar", () => {
     const f = fusionar({ ...local, correo: "l@x.cl" }, { ...remoto, escuchadas: muchas }, false);
     expect(f.correo).toBe("l@x.cl");
     expect(f.escuchadas.length).toBe(MAX_ESCUCHADAS);
+  });
+});
+
+describe("palabras abiertas", () => {
+  it("un avance viejo sin palabras da []", () => {
+    expect(validarAvance({ estado: {}, medallas: {}, escuchadas: [] }).palabras).toEqual([]);
+  });
+  it("filtra ids desconocidos, repetidos y no-strings", () => {
+    const v = validarAvance({ estado: {}, medallas: {}, escuchadas: [], palabras: ["xi1_hong2_shi4", "no_existe", "xi1_hong2_shi4", 3] });
+    expect(v.palabras).toEqual(["xi1_hong2_shi4"]);
+  });
+  it("avanceInicial trae palabras []", () => {
+    expect(avanceInicial().palabras).toEqual([]);
+  });
+  it("la fusion une las palabras sin repetir", () => {
+    const f = fusionar(
+      { ...avanceInicial(), palabras: ["ta1_ella", "shui2_guo3"] },
+      { ...avanceInicial(), palabras: ["xi1_hong2_shi4", "ta1_ella"] },
+      false,
+    );
+    expect(f.palabras).toEqual(["xi1_hong2_shi4", "ta1_ella", "shui2_guo3"]);
+  });
+});
+
+import { avancePendiente } from "@/components/casa/avance";
+
+describe("avancePendiente con palabras", () => {
+  it("deja pasar las palabras validas y descarta el correo", () => {
+    const p = avancePendiente({ ...avanceInicial(), palabras: ["ta1_ella", "no_existe"], correo: "a@b.cl" });
+    expect(p?.palabras).toEqual(["ta1_ella"]);
+    expect(p).not.toHaveProperty("correo");
   });
 });

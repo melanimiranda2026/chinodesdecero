@@ -1,5 +1,6 @@
 import { ACOPLADOS, ESTADO_INICIAL, VALORES, type EstadoCocina, type ObjetoId } from "./cocina/datos";
 import { estadosAlcanzables } from "./cocina/acciones";
+import { PALABRAS } from "./living/palabras";
 import { bytes, MAX_CUERPO } from "@/lib/limite";
 
 /** Validación pura del avance: la usan el navegador y el servidor (sin clientes de Supabase). */
@@ -10,16 +11,25 @@ export interface Avance {
   estado: EstadoCocina;
   medallas: Partial<Record<string, MedallaGuardada>>;
   escuchadas: string[];
+  /** Ids de PALABRAS abiertas, sin repetir, en el orden en que se abrieron. */
+  palabras: string[];
   correo?: string;
 }
 
 const MEDALLAS = ["oro", "plata", "bronce"];
 export const MAX_ESCUCHADAS = 500;
 
+const IDS_PALABRAS = new Set(PALABRAS.map((p) => p.id));
+
+/** Une listas de ids de palabras: solo ids de PALABRAS, sin repetir, en el orden visto, con tope. */
+export const unirPalabras = (...listas: unknown[][]): string[] =>
+  [...new Set(listas.flat().filter((x): x is string => typeof x === "string" && IDS_PALABRAS.has(x)))].slice(0, PALABRAS.length);
+
 export const avanceInicial = (): Avance => ({
   estado: { ...ESTADO_INICIAL },
   medallas: {},
   escuchadas: [],
+  palabras: [],
 });
 
 export const esObjeto = (v: unknown): v is Record<string, unknown> =>
@@ -59,7 +69,8 @@ export function validarAvance(v: unknown): Avance {
   const escuchadas = Array.isArray(v.escuchadas)
     ? [...new Set(v.escuchadas.filter((x): x is string => typeof x === "string" && x.length > 0 && x.length < 80))].slice(0, MAX_ESCUCHADAS)
     : [];
-  const a: Avance = { estado: estadoValido(v.estado), medallas, escuchadas };
+  const palabras = Array.isArray(v.palabras) ? unirPalabras(v.palabras) : [];
+  const a: Avance = { estado: estadoValido(v.estado), medallas, escuchadas, palabras };
   if (typeof v.correo === "string" && v.correo) a.correo = v.correo;
   return a;
 }

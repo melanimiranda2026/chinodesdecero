@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as EventoPuntero, type ReactNode, type Ref } from "react";
+import { useCallback, useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type PointerEvent as EventoPuntero, type ReactNode, type Ref } from "react";
 import { textoHanzi } from "@/lib/silabas";
 import { OBJETOS, type EstadoCocina, type ObjetoId } from "./cocina/datos";
 import { gatoSeVe, lugarGato } from "./cocina/gato";
@@ -13,13 +13,15 @@ import { PrimerPlano } from "./primer-plano/PrimerPlano";
 import { Refri } from "./refri/Refri";
 import { Receta } from "./receta/Receta";
 import { esReceta } from "./gestos/medalla";
-import { Minimapa } from "./Minimapa";
+import { CUARTOS_ABIERTOS, Minimapa, type Cuarto } from "./Minimapa";
+import { Living } from "./living/Living";
+import { useEscenario } from "./useEscenario";
 import { Tarjetas, type CapaTarjeta } from "./Tarjetas";
 import { desbloquearAudio } from "./audio/voz";
 import { musica } from "./audio/sonido";
 import { useCasa, type AlEvento, type CasaApi, type Punto } from "./useCasa";
 import { NOMBRES_EVENTO, type NombreEvento } from "@/lib/eventos-nombres";
-import { EVENTO_AVANCE, avanceInicial, cargarAviso, cargarAvance, guardarAvance, sincronizar, subirAvance, fusionar, type Avance, type DetalleAvance } from "./avance";
+import { EVENTO_AVANCE, avanceInicial, cargarAviso, cargarAvance, guardarAvance, sincronizar, subirAvance, fusionar, unirPalabras, type Avance, type DetalleAvance } from "./avance";
 import { registrar } from "./eventos";
 import { Correo } from "@/components/pagina/Correo";
 import styles from "./Casa.module.css";
@@ -82,6 +84,9 @@ export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; re
   /** Pidió que le avisemos (marcó la casilla): solo entonces "ya estás anotada/o". */
   const [avisado, setAvisado] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
+  /** Copia en estado de avance.current.palabras, para que la mesa se vuelva a pintar. */
+  const [palabras, setPalabras] = useState<readonly string[]>([]);
+  const verPalabras = useCallback(() => setPalabras(avance.current.palabras), []);
 
   const guardarYSubir = useCallback(() => {
     guardarAvance(avance.current);
@@ -117,8 +122,11 @@ export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; re
           restaurado.current = f.estado;
           restaurarRef.current(f.estado);
         }
+      } else {
+        avance.current = { ...avance.current, palabras: unirPalabras(r.palabras, avance.current.palabras) };
       }
       sucio.current = true;
+      verPalabras();
       guardarYSubir();
       return;
     }
@@ -126,15 +134,18 @@ export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; re
       // un correo dejado mientras volaba el GET gana sobre el del servidor
       const correo = avance.current.correo ?? r.avance.correo;
       avance.current = correo ? { ...r.avance, correo } : r.avance;
-      sucio.current = false; // no queda nada que subir
+      sucio.current = r.subir; // solo queda por subir lo que el servidor no tenía (palabras)
       guardarAvance(avance.current);
       restaurado.current = r.avance.estado;
       restaurarRef.current(r.avance.estado);
+      if (r.subir) guardarYSubir();
     } else {
+      avance.current = { ...avance.current, palabras: unirPalabras(r.palabras, avance.current.palabras) };
       sucio.current = true;
       guardarYSubir();
     }
-  }, [guardarYSubir]);
+    verPalabras();
+  }, [guardarYSubir, verPalabras]);
 
   /** Guarda tras ~500 ms sin cambios; mientras no se haya comparado con la cuenta, lo intenta de nuevo. */
   const programar = useCallback(() => {
@@ -177,6 +188,16 @@ export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; re
     },
     [marcar],
   );
+  /** La mesa avisa en cada toque, también de una palabra ya abierta: esas no cuentan. */
+  const alAbrirPalabra = useCallback(
+    (id: string) => {
+      if (avance.current.palabras.includes(id)) return;
+      avance.current = { ...avance.current, palabras: [...avance.current.palabras, id] };
+      verPalabras();
+      marcar();
+    },
+    [marcar, verPalabras],
+  );
   const casa = useCasa(alEvento, { alEscuchar });
   const { restaurar } = casa;
   useEffect(() => {
@@ -197,6 +218,7 @@ export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; re
     avance.current = cargarAvance();
     restaurado.current = avance.current.estado;
     restaurar(avance.current.estado);
+    verPalabras();
     setAvisado(cargarAviso());
     listo.current = true;
 
@@ -250,11 +272,25 @@ export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; re
         guardarAvance(avance.current); // lo pendiente (<500 ms) no se pierde
       }
     };
-  }, [restaurar, intentarSync, programar]);
+  }, [restaurar, intentarSync, programar, verPalabras]);
 
   // El aviso (enlace bueno o vencido) se muestra arriba, dentro de la casa.
-  return <CasaVista ref={ref} casa={casa} activo={activo} anotado={avisado} aviso={aviso} formulario={<Correo origen="pronto" />} />;
+  return (
+    <CasaVista
+      ref={ref}
+      casa={casa}
+      activo={activo}
+      anotado={avisado}
+      aviso={aviso}
+      formulario={<Correo origen="pronto" />}
+      palabras={palabras}
+      alAbrirPalabra={alAbrirPalabra}
+    />
+  );
 }
+
+const SIN_PALABRAS: readonly string[] = [];
+const nada = () => {};
 
 /** La vista de la casa: recibe el estado del hook y traduce los punteros a sus funciones. */
 export function CasaVista({
@@ -264,8 +300,14 @@ export function CasaVista({
   formulario,
   ref,
   activo = true,
+  palabras = SIN_PALABRAS,
+  alAbrirPalabra = nada,
 }: {
   casa: CasaApi;
+  /** Palabras ya abiertas en la mesa del living (avance.palabras). */
+  palabras?: readonly string[];
+  /** Se tocó una palabra en la mesa (también una ya abierta). */
+  alAbrirPalabra?: (id: string) => void;
   /** false = su pestaña está oculta: las tarjetas esperan (sin ver_metodo ni foco) hasta que vuelva a verse. */
   activo?: boolean;
   ref?: Ref<ControlCasa>;
@@ -292,31 +334,12 @@ export function CasaVista({
   }, [aviso]);
   const [pronto, setPronto] = useState(false);
   // Tamaño real del escenario: en celular vertical deja de ser cuadrado y la cámara se encuadra con zoom y paneo.
-  const escenarioRef = useRef<HTMLDivElement>(null);
-  const [tam, setTam] = useState({ w: 0, h: 0 });
-  // medido antes de pintar (después de hidratar), para no animar el salto al encuadre vertical
-  useLayoutEffect(() => {
-    const el = escenarioRef.current;
-    if (!el) return;
-    const medir = () => {
-      const r = el.getBoundingClientRect();
-      // oculta (pestaña del puzzle: display none) mide 0×0: se ignora, así al volver no se repite el encuadre
-      if (!r.width || !r.height) return;
-      setTam((t) => (t.w === r.width && t.h === r.height ? t : { w: r.width, h: r.height }));
-    };
-    medir();
-    if (typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(medir);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-  // La transición de la cámara se enciende recién un cuadro después de la primera medida.
-  const [medido, setMedido] = useState(false);
-  useEffect(() => {
-    if (medido || tam.w === 0) return;
-    const id = requestAnimationFrame(() => setMedido(true));
-    return () => cancelAnimationFrame(id);
-  }, [medido, tam.w]);
+  const { ref: escenarioRef, tam, medido } = useEscenario();
+  // El cuarto a la vista (no se guarda: siempre se entra por la cocina). useCasa sigue montado: la cocina no se pierde.
+  const [cuarto, setCuarto] = useState<Cuarto>("cocina");
+  const living = cuarto === "living";
+  /** Cuántas veces se cambió de cuarto: cada cambio monta un fundido nuevo (0 = recién cargado, sin fundido). */
+  const [fundidos, setFundidos] = useState(0);
   const aspecto = aspectoDe(tam.w, tam.h);
   const vertical = aspecto > 1;
   // Paneo del dedo sobre el piso; cada vez que la casa mueve la cámara (enfoque, ⤢, quiz) se olvida.
@@ -332,7 +355,21 @@ export function CasaVista({
   const [paneando, setPaneando] = useState(false);
   const quiz = casa.quiz;
   // lámpara apagada: el cuarto se oscurece, salvo durante el 玩 (se juega a luz normal)
-  const oscura = estado.deng === "apagada" && !quiz;
+  const oscura = !living && estado.deng === "apagada" && !quiz;
+  // a mitad de una secuencia (refri, primer plano, receta) o del 玩 no se cambia de cuarto
+  const cambiarCuarto = (c: Cuarto) => {
+    if (ocupado || quiz || c === cuarto) return;
+    casa.callarVaca(); // corta la voz y lo que venía después (很热, 你好, el nombre tras el pop)
+    // un segundo dedo en el minimapa a mitad de un arrastre: el arrastre se suelta sin efecto
+    ini.current = null;
+    piso.current = null;
+    sinClick.current = false;
+    setArrObj(null);
+    setArrVaca(null);
+    setPaneando(false);
+    setFundidos((n) => n + 1);
+    setCuarto(c);
+  };
   const entrar = () => {
     if (!entrada) return;
     registrar("entrar");
@@ -515,6 +552,9 @@ export function CasaVista({
       )}
       <div className={styles.interior} inert={capa !== null}>
       <div ref={escenarioRef} className={styles.escenario} data-medido={medido || undefined} data-oscura={oscura || undefined}>
+        {living ? (
+          <Living abiertas={palabras} alAbrir={alAbrirPalabra} activo={activo} />
+        ) : (
         <div
           ref={mundoRef}
           className={cx(styles.mundo, paneando && styles.paneando)}
@@ -612,9 +652,12 @@ export function CasaVista({
             <Vaca ojos={ojos} hocico={cara.hocico} orejas={cara.orejas} salta={cara.salta} />
           </button>
         </div>
+        )}
 
-        {/* botón 玩, marcador de estrellas y 🔊 */}
-        <button
+        {fundidos > 0 && <div key={fundidos} data-fundido className={styles.fundido} aria-hidden="true" />}
+
+        {/* botón 玩, marcador de estrellas y 🔊 (solo en la cocina) */}
+        {!living && <button
           type="button"
           className={styles.jugar}
           aria-label="玩"
@@ -625,8 +668,8 @@ export function CasaVista({
         >
           <span className={styles.jugarHz}>玩</span>
           <span data-pinyin>wán</span>
-        </button>
-        {quiz && (
+        </button>}
+        {!living && quiz && (
           <>
             <div className={styles.marcador} data-testid="marcador" aria-hidden="true">
               {"★".repeat(quiz.aciertos) + "☆".repeat(quiz.rondas.length - quiz.aciertos)}
@@ -638,14 +681,14 @@ export function CasaVista({
             )}
           </>
         )}
-        <Minimapa cuartoActual="cocina" anotado={anotado} alTocarBloqueado={() => {
+        <Minimapa cuartoActual={cuarto} abiertos={CUARTOS_ABIERTOS} anotado={anotado} alCambiar={cambiarCuarto} alTocarBloqueado={() => {
           registrar("tocar_bloqueado");
           setPronto(true);
         }} />
 
-        {globo && <Globo silabas={globo} x={Math.max(12, Math.min(88, pGlobo.x))} y={Math.max(16, pGlobo.y)} />}
+        {!living && globo && <Globo silabas={globo} x={Math.max(12, Math.min(88, pGlobo.x))} y={Math.max(16, pGlobo.y)} />}
 
-        {opciones && (
+        {!living && opciones && (
           <Opciones
             id={opciones.id}
             lista={opciones.lista}
@@ -656,7 +699,7 @@ export function CasaVista({
           />
         )}
 
-        {camara.s > 1 && (
+        {!living && camara.s > 1 && (
           <button type="button" className={styles.alejar} aria-label="全部" title="全部 quán bù" disabled={ocupado} onClick={() => casa.verTodo()}>
             ⤢
           </button>

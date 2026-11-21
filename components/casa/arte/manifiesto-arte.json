@@ -54,5 +54,7 @@
   "cocina/wan_mugre": "/arte/cocina/wan_mugre.svg",
   "cocina/wan_zanahoria": "/arte/cocina/wan_zanahoria.svg",
   "cocina/yizi_silla": "/arte/cocina/yizi_silla.svg",
-  "cocina/zhuozi_zona": "/arte/cocina/zhuozi_zona.svg"
+  "cocina/zhuozi_zona": "/arte/cocina/zhuozi_zona.svg",
+  "living/cuarto_living": "/arte/living/cuarto_living.svg",
+  "living/mesa_arriba": "/arte/living/mesa_arriba.svg"
 }

@@ -69,6 +69,8 @@ export interface CasaApi {
   escuchar(idAudio: string): void;
   /** Cierra el quiz terminado (después de la tarjeta del método). */
   cerrarQuiz(): void;
+  /** Corta lo que dice la vaca y lo que venía después (很热, 你好, el nombre tras el pop). Al cambiar de cuarto. */
+  callarVaca(): void;
   /** La vaca festeja y dice 你好 (al entrar a la casa). */
   saludar(): void;
   /** Pone el estado de la cocina guardado (al cargar el avance). */
@@ -125,6 +127,8 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
   /** null = ✕ (salir sin aplicar la acción). */
   const resolverPP = useRef<((m: Medalla | null) => void) | null>(null);
   const turnoVoz = useRef(0);
+  /** Cuenta los cortes de voz (callarVaca, empezar un arrastre): el nombre tras el pop solo cede ante esto. */
+  const cortes = useRef(0);
   // cuenta los toques a objetos: el saludo del primer toque cede ante lo que se tocó
   const toques = useRef(0);
   /** Frases en curso (para no tocar efectos encima del mandarín). */
@@ -241,6 +245,7 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
 
   const callarVaca = useCallback(() => {
     turnoVoz.current++;
+    cortes.current++;
     callar();
     setGlobo(null);
     setHocico("sonrisa");
@@ -291,7 +296,11 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
       mirar("izquierda", 900);
       eventoRef.current?.("tocar_objeto", { id });
       let turno = -1;
-      const decirNombre = () => {
+      const antes = cortes.current;
+      const decirNombre = async () => {
+        // durante el pop la vaca se calló (cambio de cuarto, arrastre): el nombre ya no va.
+        // Si solo habló otra cosa (otro toque rápido), el nombre sí va: el último toque gana.
+        if (cortes.current !== antes || ocupadoRef.current || quizRef.current) return false;
         const dicho = hablar(OBJETOS[id].nombre);
         turno = turnoVoz.current;
         return dicho;
@@ -484,6 +493,7 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
     cerrarOpciones();
     if (quizRef.current) return; // en el 玩 el globo con la pregunta se queda
     turnoVoz.current++;
+    cortes.current++;
     setGlobo(null);
   }, [cerrarOpciones, quizRef]);
 
@@ -500,6 +510,6 @@ export function useCasa(onEvento?: AlEvento, ganchos: OpcionesCasa = {}): CasaAp
     quiz, posiciones, clases, particulas,
     empezarQuiz, repetirQuiz, cerrarQuiz, saludar, restaurar,
     tocar, tocarVaca, soltarObjetoEnVaca, soltarVaca, elegir, empezarArrastre, verTodo, terminarPrimerPlano,
-    cancelarPrimerPlano, refri, elegirRefri, cerrarRefri, tocarComida, escuchar,
+    cancelarPrimerPlano, refri, elegirRefri, cerrarRefri, tocarComida, escuchar, callarVaca,
   };
 }

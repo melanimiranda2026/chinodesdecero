@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { idAudio, textoHanzi, type Silaba } from "../lib/silabas";
 import { frasesUsadas } from "../components/casa/audio/manifiesto";
 import { TEMAS } from "../components/puzzle/datos";
+import { PALABRAS, srcPalabra } from "../components/casa/living/palabras";
 
 const raiz = process.cwd();
 const pinyin = (s: Silaba[]) => s.map(([, p]) => p).join(" ");
@@ -92,15 +93,85 @@ for (const t of TEMAS) {
   }
 }
 
-const faltan = filas.filter((f) => !f.existe).length;
+// Mesa de palabras (living): copiadas, no generadas. [toma normal, toma lenta]; "cocina" = ya estaba en la web, lo demás es del proyecto de videos (../video/public/audio/).
+const ORIGEN_MESA: Record<string, [string, string | null]> = {
+  shui3: ["cocina", null],
+  mi3: ["cocina", null],
+  da4: ["facil-5/da.mp3", null],
+  ping2_guo3: ["cocina", "banco/pingguo_lento.mp3"],
+  cha2: ["banco/cha.mp3", null],
+  hua1: ["banco/hua.mp3", null],
+  cao3_mei2: ["cocina", null],
+  mo2_gu5: ["cocina", null],
+  chi1: ["cocina", null],
+  he1: ["cocina", null],
+  xi3: ["cocina", null],
+  bei1_zi5: ["cocina", null],
+  kuai4_zi5: ["cocina", null],
+  dian4_nao3: ["facil-1/diannao.mp3", "facil-1/diannao_lento.mp3"],
+  dian4_shi4: ["facil-2/dianshi.mp3", "facil-2/dianshi_lento.mp3"],
+  dian4_hua4: ["facil-3/dianhua.mp3", "facil-3/dianhua_lento.mp3"],
+  xiao4_hua5: ["facil-4/xiaohua.mp3", "facil-4/xiaohua_lento.mp3"],
+  niu2_nai3: ["cocina", null],
+  bing1_xiang1: ["cocina", null],
+  shou3_ji1: ["cocina", null],
+  shui3_guo3: ["cocina", null],
+  ni2_hao3: ["cocina", null],
+  xi1_hong2_shi4: ["cocina", "banco/xihongshi_lento.mp3"],
+  xi1_gua1: ["cocina", "banco/xigua_lento.mp3"],
+  hu2_luo2_bo5: ["cocina", "banco/huluobo_lento.mp3"],
+  tu3_dou4: ["cocina", "banco/tudou_lento.mp3"],
+  xi1_lan2_hua1: ["cocina", "banco/xilanhua_lento.mp3"],
+  mian4_bao1: ["cocina", null],
+  chang2_jing3_lu4: ["banco/changjinglu.mp3", "banco/changjinglu_lento.mp3"],
+  mao1_tou2_ying1: ["banco/maotouying.mp3", "banco/maotouying_lento.mp3"],
+  ya1_zui3_shou4: ["banco/yazuishou.mp3", "banco/yazuishou_lento.mp3"],
+  ka1_fei1: ["gratis-1/kafei.mp3", "gratis-1/kafei_lento.mp3"],
+  sha1_fa1: ["banco/shafa.mp3", "banco/shafa_lento.mp3"],
+  bu4_ding1: ["banco/budin.mp3", "banco/budin_lento.mp3"],
+  sha1_la1: ["banco/shala.mp3", "banco/shala_lento.mp3"],
+  han4_bao3: ["banco/hanbao.mp3", "banco/hanbao_lento.mp3"],
+  pi1_sa4: ["banco/pisa.mp3", "banco/pisa_lento.mp3"],
+  ke3_le4: ["banco/kele.mp3", "banco/kele_lento.mp3"],
+  qiao3_ke4_li4: ["banco/qiaokeli.mp3", "banco/qiaokeli_lento.mp3"],
+  hao3_chi1: ["banco/haochi.mp3", "banco/haochi_lento.mp3"],
+  hao3_he1: ["banco/haohe.mp3", "banco/haohe_lento.mp3"],
+  hao3_kan4: ["banco/haokan.mp3", "banco/haokan_lento.mp3"],
+  hao3_ting1: ["banco/haoting.mp3", "banco/haoting_lento.mp3"],
+  hao3_wan2: ["banco/haowan.mp3", "banco/haowan_lento.mp3"],
+  hao3: ["cocina", null],
+  ni3: ["banco/ni.mp3", "banco/ni_lento.mp3"],
+  wo3_men5: ["banco/women.mp3", "banco/women_lento.mp3"],
+  mao1: ["cocina", null],
+  ta1: ["banco/ta.mp3", "banco/ta_lento.mp3"],
+};
+const mesa = PALABRAS.flatMap((p) => {
+  const [normal, lenta] = ORIGEN_MESA[p.audio ?? p.id] ?? ["?", null];
+  const base = p.audio ?? p.id;
+  const compartida = p.audio ? ` (también la usa ${p.id})` : "";
+  const estado = (o: string) => (o === "cocina" ? (REVISAR_COCINA[base] ? `? nativo: ${REVISAR_COCINA[base]}` : "revisada") : "? nativo: copiada del proyecto de videos");
+  const filas = [{ archivo: `public${srcPalabra(p)}`, origen: (normal === "cocina" ? `public/audio/cocina/${base}.mp3` : `video/${normal}`) + compartida, estado: estado(normal) }];
+  if (p.lento && !p.audio) filas.push({ archivo: `public${srcPalabra(p, true)}`, origen: `video/${lenta}`, estado: "? nativo: copiada del proyecto de videos" });
+  return filas.map((f) => ({ ...f, hanzi: textoHanzi(p.s), existe: existsSync(join(raiz, f.archivo)) }));
+});
+
+const faltan = filas.filter((f) => !f.existe).length + mesa.filter((f) => !f.existe).length;
 const md = [
   "# Audios de la casa y del puzzle",
   "",
-  `${filas.length - faltan} de ${filas.length} existen. Generado con \`npm run audios\`; no se edita a mano.`,
+  `${filas.length + mesa.length - faltan} de ${filas.length + mesa.length} existen. Generado con \`npm run audios\`; no se edita a mano.`,
   "",
   "| Archivo | Hanzi | Pinyin | ¿Existe? |",
   "|---|---|---|---|",
   ...filas.map((f) => `| ${f.archivo} | ${f.hanzi} | ${f.pinyin} | ${f.existe ? "sí" : "no"} |`),
+  "",
+  "## Mesa de palabras",
+  "",
+  "Copiadas, no generadas (cero créditos). La vaca las dice en el living.",
+  "",
+  "| Archivo | Hanzi | Copiado de | Estado | ¿Existe? |",
+  "|---|---|---|---|---|",
+  ...mesa.map((f) => `| ${f.archivo} | ${f.hanzi} | ${f.origen} | ${f.estado} | ${f.existe ? "sí" : "no"} |`),
   "",
 ].join("\n");
 

@@ -2,10 +2,11 @@
  * Puente con Krita (ver docs/arte.md, "Pintar en Krita con capas").
  *
  *   npm run arte:krita            arma arte-krita/<objeto>.ora: un archivo por objeto con sus capas separadas y con
- *                                 nombre, y arte-krita/cuarto_cocina.ora con el cuarto partido en piezas.
+ *                                 nombre, y arte-krita/cuarto_cocina.ora y cuarto_living.ora con cada cuarto partido
+ *                                 en piezas.
  *                                 No pisa un .ora que ya exista (es tu trabajo); con `-- --forzar` lo rehace.
- *   npm run arte:krita-importar   lee los .ora que guardaste en Krita y deja en public/arte/cocina/ un PNG por cada
- *                                 capa que cambiaste (las que no tocaste siguen con su dibujo actual).
+ *   npm run arte:krita-importar   lee los .ora que guardaste en Krita y deja en public/arte/cocina/ (o living/) un PNG
+ *                                 por cada capa que cambiaste (las que no tocaste siguen con su dibujo actual).
  *
  * OpenRaster (.ora) es un zip con un PNG por capa y un stack.xml; Krita lo abre y lo guarda con capas.
  */
@@ -16,6 +17,8 @@ import sharp from "sharp";
 
 const RAIZ = process.cwd();
 const ARTE = join(RAIZ, "public", "arte", "cocina");
+/** Carpeta de public/arte/ de cada cuarto. */
+const CUARTOS: Record<string, string> = { cuarto_cocina: "cocina", cuarto_living: "living" };
 const KRITA = join(RAIZ, "arte-krita");
 const FUENTES = join(KRITA, "fuentes");
 
@@ -30,7 +33,6 @@ const OBJETOS: Record<string, { capas: string[]; ocultas?: string[] }> = {
   chahu: { capas: ["tetera"] },
   kuaizi: { capas: ["palillos"] },
 };
-const CUARTO = "cuarto_cocina";
 
 // ---------------------------------------------------------------- zip mínimo (lo justo para OpenRaster)
 type Entrada = { nombre: string; datos: Buffer; guardar?: boolean };
@@ -127,17 +129,17 @@ function cambio(a: Rgba, b: Rgba): number {
 }
 
 /** El dibujo que usa hoy el juego para una capa: tu WebP/PNG si existe, si no el SVG generado. */
-function archivoActual(nombre: string): string {
+function archivoActual(nombre: string, dir = ARTE): string {
   for (const ext of [".webp", ".png", ".svg"]) {
-    const ruta = join(ARTE, nombre + ext);
+    const ruta = join(dir, nombre + ext);
     if (existsSync(ruta)) return ruta;
   }
-  throw new Error(`falta public/arte/cocina/${nombre}.svg (corre npm run arte:generar)`);
+  throw new Error(`falta ${join(dir, nombre)}.svg (corre npm run arte:generar)`);
 }
-async function dibujoActual(nombre: string, lado: number): Promise<Rgba> {
-  const img = await rgba(readFileSync(archivoActual(nombre)));
+async function dibujoActual(nombre: string, lado: number, dir = ARTE): Promise<Rgba> {
+  const img = await rgba(readFileSync(archivoActual(nombre, dir)));
   if (img.w === lado && img.h === lado) return img;
-  return rgba(await sharp(readFileSync(archivoActual(nombre))).resize(lado, lado).png().toBuffer());
+  return rgba(await sharp(readFileSync(archivoActual(nombre, dir))).resize(lado, lado).png().toBuffer());
 }
 
 // ---------------------------------------------------------------- exportar
@@ -181,21 +183,23 @@ async function exportar(forzar: boolean) {
     console.log(`✓ ${id}.ora (${o.capas.join(", ")})`);
   }
 
-  if (toca(CUARTO)) {
-    const propio = [".webp", ".png"].some((e) => existsSync(join(ARTE, CUARTO + e)));
-    const partes = existsSync(FUENTES) ? readdirSync(FUENTES).filter((n) => n.startsWith(CUARTO + "__") && n.endsWith(".svg")).sort() : [];
+  for (const [cuarto, carpeta] of Object.entries(CUARTOS)) {
+    if (!toca(cuarto)) continue;
+    const dir = join(RAIZ, "public", "arte", carpeta);
+    const propio = [".webp", ".png"].some((e) => existsSync(join(dir, cuarto + e)));
+    const partes = existsSync(FUENTES) ? readdirSync(FUENTES).filter((n) => n.startsWith(cuarto + "__") && n.endsWith(".svg")).sort() : [];
     if (!partes.length) throw new Error("faltan las partes del cuarto en arte-krita/fuentes/ (corre npm run arte:generar)");
     const capas: CapaOra[] = await Promise.all(
-      partes.map(async (n) => ({ nombre: n.slice(CUARTO.length + 2, -4).replace(/^\d+_/, ""), img: await rgba(readFileSync(join(FUENTES, n))), visible: true })),
+      partes.map(async (n) => ({ nombre: n.slice(cuarto.length + 2, -4).replace(/^\d+_/, ""), img: await rgba(readFileSync(join(FUENTES, n))), visible: true })),
     );
     // si ya repintaste el cuarto entero, tu dibujo va arriba y las piezas generadas quedan ocultas debajo
     if (propio) {
       for (const c of capas) c.visible = false;
-      capas.push({ nombre: "tu_dibujo", img: await dibujoActual(CUARTO, 2000), visible: true });
+      capas.push({ nombre: "tu_dibujo", img: await dibujoActual(cuarto, 2000, dir), visible: true });
     }
-    await escribirOra(join(KRITA, `${CUARTO}.ora`), 2000, capas);
+    await escribirOra(join(KRITA, `${cuarto}.ora`), 2000, capas);
     hechos++;
-    console.log(`✓ ${CUARTO}.ora (${capas.map((c) => c.nombre).join(", ")})`);
+    console.log(`✓ ${cuarto}.ora (${capas.map((c) => c.nombre).join(", ")})`);
   }
   console.log(`listo: ${hechos} archivo(s) en arte-krita/${saltados ? `, ${saltados} sin tocar` : ""}`);
 }
@@ -237,10 +241,10 @@ async function aplanar(n: Nodo, archivos: Map<string, Buffer>, w: number, h: num
   return lienzo;
 }
 
-async function guardarSiCambio(nombre: string, img: Rgba, lado: number): Promise<boolean> {
-  const antes = await dibujoActual(nombre, lado);
+async function guardarSiCambio(nombre: string, img: Rgba, lado: number, dir = ARTE): Promise<boolean> {
+  const antes = await dibujoActual(nombre, lado, dir);
   if (cambio(antes, img) < 0.0002) return false;
-  writeFileSync(join(ARTE, `${nombre}.png`), await aPng(img));
+  writeFileSync(join(dir, `${nombre}.png`), await aPng(img));
   return true;
 }
 
@@ -259,12 +263,12 @@ async function importar() {
     const w = Number(xml.match(/<image\b[^>]*\bw\s*=\s*["'](\d+)/)?.[1]);
     const h = Number(xml.match(/<image\b[^>]*\bh\s*=\s*["'](\d+)/)?.[1]);
 
-    if (id === CUARTO) {
+    if (id in CUARTOS) {
       if (w !== 2000 || h !== 2000) { console.log(`! ${archivo}: el lienzo es ${w}×${h}, tiene que ser 2000×2000. No lo importo.`); continue; }
       const fusion = archivos.get("mergedimage.png");
       const img = fusion ? await rgba(fusion) : await aplanar(leerPila(xml), archivos, w, h);
-      if (await guardarSiCambio(CUARTO, img, 2000)) { escritos++; console.log(`✓ ${CUARTO}.png (todo lo visible, junto)`); }
-      else console.log(`· ${CUARTO}: sin cambios`);
+      if (await guardarSiCambio(id, img, 2000, join(RAIZ, "public", "arte", CUARTOS[id]))) { escritos++; console.log(`✓ ${id}.png (todo lo visible, junto)`); }
+      else console.log(`· ${id}: sin cambios`);
       continue;
     }
 
@@ -285,7 +289,7 @@ async function importar() {
     escritos += cambiadas.length;
     console.log(cambiadas.length ? `✓ ${id}: ${cambiadas.map((c) => `${id}_${c}.png`).join(", ")}` : `· ${id}: sin cambios`);
   }
-  console.log(`listo: ${escritos} PNG nuevo(s) o actualizado(s) en public/arte/cocina/`);
+  console.log(`listo: ${escritos} PNG nuevo(s) o actualizado(s) en public/arte/`);
 }
 
 const args = process.argv.slice(2);

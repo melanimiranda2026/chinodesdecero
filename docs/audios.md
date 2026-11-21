@@ -1,6 +1,6 @@
 # Audios de la casa y del puzzle
 
-146 de 146 existen. Generado con `npm run audios`; no se edita a mano.
+225 de 225 existen. Generado con `npm run audios`; no se edita a mano.
 
 | Archivo | Hanzi | Pinyin | ¿Existe? |
 |---|---|---|---|
@@ -150,3 +150,89 @@
 | public/audio/puzzle/wo_mingtian_pingguo.mp3 | 我明天吃苹果 | wǒ míng tiān chī píng guǒ (? nativo: 明 no se ve subir en la medición) | sí |
 | public/audio/puzzle/wo_mingtian_kafei.mp3 | 我明天喝咖啡 | wǒ míng tiān hē kā fēi (? nativo: 明 no se ve subir en la medición) | sí |
 | public/audio/puzzle/ni_mingtian_chi_shenme.mp3 | 你明天吃什么 | nǐ míng tiān chī shén me (? nativo: 什 baja un poco antes de subir) | sí |
+
+## Mesa de palabras
+
+Copiadas, no generadas (cero créditos). La vaca las dice en el living.
+
+| Archivo | Hanzi | Copiado de | Estado | ¿Existe? |
+|---|---|---|---|---|
+| public/audio/palabras/shui3.mp3 | 水 | public/audio/cocina/shui3.mp3 | ? nativo: nueva (17 nov. 2026) | sí |
+| public/audio/palabras/mi3.mp3 | 米 | public/audio/cocina/mi3.mp3 | ? nativo: nueva (17 nov. 2026) | sí |
+| public/audio/palabras/da4.mp3 | 大 | video/facil-5/da.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/ping2_guo3.mp3 | 苹果 | public/audio/cocina/ping2_guo3.mp3 | revisada | sí |
+| public/audio/palabras/ping2_guo3_lento.mp3 | 苹果 | video/banco/pingguo_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/cha2.mp3 | 茶 | video/banco/cha.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/hua1.mp3 | 花 | video/banco/hua.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/cao3_mei2.mp3 | 草莓 | public/audio/cocina/cao3_mei2.mp3 | ? nativo: nueva: cortada (traía 1,6 s de silencio) | sí |
+| public/audio/palabras/mo2_gu5.mp3 | 蘑菇 | public/audio/cocina/mo2_gu5.mp3 | revisada | sí |
+| public/audio/palabras/chi1.mp3 | 吃 | public/audio/cocina/chi1.mp3 | revisada | sí |
+| public/audio/palabras/he1.mp3 | 喝 | public/audio/cocina/he1.mp3 | revisada | sí |
+| public/audio/palabras/xi3.mp3 | 洗 | public/audio/cocina/xi3.mp3 | revisada | sí |
+| public/audio/palabras/bei1_zi5.mp3 | 杯子 | public/audio/cocina/bei1_zi5.mp3 | revisada | sí |
+| public/audio/palabras/kuai4_zi5.mp3 | 筷子 | public/audio/cocina/kuai4_zi5.mp3 | revisada | sí |
+| public/audio/palabras/dian4_nao3.mp3 | 电脑 | video/facil-1/diannao.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/dian4_nao3_lento.mp3 | 电脑 | video/facil-1/diannao_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/dian4_shi4.mp3 | 电视 | video/facil-2/dianshi.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/dian4_shi4_lento.mp3 | 电视 | video/facil-2/dianshi_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/dian4_hua4.mp3 | 电话 | video/facil-3/dianhua.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/dian4_hua4_lento.mp3 | 电话 | video/facil-3/dianhua_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/xiao4_hua5.mp3 | 笑话 | video/facil-4/xiaohua.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/xiao4_hua5_lento.mp3 | 笑话 | video/facil-4/xiaohua_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/niu2_nai3.mp3 | 牛奶 | public/audio/cocina/niu2_nai3.mp3 | ? nativo: nueva (17 nov. 2026) | sí |
+| public/audio/palabras/bing1_xiang1.mp3 | 冰箱 | public/audio/cocina/bing1_xiang1.mp3 | revisada | sí |
+| public/audio/palabras/shou3_ji1.mp3 | 手机 | public/audio/cocina/shou3_ji1.mp3 | ? nativo: nueva (17 nov. 2026) | sí |
+| public/audio/palabras/shui3_guo3.mp3 | 水果 | public/audio/cocina/shui3_guo3.mp3 (también la usa shui2_guo3) | ? nativo: nueva (17 nov. 2026) | sí |
+| public/audio/palabras/ni2_hao3.mp3 | 你好 | public/audio/cocina/ni2_hao3.mp3 | revisada | sí |
+| public/audio/palabras/xi1_hong2_shi4.mp3 | 西红柿 | public/audio/cocina/xi1_hong2_shi4.mp3 | revisada | sí |
+| public/audio/palabras/xi1_hong2_shi4_lento.mp3 | 西红柿 | video/banco/xihongshi_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/xi1_gua1.mp3 | 西瓜 | public/audio/cocina/xi1_gua1.mp3 | revisada | sí |
+| public/audio/palabras/xi1_gua1_lento.mp3 | 西瓜 | video/banco/xigua_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/hu2_luo2_bo5.mp3 | 胡萝卜 | public/audio/cocina/hu2_luo2_bo5.mp3 | revisada | sí |
+| public/audio/palabras/hu2_luo2_bo5_lento.mp3 | 胡萝卜 | video/banco/huluobo_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/tu3_dou4.mp3 | 土豆 | public/audio/cocina/tu3_dou4.mp3 | revisada | sí |
+| public/audio/palabras/tu3_dou4_lento.mp3 | 土豆 | video/banco/tudou_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/xi1_lan2_hua1.mp3 | 西兰花 | public/audio/cocina/xi1_lan2_hua1.mp3 | revisada | sí |
+| public/audio/palabras/xi1_lan2_hua1_lento.mp3 | 西兰花 | video/banco/xilanhua_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/mian4_bao1.mp3 | 面包 | public/audio/cocina/mian4_bao1.mp3 | ? nativo: nueva: 包 sube un poco al final | sí |
+| public/audio/palabras/chang2_jing3_lu4.mp3 | 长颈鹿 | video/banco/changjinglu.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/chang2_jing3_lu4_lento.mp3 | 长颈鹿 | video/banco/changjinglu_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/mao1_tou2_ying1.mp3 | 猫头鹰 | video/banco/maotouying.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/mao1_tou2_ying1_lento.mp3 | 猫头鹰 | video/banco/maotouying_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/ya1_zui3_shou4.mp3 | 鸭嘴兽 | video/banco/yazuishou.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/ya1_zui3_shou4_lento.mp3 | 鸭嘴兽 | video/banco/yazuishou_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/ka1_fei1.mp3 | 咖啡 | video/gratis-1/kafei.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/ka1_fei1_lento.mp3 | 咖啡 | video/gratis-1/kafei_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/sha1_fa1.mp3 | 沙发 | video/banco/shafa.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/sha1_fa1_lento.mp3 | 沙发 | video/banco/shafa_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/bu4_ding1.mp3 | 布丁 | video/banco/budin.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/bu4_ding1_lento.mp3 | 布丁 | video/banco/budin_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/sha1_la1.mp3 | 沙拉 | video/banco/shala.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/sha1_la1_lento.mp3 | 沙拉 | video/banco/shala_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/han4_bao3.mp3 | 汉堡 | video/banco/hanbao.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/han4_bao3_lento.mp3 | 汉堡 | video/banco/hanbao_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/pi1_sa4.mp3 | 披萨 | video/banco/pisa.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/pi1_sa4_lento.mp3 | 披萨 | video/banco/pisa_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/ke3_le4.mp3 | 可乐 | video/banco/kele.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/ke3_le4_lento.mp3 | 可乐 | video/banco/kele_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/qiao3_ke4_li4.mp3 | 巧克力 | video/banco/qiaokeli.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/qiao3_ke4_li4_lento.mp3 | 巧克力 | video/banco/qiaokeli_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/hao3_chi1.mp3 | 好吃 | video/banco/haochi.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/hao3_chi1_lento.mp3 | 好吃 | video/banco/haochi_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/hao3_he1.mp3 | 好喝 | video/banco/haohe.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/hao3_he1_lento.mp3 | 好喝 | video/banco/haohe_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/hao3_kan4.mp3 | 好看 | video/banco/haokan.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/hao3_kan4_lento.mp3 | 好看 | video/banco/haokan_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/hao3_ting1.mp3 | 好听 | video/banco/haoting.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/hao3_ting1_lento.mp3 | 好听 | video/banco/haoting_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/hao3_wan2.mp3 | 好玩 | video/banco/haowan.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/hao3_wan2_lento.mp3 | 好玩 | video/banco/haowan_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/hao3.mp3 | 好 | public/audio/cocina/hao3.mp3 | revisada | sí |
+| public/audio/palabras/ni3.mp3 | 你 | video/banco/ni.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/ni3_lento.mp3 | 你 | video/banco/ni_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/wo3_men5.mp3 | 我们 | video/banco/women.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/wo3_men5_lento.mp3 | 我们 | video/banco/women_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/mao1.mp3 | 猫 | public/audio/cocina/mao1.mp3 | ? nativo: nueva: 猫 sube un poco (286→327 Hz) | sí |
+| public/audio/palabras/ta1.mp3 | 他 | video/banco/ta.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/ta1_lento.mp3 | 他 | video/banco/ta_lento.mp3 | ? nativo: copiada del proyecto de videos | sí |
+| public/audio/palabras/ta1.mp3 | 她 | video/banco/ta.mp3 (también la usa ta1_ella) | ? nativo: copiada del proyecto de videos | sí |

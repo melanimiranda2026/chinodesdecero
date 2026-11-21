@@ -246,12 +246,65 @@ describe("CuartoMotor", () => {
     expect(alEvento).not.toHaveBeenCalledWith("cuarto_completo", expect.anything());
   });
 
-  it("un objeto con `abre`: después de decir su nombre llama alAbrir", async () => {
-    const { alAbrir } = montar();
+  it("un objeto con `abre`: después de decir su nombre la vaca camina a su pie y recién ahí llama alAbrir", async () => {
+    const { alAbrir, container } = montar();
     fireEvent.click(zona("桌子"));
     expect(alAbrir).not.toHaveBeenCalled();
     await avanzar(400);
+    expect(llamadasFrase(S("这是桌子", "zhè shì zhuō zi", "4415"))).toBe(1);
+    expect(alAbrir).not.toHaveBeenCalled();
+    expect(parseFloat(vaca(container).style.left)).toBeCloseTo(33, 2);
+    expect(parseFloat(vaca(container).style.top)).toBeCloseTo(70, 2);
+    // caminando: otro toque no hace nada
+    expect(container.querySelector("[data-cuarto-motor]")!.getAttribute("data-ocupado")).toBe("true");
+    fireEvent.click(zona("沙发"));
+    await avanzar(PASO_MS);
+    expect(alAbrir).toHaveBeenCalledTimes(1);
     expect(alAbrir).toHaveBeenCalledWith("mesa");
+    expect(llamadasFrase(SOFA)).toBe(0);
+    expect(container.querySelector("[data-cuarto-motor]")!.getAttribute("data-ocupado")).toBeNull();
+  });
+
+  it("un objeto con `abre` y movimiento reducido: sin caminata, se abre apenas termina el nombre", async () => {
+    vi.stubGlobal("matchMedia", (q: string) => ({ matches: q.includes("reduce"), media: q, addEventListener() {}, removeEventListener() {} }));
+    try {
+      const { alAbrir } = montar();
+      fireEvent.click(zona("桌子"));
+      await avanzar(400);
+      expect(alAbrir).toHaveBeenCalledWith("mesa");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("activo pasa a false mientras camina hacia un objeto con `abre`: no se abre", async () => {
+    const { alAbrir, desactivar, container } = montar();
+    fireEvent.click(zona("桌子"));
+    await avanzar(400);
+    desactivar();
+    await avanzar(PASO_MS + 100);
+    expect(alAbrir).not.toHaveBeenCalled();
+    expect(container.querySelector("[data-cuarto-motor]")!.getAttribute("data-ocupado")).toBeNull();
+  });
+
+  it("cámara, sorpresa y decorado: la cámara de afuera manda, la vaca se sorprende y el decorado va en el mundo", () => {
+    const r = render(
+      <CuartoMotor
+        def={DEF}
+        progreso={progresoVacio()}
+        activo
+        alCambiar={() => {}}
+        alSalir={() => {}}
+        camara={{ x: 500, y: 500, s: 2 }}
+        sorpresa
+        decorado={<svg data-deco />}
+      />,
+    );
+    const mundo = r.container.querySelector<HTMLElement>("[data-mundo]")!;
+    expect(mundo.style.transform).toMatch(/scale\(2\)/);
+    expect(mundo.querySelector("[data-deco]")).not.toBeNull();
+    expect(r.container.querySelector<HTMLElement>('[data-capa="orejas"]')!.style.opacity).toBe("1");
+    expect(r.container.querySelector<HTMLElement>('[data-ojos="sorpresa"]')!.style.opacity).toBe("1");
   });
 
   it("reloj y bandeja: hora según el progreso, una silueta por ficha que falta", () => {

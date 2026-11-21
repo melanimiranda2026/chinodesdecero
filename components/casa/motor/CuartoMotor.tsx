@@ -32,7 +32,7 @@ const NOMBRE_CUARTO: Record<CuartoId, string> = { living: "客厅", cocina: "厨
  * La puerta, en la pared izquierda (u 0, v 5.4, a media altura): bajo la ventana redonda, lejos de la tele
  * y visible también en el encuadre vertical del celular. Todos los cuartos son la misma caja isométrica.
  */
-const PUERTA = (() => {
+export const PUERTA = (() => {
   const c = proyectar(0, 5.4, 1.1);
   return { x: Math.round(c.x) - 35, y: Math.round(c.y) - 45, w: 70, h: 90 };
 })();
@@ -40,7 +40,7 @@ const PUERTA = (() => {
 const tieneFondo = (id: CuartoId): id is keyof typeof FONDO_CUARTO => id in FONDO_CUARTO;
 
 export function CuartoMotor({
-  def, progreso: progresoGuardado, activo, alCambiar, alEvento, alSalir, alAbrir, hijos,
+  def, progreso: progresoGuardado, activo, alCambiar, alEvento, alSalir, alAbrir, hijos, camara = VER_TODO, sorpresa = false, decorado,
 }: {
   def: DefCuarto;
   progreso: ProgresoCuarto;
@@ -53,11 +53,17 @@ export function CuartoMotor({
   alAbrir?: (que: "mesa") => void;
   /** Capas extra (la mesa a pantalla completa). */
   hijos?: ReactNode;
+  /** A dónde mira la cámara (el zoom del living a la mesa); por defecto, todo el cuarto. */
+  camara?: Camara;
+  /** La vaca se sorprende: orejas arriba, ojos grandes y un saltito (al llegar a la mesa). */
+  sorpresa?: boolean;
+  /** Dibujos sobre los muebles, dentro del mundo (el zoom los lleva); debajo de las zonas de toque. */
+  decorado?: ReactNode;
 }) {
   const c = useCuarto(def, { progreso: progresoGuardado, alCambiar, alEvento, activo, alAbrir });
   const { ref: raiz, tam, medido } = useEscenario();
   const aspecto = aspectoDe(tam.w, tam.h);
-  const vista = encuadrar(VER_TODO, tam.w, tam.h);
+  const vista = encuadrar(camara, tam.w, tam.h);
 
   const [parpadeo, setParpadeo] = useState(0);
   const parpadeoT = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -102,6 +108,7 @@ export function CuartoMotor({
         style={{ transform: transformCSS(vista, aspecto), transition: medido ? undefined : "none" }}
       >
         {tieneFondo(def.id) && <FondoCuarto cuarto={def.id} />}
+        {decorado}
 
         {def.objetos.map((o) => (
           <button
@@ -137,7 +144,12 @@ export function CuartoMotor({
           style={estiloVaca}
         >
           <div className={cs.sombra} />
-          <Vaca ojos={c.pose === "mira" ? "izquierda" : "abiertos"} hocico={c.hocico} orejas="normales" />
+          <Vaca
+            ojos={sorpresa ? "sorpresa" : c.pose === "mira" ? "izquierda" : "abiertos"}
+            hocico={c.hocico}
+            orejas={sorpresa ? "arriba" : "normales"}
+            salta={sorpresa}
+          />
         </div>
       </div>
 

@@ -1,39 +1,30 @@
 "use client";
-import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { COLOR_TONO } from "@/lib/tonos";
 import { callar } from "../audio/voz";
 import { sfx } from "../audio/sonido";
-import { FondoCuarto } from "../arte/Capa";
-import { apuntar, aspectoDe, encuadrar, transformCSS, type Camara } from "../camara";
-import { proyectar } from "../cocina/iso";
-import { Vaca } from "../Vaca";
-import { useEscenario } from "../useEscenario";
+import { apuntar } from "../camara";
+import { CuartoMotor } from "../motor/CuartoMotor";
+import type { ProgresoCuarto } from "../motor/tipos";
+import type { AlEvento } from "../useCasa";
+import { LIVING } from "./cuarto";
 import { Mesa } from "./Mesa";
-import { MESA_LIVING, PARADA_VACA } from "./lugares";
+import { MESA_LIVING } from "./lugares";
 import { PALABRAS } from "./palabras";
-import cs from "../Casa.module.css";
 import styles from "./Living.module.css";
 
-const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(" ");
 const pct = (n: number) => `${n / 10}%`;
 
-/** La vaca camina hasta la mesa. */
-export const PASO_MS = 900;
+/** La vaca camina hasta la mesa (la caminata la hace el motor, después de decir 这是桌子). */
+export { PASO_MS } from "../motor/useCuarto";
 /** La cámara entra a la mesa; después, la mesa a pantalla completa. */
 export const ZOOM_MS = 600;
 /** Zoom de la cámara sobre la mesa (en vertical lo amortigua `encuadrar`). */
 const ZOOM_MESA = 2.4;
 
-type Fase = "cuarto" | "camina" | "zoom" | "mesa";
-
-/** Donde la vaca espera al entrar: en el piso, adelante y a la derecha de la mesa (u 8.6, v 8.8). */
-const VACA_INICIAL = (() => {
-  const p = proyectar(8.6, 8.8);
-  return { x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 };
-})();
+type Fase = "cuarto" | "zoom" | "mesa";
 
 const CENTRO_MESA = { x: MESA_LIVING.x + MESA_LIVING.w / 2, y: MESA_LIVING.y + MESA_LIVING.h / 2 };
-const VER_TODO: Camara = { x: 500, y: 500, s: 1 };
 const CAMARA_MESA = apuntar(CENTRO_MESA.x, CENTRO_MESA.y, ZOOM_MESA);
 
 /** Unas pocas palabras chiquitas sobre la mesa (decorativas): posición en % del tablero, color por tono. */
@@ -53,20 +44,56 @@ const SOBRE_LA_MESA = [
     return { id: p.id, hz, color: COLOR_TONO[tono], x, y };
   });
 
+/** Las fichas de colores sobre el tablero: dentro del mundo, bajo la zona de toque del 桌子. */
+const DECORADO = (
+  <svg
+    data-hanzi-mesa
+    aria-hidden="true"
+    className={styles.sobreMesa}
+    style={{ left: pct(MESA_LIVING.x), top: pct(MESA_LIVING.y), width: pct(MESA_LIVING.w), height: pct(MESA_LIVING.h) }}
+    viewBox={`0 0 ${MESA_LIVING.w} ${MESA_LIVING.h}`}
+  >
+    {SOBRE_LA_MESA.map((f, k) => {
+      const x = (f.x / 100) * MESA_LIVING.w;
+      const y = (f.y / 100) * MESA_LIVING.h;
+      return (
+        <g key={f.id} className={styles.fichaChica} style={{ animationDelay: `${-k * 0.9}s` }}>
+          <rect x={x - 17} y={y - 15} width={34} height={30} rx={7} className={styles.fichaFondo} />
+          <text data-hz x={x} y={y + 1} fill={f.color} className={styles.fichaHz}>
+            {f.hz}
+          </text>
+        </g>
+      );
+    })}
+  </svg>
+);
+
 /**
- * El living comedor (客厅): el cuarto, la vaca y la mesa con fichas de colores encima. Tocar la mesa: la vaca
- * camina hasta ella, se sorprende (orejas arriba), la cámara entra y se abre la mesa vista desde arriba.
+ * El living comedor (客厅), armado por el motor desde `LIVING`: sofá, silla, tele y la mesa. Tocar la mesa: la
+ * vaca dice 这是桌子 y camina hasta ella (el motor); aquí se sorprende, la cámara entra y se abre la mesa vista
+ * desde arriba. Abrir una palabra en la mesa no cuenta como ficha ganada.
  */
 export const Living = memo(function Living({
-  abiertas, alAbrir, activo,
+  abiertas, alAbrir, activo, progreso, alCambiar, alEvento, alSalir,
 }: {
   abiertas: readonly string[];
+  /** Se tocó una palabra en la mesa (también una ya abierta). */
   alAbrir: (id: string) => void;
   /** false: la pestaña del puzzle está a la vista; se sale de la mesa y no queda nada sonando. */
   activo: boolean;
+  /** Progreso guardado del cuarto (objeto estable: el motor lo vuelve a leer cuando cambia). */
+  progreso: ProgresoCuarto;
+  alCambiar: (p: ProgresoCuarto, nuevas: string[]) => void;
+  alEvento?: AlEvento;
+  /** Tocar la puerta con el cuarto completo. */
+  alSalir: () => void;
 }) {
   const [fase, setFase] = useState<Fase>("cuarto");
-  const [vaca, setVaca] = useState(VACA_INICIAL);
+  const faseRef = useRef<Fase>("cuarto");
+  const cambiarFase = (f: Fase) => {
+    faseRef.current = f;
+    setFase(f);
+  };
   const tiempos = useRef<ReturnType<typeof setTimeout>[]>([]);
   const limpiar = () => {
     tiempos.current.forEach(clearTimeout);
@@ -74,99 +101,54 @@ export const Living = memo(function Living({
   };
   useEffect(() => limpiar, []);
 
-  // Tamaño real del escenario (en celular vertical deja de ser cuadrado), como en la cocina.
-  const { ref: raiz, tam, medido } = useEscenario();
-
-  const aspecto = aspectoDe(tam.w, tam.h);
-  const entra = fase === "zoom" || fase === "mesa";
-  const vista = encuadrar(entra ? CAMARA_MESA : VER_TODO, tam.w, tam.h);
-
-  const irALaMesa = () => {
-    if (fase !== "cuarto") return;
-    sfx("pop", "cocina");
-    setVaca(PARADA_VACA);
-    setFase("camina");
-    tiempos.current.push(
-      setTimeout(() => {
-        sfx("whoosh", "cocina");
-        setFase("zoom");
-      }, PASO_MS),
-      setTimeout(() => setFase("mesa"), PASO_MS + ZOOM_MS),
-    );
+  /** El motor ya dijo 这是桌子 y la vaca llegó a la mesa: zoom y luego la mesa a pantalla completa. */
+  const entrarALaMesa = () => {
+    if (faseRef.current !== "cuarto") return;
+    sfx("whoosh", "cocina"); // el nombre ya terminó: nunca encima del mandarín
+    cambiarFase("zoom");
+    tiempos.current.push(setTimeout(() => cambiarFase("mesa"), ZOOM_MS));
   };
 
-  const zona = useRef<HTMLButtonElement>(null);
+  const raiz = useRef<HTMLDivElement>(null);
   const volver = () => {
     limpiar();
-    setFase("cuarto");
+    cambiarFase("cuarto");
     // el foco vuelve al 桌子 (la mesa a pantalla completa se va)
-    zona.current?.focus({ preventScroll: true });
+    raiz.current?.querySelector<HTMLElement>('[data-objeto="zhuozi"]')?.focus({ preventScroll: true });
   };
 
-  // pestaña oculta: se sale de la mesa (o de la caminata) y se calla la voz
+  // pestaña oculta: se sale de la mesa (o del zoom) y se calla la voz
   useEffect(() => {
     if (activo || fase === "cuarto") return;
     limpiar();
     callar();
-    setFase("cuarto");
+    cambiarFase("cuarto");
   }, [activo, fase]);
 
-  const estiloVaca: CSSProperties = {
-    left: pct(vaca.x),
-    top: pct(vaca.y),
-    transition: `left ${PASO_MS}ms ease-in-out, top ${PASO_MS}ms ease-in-out`,
-  };
-  const llego = fase === "zoom" || fase === "mesa";
+  const entra = fase !== "cuarto";
 
   return (
     <div ref={raiz} className={styles.living} data-living data-fase={fase}>
-      <div
-        data-mundo
-        className={cs.mundo}
-        style={{
-          transform: transformCSS(vista, aspecto),
-          transition: medido ? `transform ${ZOOM_MS}ms cubic-bezier(0.45, 0.05, 0.25, 1)` : "none",
-        }}
-      >
-        <FondoCuarto cuarto="living" />
-
-        <button
-          ref={zona}
-          type="button"
-          data-mesa
-          aria-label="桌子"
-          className={styles.zonaMesa}
-          style={{ left: pct(MESA_LIVING.x), top: pct(MESA_LIVING.y), width: pct(MESA_LIVING.w), height: pct(MESA_LIVING.h) }}
-          onClick={irALaMesa}
-        >
-          <svg
-            data-hanzi-mesa
-            aria-hidden="true"
-            className={styles.sobreMesa}
-            viewBox={`0 0 ${MESA_LIVING.w} ${MESA_LIVING.h}`}
-          >
-            {SOBRE_LA_MESA.map((f, k) => {
-              const x = (f.x / 100) * MESA_LIVING.w;
-              const y = (f.y / 100) * MESA_LIVING.h;
-              return (
-                <g key={f.id} className={styles.fichaChica} style={{ animationDelay: `${-k * 0.9}s` }}>
-                  <rect x={x - 17} y={y - 15} width={34} height={30} rx={7} className={styles.fichaFondo} />
-                  <text data-hz x={x} y={y + 1} fill={f.color} className={styles.fichaHz}>
-                    {f.hz}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
-        </button>
-
-        <div data-vaca role="img" aria-label="牛" className={cx(cs.vaca, styles.vaca)} style={estiloVaca}>
-          <div className={cs.sombra} />
-          <Vaca ojos={llego ? "sorpresa" : "abiertos"} hocico="punto" orejas={llego ? "arriba" : "normales"} salta={fase === "zoom"} />
-        </div>
-      </div>
-
-      {fase === "mesa" && <Mesa abiertas={abiertas} alAbrir={alAbrir} alCerrar={volver} />}
+      <CuartoMotor
+        def={LIVING}
+        progreso={progreso}
+        activo={activo}
+        alCambiar={alCambiar}
+        alEvento={alEvento}
+        alSalir={alSalir}
+        alAbrir={entrarALaMesa}
+        camara={entra ? CAMARA_MESA : undefined}
+        sorpresa={entra}
+        decorado={DECORADO}
+        hijos={
+          fase === "mesa" ? (
+            <Mesa abiertas={abiertas} alAbrir={alAbrir} alCerrar={volver} />
+          ) : (
+            // durante el zoom nada más se toca
+            fase === "zoom" && <div className={styles.bloqueo} aria-hidden="true" />
+          )
+        }
+      />
     </div>
   );
 });

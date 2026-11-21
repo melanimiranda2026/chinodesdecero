@@ -17,30 +17,49 @@ vi.mock("@/components/casa/audio/sonido", () => ({
 import { callar, decir } from "@/components/casa/audio/voz";
 import { esperaDe } from "@/components/casa/audio/turnos";
 import { HEN_RE, NI_HAO } from "@/components/casa/cocina/frases";
-import { textoHanzi } from "@/lib/silabas";
+import { S, textoHanzi } from "@/lib/silabas";
 import { sfx } from "@/components/casa/audio/sonido";
 import { Living, PASO_MS, ZOOM_MS } from "@/components/casa/living/Living";
+import { LIVING } from "@/components/casa/living/cuarto";
 import { PARADA_VACA } from "@/components/casa/living/lugares";
 import { PALABRAS } from "@/components/casa/living/palabras";
+import { PUERTA } from "@/components/casa/motor/CuartoMotor";
+import { fichaId, progresoVacio } from "@/components/casa/motor/progreso";
+import type { ProgresoCuarto } from "@/components/casa/motor/tipos";
 import { CasaVista } from "@/components/casa/Casa";
 import { useCasa, type CasaApi } from "@/components/casa/useCasa";
 import { ESTADO_INICIAL } from "@/components/casa/cocina/datos";
 import { acciones } from "@/components/casa/cocina/acciones";
 
 const avanzar = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
+/** Tocar 桌子: pop, 这是桌子, la vaca camina; después, el zoom. */
+const POP = esperaDe("pop");
+const HASTA_MESA = POP + PASO_MS + ZOOM_MS;
+const ZHE_SHI_ZHUOZI = S("这是桌子", "zhè shì zhuō zi", "4415");
+
+const VACIO: ProgresoCuarto = progresoVacio();
 
 function montar(activo = true) {
   const alAbrir = vi.fn();
-  const r = render(<Living abiertas={[]} alAbrir={alAbrir} activo={activo} />);
-  const rerender = (a: boolean) => r.rerender(<Living abiertas={[]} alAbrir={alAbrir} activo={a} />);
-  return { ...r, alAbrir, rerender };
+  const alCambiar = vi.fn<(p: ProgresoCuarto, nuevas: string[]) => void>();
+  const alEvento = vi.fn();
+  const alSalir = vi.fn();
+  const el = (a: boolean) => (
+    <Living abiertas={[]} alAbrir={alAbrir} activo={a} progreso={VACIO} alCambiar={alCambiar} alEvento={alEvento} alSalir={alSalir} />
+  );
+  const r = render(el(activo));
+  const rerender = (a: boolean) => r.rerender(el(a));
+  return { ...r, alAbrir, alCambiar, alEvento, alSalir, rerender };
 }
 const vaca = (c: HTMLElement) => c.querySelector<HTMLElement>("[data-vaca]")!;
-const mesa = (c: HTMLElement) => c.querySelector<HTMLElement>("[data-mesa]")!;
+const mesa = (c: HTMLElement) => c.querySelector<HTMLElement>('[data-objeto="zhuozi"]')!;
 const visible = (c: HTMLElement, sel: string) => c.querySelector<HTMLElement>(sel)!.style.opacity === "1";
+const choca = (a: { x: number; y: number; w: number; h: number }, b: typeof a) =>
+  a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
 beforeEach(() => {
   vi.useFakeTimers();
+  vi.mocked(decir).mockClear();
   vi.mocked(callar).mockClear();
   vi.mocked(sfx).mockClear();
 });
@@ -52,20 +71,36 @@ describe("Living", () => {
   it("se ve el cuarto, la vaca y la mesa con hanzi de colores decorativos", () => {
     const { container } = montar();
     expect(container.querySelector('[data-capa="cuarto_living"]')).not.toBeNull();
+    expect(container.querySelector('[data-cuarto-motor="living"]')).not.toBeNull();
     expect(vaca(container)).not.toBeNull();
     const m = mesa(container);
     expect(m.getAttribute("aria-label")).toBe("桌子");
     const deco = container.querySelector<HTMLElement>("[data-hanzi-mesa]")!;
     expect(deco.getAttribute("aria-hidden")).toBe("true");
+    // las fichas decorativas van dentro del mundo (el zoom las lleva con la mesa)
+    expect(deco.closest("[data-mundo]")).not.toBeNull();
     const hz = deco.querySelectorAll("[data-hz]");
     expect(hz.length).toBeGreaterThanOrEqual(4);
     for (const h of hz) expect(h.getAttribute("fill") ?? (h as HTMLElement).style.color).toMatch(/^#/);
     expect(screen.queryByTestId("mesa")).toBeNull();
   });
 
-  it("tocar la mesa: la vaca camina a la parada, se sorprende y tras el zoom se abre la mesa", async () => {
-    const { container } = montar();
+  it("los muebles del living y la puerta al 厨房 son botones; la puerta no pisa ningún objeto", () => {
+    montar();
+    for (const hz of ["沙发", "椅子", "电视", "桌子", "厨房"]) expect(screen.getByRole("button", { name: hz })).toBeTruthy();
+    for (const o of LIVING.objetos) expect(choca(PUERTA, o.zona), `puerta / ${o.id}`).toBe(false);
+  });
+
+  it("tocar 桌子: dice su nombre, marca zhuozi en tocados, la vaca camina, se sorprende y tras el zoom se abre la mesa", async () => {
+    const { container, alCambiar } = montar();
     fireEvent.click(mesa(container));
+    expect(alCambiar).toHaveBeenCalledTimes(1);
+    const [p, nuevas] = alCambiar.mock.calls[0];
+    expect(p.tocados).toEqual(["zhuozi"]);
+    expect(nuevas).toEqual([fichaId(LIVING.objetos.find((o) => o.id === "zhuozi")!.nombre)]);
+
+    await avanzar(POP);
+    expect(decir).toHaveBeenCalledWith(ZHE_SHI_ZHUOZI, expect.anything());
     const v = vaca(container);
     expect(parseFloat(v.style.left)).toBeCloseTo(PARADA_VACA.x / 10, 2);
     expect(parseFloat(v.style.top)).toBeCloseTo(PARADA_VACA.y / 10, 2);
@@ -75,6 +110,8 @@ describe("Living", () => {
     expect(visible(container, '[data-capa="orejas"]')).toBe(true);
     expect(visible(container, '[data-ojos="sorpresa"]')).toBe(true);
     expect(screen.queryByTestId("mesa")).toBeNull();
+    // el whoosh del zoom llega después del nombre, nunca encima
+    expect(sfx).toHaveBeenCalledWith("whoosh", "cocina");
 
     await avanzar(ZOOM_MS - 1);
     expect(screen.queryByTestId("mesa")).toBeNull();
@@ -87,7 +124,7 @@ describe("Living", () => {
     const mundo = container.querySelector<HTMLElement>("[data-mundo]")!;
     const antes = mundo.style.transform;
     fireEvent.click(mesa(container));
-    await avanzar(PASO_MS);
+    await avanzar(POP + PASO_MS);
     expect(mundo.style.transform).not.toBe(antes);
     expect(mundo.style.transform).toMatch(/scale\((\d+(\.\d+)?)\)/);
     const s = Number(/scale\(([\d.]+)\)/.exec(mundo.style.transform)![1]);
@@ -97,18 +134,19 @@ describe("Living", () => {
   it("un segundo toque durante la caminata no hace nada", async () => {
     const { container } = montar();
     fireEvent.click(mesa(container));
-    await avanzar(PASO_MS / 2);
+    await avanzar(POP + PASO_MS / 2);
     fireEvent.click(mesa(container));
     await avanzar(PASO_MS / 2 + ZOOM_MS);
     expect(screen.getByTestId("mesa")).toBeTruthy();
     // un solo paso: el segundo toque no reinicia la caminata ni suena otra vez
     expect(vi.mocked(sfx).mock.calls.filter((c) => c[0] === "pop")).toHaveLength(1);
+    expect(vi.mocked(decir).mock.calls.filter(([s]) => textoHanzi(s) === "这是桌子")).toHaveLength(1);
   });
 
   it("cerrar la mesa vuelve al cuarto con la vaca junto a la mesa", async () => {
     const { container } = montar();
     fireEvent.click(mesa(container));
-    await avanzar(PASO_MS + ZOOM_MS);
+    await avanzar(HASTA_MESA);
     fireEvent.click(screen.getByRole("button", { name: "返回" }));
     expect(screen.queryByTestId("mesa")).toBeNull();
     const v = vaca(container);
@@ -117,22 +155,33 @@ describe("Living", () => {
     expect(container.querySelector("[data-mundo]")!.getAttribute("style")).not.toMatch(/scale\(2/);
     // y se puede volver a entrar
     fireEvent.click(mesa(container));
-    await avanzar(PASO_MS + ZOOM_MS);
+    await avanzar(HASTA_MESA);
     expect(screen.getByTestId("mesa")).toBeTruthy();
   });
 
   it("al cerrar la mesa el foco vuelve al botón 桌子", async () => {
     const { container } = montar();
     fireEvent.click(mesa(container));
-    await avanzar(PASO_MS + ZOOM_MS);
+    await avanzar(HASTA_MESA);
     fireEvent.click(screen.getByRole("button", { name: "返回" }));
     expect(document.activeElement).toBe(mesa(container));
+  });
+
+  it("abrir una palabra en la mesa avisa con alAbrir y no cuenta como ficha ganada", async () => {
+    const { container, alAbrir, alCambiar } = montar();
+    fireEvent.click(mesa(container));
+    await avanzar(HASTA_MESA);
+    const llamadas = alCambiar.mock.calls.length;
+    fireEvent.click(screen.getByTestId("mesa").querySelector<HTMLElement>(`[data-palabra="${PALABRAS[0].id}"]`)!);
+    await avanzar(2000);
+    expect(alAbrir).toHaveBeenCalledWith(PALABRAS[0].id);
+    expect(alCambiar.mock.calls.length).toBe(llamadas);
   });
 
   it("activo=false con la mesa abierta: se cierra y calla la voz", async () => {
     const { container, rerender } = montar();
     fireEvent.click(mesa(container));
-    await avanzar(PASO_MS + ZOOM_MS);
+    await avanzar(HASTA_MESA);
     expect(screen.getByTestId("mesa")).toBeTruthy();
     vi.mocked(callar).mockClear();
     rerender(false);
@@ -143,9 +192,9 @@ describe("Living", () => {
   it("activo=false durante la caminata: no se abre la mesa después", async () => {
     const { container, rerender } = montar();
     fireEvent.click(mesa(container));
-    await avanzar(PASO_MS / 2);
+    await avanzar(POP + PASO_MS / 2);
     rerender(false);
-    await avanzar(PASO_MS + ZOOM_MS);
+    await avanzar(HASTA_MESA);
     expect(screen.queryByTestId("mesa")).toBeNull();
   });
 
@@ -154,10 +203,12 @@ describe("Living", () => {
   });
 
   it("con movimiento reducido no hay caminata ni zoom animados (CSS)", () => {
-    const css = readFileSync(join(process.cwd(), "components/casa/living/Living.module.css"), "utf8");
-    const reducido = [...css.matchAll(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/g)].map((m) => m[1]).join("\n");
-    expect(reducido).toMatch(/\.living \[data-mundo\][\s\S]*transition: none !important/);
-    expect(reducido).toMatch(/\.living \.vaca[\s\S]*transition: none !important/);
+    const bloques = (archivo: string) => {
+      const css = readFileSync(join(process.cwd(), archivo), "utf8");
+      return [...css.matchAll(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/g)].map((m) => m[1]).join("\n");
+    };
+    expect(bloques("components/casa/living/Living.module.css")).toMatch(/\.living \[data-mundo\][\s\S]*transition: none !important/);
+    expect(bloques("components/casa/motor/Motor.module.css")).toMatch(/\.cuarto \.vaca[\s\S]*transition: none !important/);
   });
 
   it("sin español en el cuarto", () => {
@@ -182,7 +233,7 @@ function montarCasa(props: { palabras?: readonly string[]; alAbrirPalabra?: (id:
 }
 const ir = (cuarto: string) => fireEvent.click(document.querySelector(`[data-cuarto="${cuarto}"]`) as HTMLElement);
 const enLiving = () => document.querySelector("[data-living]") !== null;
-const enCocina = () => document.querySelector("[data-objeto]") !== null;
+const enCocina = () => document.querySelector('[data-objeto="beizi"]') !== null;
 
 describe("Living en la casa", () => {
   it("客厅 muestra el living sin la cocina; 厨房 vuelve y la cocina conserva su estado", () => {
@@ -260,7 +311,7 @@ describe("Living en la casa", () => {
     const { container } = montarCasa({ palabras: [id], alAbrirPalabra });
     ir("living");
     fireEvent.click(mesa(container));
-    await avanzar(PASO_MS + ZOOM_MS);
+    await avanzar(HASTA_MESA);
     const tile = (i: string) => screen.getByTestId("mesa").querySelector<HTMLElement>(`[data-palabra="${i}"]`)!;
     expect(tile(id).dataset.abierta).toBe("true");
     fireEvent.click(tile(PALABRAS[1].id));
@@ -271,7 +322,7 @@ describe("Living en la casa", () => {
     const { container, rerender } = montarCasa();
     ir("living");
     fireEvent.click(mesa(container));
-    await avanzar(PASO_MS + ZOOM_MS);
+    await avanzar(HASTA_MESA);
     fireEvent.click(screen.getByTestId("mesa").querySelector<HTMLElement>("[data-palabra]")!);
     expect(screen.getByRole("dialog")).toBeTruthy();
     rerender(false);

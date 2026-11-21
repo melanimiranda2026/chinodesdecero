@@ -51,7 +51,7 @@ export interface OpcionesCuarto {
   alCambiar: (p: ProgresoCuarto, nuevas: string[]) => void;
   alEvento?: AlEvento;
   activo: boolean;
-  /** Un objeto con `abre`: se llama después de decir su nombre. */
+  /** Un objeto con `abre`: se llama después de decir su nombre y de que la vaca camine a su pie. */
   alAbrir?: (que: "mesa") => void;
 }
 
@@ -193,9 +193,19 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
       };
       // el pop solo si nada suena: nunca encima del mandarín
       await (conPop ? efectoYLuegoVoz("pop", decirNombre, { juego: "cocina" }) : decirNombre());
-      if (o.abre && dicho && sec === secuencia.current && activoRef.current) abrirRef.current?.(o.abre);
+      if (!o.abre || !dicho || sec !== secuencia.current || !activoRef.current || ocupadoRef.current) return;
+      // después del nombre la vaca camina hasta el objeto y recién ahí se abre (movimiento reducido: llega de una vez)
+      setOcupado(true);
+      const camino = ++secuencia.current;
+      try {
+        setVaca(o.pie);
+        await espera(reducido ? 0 : PASO_MS);
+        if (camino === secuencia.current && activoRef.current) abrirRef.current?.(o.abre);
+      } finally {
+        if (camino === secuencia.current) setOcupado(false);
+      }
     },
-    [ocupadoRef, progresoRef, luego, aplicar, hablar],
+    [ocupadoRef, progresoRef, setOcupado, setVaca, espera, reducido, luego, aplicar, hablar],
   );
 
   const hacer = useCallback(

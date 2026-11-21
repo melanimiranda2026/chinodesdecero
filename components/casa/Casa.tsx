@@ -15,6 +15,8 @@ import { Receta } from "./receta/Receta";
 import { esReceta } from "./gestos/medalla";
 import { CUARTOS_ABIERTOS, Minimapa, type Cuarto } from "./Minimapa";
 import { Living } from "./living/Living";
+import { progresoVacio } from "./motor/progreso";
+import type { ProgresoCuarto } from "./motor/tipos";
 import { useEscenario } from "./useEscenario";
 import { Tarjetas, type CapaTarjeta } from "./Tarjetas";
 import { desbloquearAudio } from "./audio/voz";
@@ -86,7 +88,13 @@ export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; re
   const [aviso, setAviso] = useState<string | null>(null);
   /** Copia en estado de avance.current.palabras, para que la mesa se vuelva a pintar. */
   const [palabras, setPalabras] = useState<readonly string[]>([]);
-  const verPalabras = useCallback(() => setPalabras(avance.current.palabras), []);
+  /** Copia en estado de avance.current.cuartos.living (objeto estable: el motor lo relee cuando cambia). */
+  const [progresoLiving, setProgresoLiving] = useState<ProgresoCuarto>(progresoVacio);
+  /** Lo guardado (al cargar o tras comparar con la cuenta) llega a la mesa y al living. */
+  const verPalabras = useCallback(() => {
+    setPalabras(avance.current.palabras);
+    setProgresoLiving((p) => avance.current.cuartos.living ?? p);
+  }, []);
 
   const guardarYSubir = useCallback(() => {
     guardarAvance(avance.current);
@@ -208,6 +216,19 @@ export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; re
     },
     [marcar, verPalabras],
   );
+  /** El living cambió: se guarda su progreso y se suman las fichas recién ganadas. */
+  const alCambiarLiving = useCallback(
+    (p: ProgresoCuarto, nuevas: string[]) => {
+      avance.current = {
+        ...avance.current,
+        cuartos: { ...avance.current.cuartos, living: p },
+        fichas: unirFichas(avance.current.fichas, nuevas),
+      };
+      setProgresoLiving(p);
+      marcar();
+    },
+    [marcar],
+  );
   const casa = useCasa(alEvento, { alEscuchar });
   const { restaurar } = casa;
   useEffect(() => {
@@ -295,12 +316,16 @@ export function Casa({ onEvento, ref, activo = true }: { onEvento?: AlEvento; re
       formulario={<Correo origen="pronto" />}
       palabras={palabras}
       alAbrirPalabra={alAbrirPalabra}
+      progresoLiving={progresoLiving}
+      alCambiarLiving={alCambiarLiving}
+      alEvento={alEvento}
     />
   );
 }
 
 const SIN_PALABRAS: readonly string[] = [];
 const nada = () => {};
+const LIVING_VACIO: ProgresoCuarto = progresoVacio();
 
 /** La vista de la casa: recibe el estado del hook y traduce los punteros a sus funciones. */
 export function CasaVista({
@@ -312,12 +337,21 @@ export function CasaVista({
   activo = true,
   palabras = SIN_PALABRAS,
   alAbrirPalabra = nada,
+  progresoLiving = LIVING_VACIO,
+  alCambiarLiving = nada,
+  alEvento,
 }: {
   casa: CasaApi;
   /** Palabras ya abiertas en la mesa del living (avance.palabras). */
   palabras?: readonly string[];
   /** Se tocó una palabra en la mesa (también una ya abierta). */
   alAbrirPalabra?: (id: string) => void;
+  /** Progreso guardado del living (avance.cuartos.living). */
+  progresoLiving?: ProgresoCuarto;
+  /** El living cambió: `nuevas` = fichas recién ganadas. */
+  alCambiarLiving?: (p: ProgresoCuarto, nuevas: string[]) => void;
+  /** Eventos del living (ficha_ganada, accion_lograda, cuarto_completo). */
+  alEvento?: AlEvento;
   /** false = su pestaña está oculta: las tarjetas esperan (sin ver_metodo ni foco) hasta que vuelva a verse. */
   activo?: boolean;
   ref?: Ref<ControlCasa>;
@@ -380,6 +414,12 @@ export function CasaVista({
     setFundidos((n) => n + 1);
     setCuarto(c);
   };
+  // la puerta del living (cuarto completo) lleva a la cocina; estable para que el living (memo) no se repinte
+  const cambiarRef = useRef(cambiarCuarto);
+  useEffect(() => {
+    cambiarRef.current = cambiarCuarto;
+  });
+  const salirDelLiving = useCallback(() => cambiarRef.current("cocina"), []);
   const entrar = () => {
     if (!entrada) return;
     registrar("entrar");
@@ -563,7 +603,15 @@ export function CasaVista({
       <div className={styles.interior} inert={capa !== null}>
       <div ref={escenarioRef} className={styles.escenario} data-medido={medido || undefined} data-oscura={oscura || undefined}>
         {living ? (
-          <Living abiertas={palabras} alAbrir={alAbrirPalabra} activo={activo} />
+          <Living
+            abiertas={palabras}
+            alAbrir={alAbrirPalabra}
+            activo={activo}
+            progreso={progresoLiving}
+            alCambiar={alCambiarLiving}
+            alEvento={alEvento}
+            alSalir={salirDelLiving}
+          />
         ) : (
         <div
           ref={mundoRef}

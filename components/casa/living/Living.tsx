@@ -79,7 +79,7 @@ export const Living = memo(function Living({
   abiertas: readonly string[];
   /** Se tocó una palabra en la mesa (también una ya abierta). */
   alAbrir: (id: string) => void;
-  /** false: la pestaña del puzzle está a la vista; se sale de la mesa y no queda nada sonando. */
+  /** false: la pestaña del navegador está oculta; se sale de la mesa y no queda nada sonando. */
   activo: boolean;
   /** Progreso guardado del cuarto (objeto estable: el motor lo vuelve a leer cuando cambia). */
   progreso: ProgresoCuarto;

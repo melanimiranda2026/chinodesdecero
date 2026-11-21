@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -16,7 +16,7 @@ vi.mock("@/components/casa/audio/sonido", () => ({
 const registrar = vi.fn();
 vi.mock("@/components/casa/eventos", () => ({ registrar: (...a: unknown[]) => registrar(...a) }));
 
-import { decir, desbloquearAudio, enfocarJuego } from "@/components/casa/audio/voz";
+import { callar, decir, desbloquearAudio, enfocarJuego } from "@/components/casa/audio/voz";
 import { musica } from "@/components/casa/audio/sonido";
 import { Portada } from "@/components/pagina/Portada";
 import { PORTADA } from "@/components/pagina/contenido";
@@ -109,6 +109,30 @@ describe("Portada: la portada es la casa", () => {
     expect(PORTADA.confianza).toBe("Gratis · funciona en tu celular");
     expect(PORTADA.confianza).not.toMatch(/sin registrarte/i);
     expect(document.body.textContent ?? "").not.toMatch(/chino desde cero|chino comprensible/i);
+  });
+
+  it("pestaña del navegador oculta: la casa deja de estar activa y la voz se corta; al volver sigue jugable", async () => {
+    let estado: DocumentVisibilityState = "visible";
+    const desc = Object.getOwnPropertyDescriptor(Document.prototype, "visibilityState");
+    Object.defineProperty(document, "visibilityState", { configurable: true, get: () => estado });
+    try {
+      render(<Portada />);
+      await pasarEntrada();
+      fireEvent.click(screen.getByRole("button", { name: "沙发" }));
+      vi.mocked(callar).mockClear();
+      estado = "hidden";
+      act(() => { document.dispatchEvent(new Event("visibilitychange")); });
+      expect(callar).toHaveBeenCalled();
+      estado = "visible";
+      act(() => { document.dispatchEvent(new Event("visibilitychange")); });
+      vi.mocked(decir).mockClear();
+      fireEvent.click(screen.getByRole("button", { name: "椅子" }));
+      await act(async () => { await vi.advanceTimersByTimeAsync(400); });
+      expect(decir).toHaveBeenCalled();
+    } finally {
+      delete (document as { visibilityState?: unknown }).visibilityState;
+      if (desc) Object.defineProperty(Document.prototype, "visibilityState", desc);
+    }
   });
 
   it("la casa es el juego enfocado: enfocarJuego('cocina') al montar y null al desmontar", () => {

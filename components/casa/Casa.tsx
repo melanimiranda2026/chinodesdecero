@@ -383,7 +383,7 @@ export function CasaVista({
   alCambiarLiving?: (p: ProgresoCuarto, nuevas: string[]) => void;
   /** Eventos del living (ficha_ganada, accion_lograda, cuarto_completo). */
   alEvento?: AlEvento;
-  /** false = su pestaña está oculta: las tarjetas esperan (sin ver_metodo ni foco) hasta que vuelva a verse. */
+  /** false = la pestaña del navegador está oculta: las tarjetas esperan (sin ver_metodo ni foco) hasta que vuelva a verse. */
   activo?: boolean;
   ref?: Ref<ControlCasa>;
   /** Pidió que le avisemos cuando abran los cuartos. */

@@ -1,10 +1,18 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Casa, type ControlCasa } from "@/components/casa/Casa";
 import { enfocarJuego } from "@/components/casa/audio/voz";
 import { PORTADA } from "./contenido";
 import { BotonMudo } from "./BotonMudo";
 import styles from "./portada.module.css";
+
+/** La pestaña del navegador se ve: si se oculta, la casa deja de estar activa (se corta la voz). */
+function suscribirVisible(aviso: () => void) {
+  document.addEventListener("visibilitychange", aviso);
+  return () => document.removeEventListener("visibilitychange", aviso);
+}
+const pestanaVisible = () => document.visibilityState !== "hidden";
+const visibleEnServidor = () => true;
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(" ");
 
@@ -15,6 +23,7 @@ const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).jo
 export function Portada() {
   const casa = useRef<ControlCasa>(null);
   const [grande, setGrande] = useState(false);
+  const visible = useSyncExternalStore(suscribirVisible, pestanaVisible, visibleEnServidor);
 
   // la casa es el único juego de la portada: su canal de audio es el enfocado
   useEffect(() => {
@@ -64,7 +73,7 @@ export function Portada() {
         </div>
         <div className={styles.marco}>
           <div className={styles.panel} data-juego="cocina">
-            <Casa ref={casa} activo />
+            <Casa ref={casa} activo={visible} />
           </div>
         </div>
       </div>

@@ -7,6 +7,8 @@
  *                                 No pisa un .ora que ya exista (es tu trabajo); con `-- --forzar` lo rehace.
  *   npm run arte:krita-importar   lee los .ora que guardaste en Krita y deja en public/arte/cocina/ (o living/) un PNG
  *                                 por cada capa que cambiaste (las que no tocaste siguen con su dibujo actual).
+ *                                 El botón Play (`boton play<versión>.ora`, la versión más alta) sale entero, a su
+ *                                 tamaño, como public/arte/ui/boton_play.png.
  *
  * OpenRaster (.ora) es un zip con un PNG por capa y un stack.xml; Krita lo abre y lo guarda con capas.
  */
@@ -20,6 +22,16 @@ const ARTE = join(RAIZ, "public", "arte", "cocina");
 /** Carpeta de public/arte/ de cada cuarto. */
 const CUARTOS: Record<string, string> = { cuarto_cocina: "cocina", cuarto_living: "living" };
 const KRITA = join(RAIZ, "arte-krita");
+/** Arte suelto de la página (botones): sale entero, a su tamaño. */
+const UI = join(RAIZ, "public", "arte", "ui");
+const BOTON_PLAY = /^boton play.*\.ora$/i;
+
+/** De los `boton play<versión>.ora`, el de versión más alta (v2 < v10); null si no hay ninguno. */
+export function ultimoBotonPlay(nombres: string[]): string | null {
+  const botones = nombres.filter((n) => BOTON_PLAY.test(n));
+  botones.sort((a, b) => a.localeCompare(b, "es", { numeric: true, sensitivity: "base" }));
+  return botones.at(-1) ?? null;
+}
 const FUENTES = join(KRITA, "fuentes");
 
 /** Capas de cada objeto, de atrás hacia adelante (el mismo orden en que el juego las apila). */
@@ -255,7 +267,31 @@ async function importar() {
   if (kras.length) console.log(`! ${kras.join(", ")}: los .kra no se leen. En Krita usa Archivo → Guardar como… → OpenRaster (.ora).`);
   let escritos = 0;
 
+  // el botón Play: la última versión, entera (lo que se ve en Krita) y a su tamaño
+  const play = ultimoBotonPlay(oras);
+  if (play) {
+    const archivos = unzip(readFileSync(join(KRITA, play)));
+    const xml = archivos.get("stack.xml")?.toString("utf8") ?? "";
+    const w = Number(xml.match(/<image[^>]*w\s*=\s*["'](\d+)/)?.[1]);
+    const h = Number(xml.match(/<image[^>]*h\s*=\s*["'](\d+)/)?.[1]);
+    const fusion = archivos.get("mergedimage.png");
+    if (!fusion && !xml) console.log(`! ${play}: no tiene mergedimage.png ni stack.xml, lo salto`);
+    else {
+      const img = fusion ? await rgba(fusion) : await aplanar(leerPila(xml), archivos, w, h);
+      mkdirSync(UI, { recursive: true });
+      const destino = join(UI, "boton_play.png");
+      const antes = existsSync(destino) ? await rgba(readFileSync(destino)) : null;
+      if (antes && cambio(antes, img) < 0.0002) console.log(`· boton_play: sin cambios (${play})`);
+      else {
+        writeFileSync(destino, await aPng(img));
+        escritos++;
+        console.log(`✓ ui/boton_play.png (${play}, ${img.w}×${img.h})`);
+      }
+    }
+  }
+
   for (const archivo of oras) {
+    if (BOTON_PLAY.test(archivo)) continue;
     const id = basename(archivo, ".ora");
     const archivos = unzip(readFileSync(join(KRITA, archivo)));
     const xml = archivos.get("stack.xml")?.toString("utf8");
@@ -292,8 +328,10 @@ async function importar() {
   console.log(`listo: ${escritos} PNG nuevo(s) o actualizado(s) en public/arte/`);
 }
 
-const args = process.argv.slice(2);
-(args[0] === "importar" ? importar() : exportar(args.includes("--forzar"))).catch((e) => {
-  console.error("✗", e instanceof Error ? e.message : e);
-  process.exit(1);
-});
+if (process.argv[1]?.endsWith("arte-krita.ts")) {
+  const args = process.argv.slice(2);
+  (args[0] === "importar" ? importar() : exportar(args.includes("--forzar"))).catch((e) => {
+    console.error("✗", e instanceof Error ? e.message : e);
+    process.exit(1);
+  });
+}

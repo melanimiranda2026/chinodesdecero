@@ -57,5 +57,6 @@
   "cocina/yizi_silla": "/arte/cocina/yizi_silla.svg",
   "cocina/zhuozi_zona": "/arte/cocina/zhuozi_zona.svg",
   "living/cuarto_living": "/arte/living/cuarto_living.svg",
-  "living/mesa_arriba": "/arte/living/mesa_arriba.svg"
+  "living/mesa_arriba": "/arte/living/mesa_arriba.svg",
+  "ui/boton_play": "/arte/ui/boton_play.png"
 }

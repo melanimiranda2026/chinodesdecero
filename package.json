@@ -16,7 +16,8 @@
     "arte": "tsx scripts/arte-manifiesto.ts",
     "arte:generar": "tsx scripts/arte-iso.ts && tsx scripts/arte-manifiesto.ts",
     "arte:krita": "tsx scripts/arte-iso.ts && tsx scripts/arte-krita.ts",
-    "arte:krita-importar": "tsx scripts/arte-krita.ts importar && tsx scripts/arte-manifiesto.ts"
+    "arte:krita-importar": "tsx scripts/arte-krita.ts importar && tsx scripts/arte-manifiesto.ts",
+    "videos": "tsx scripts/videos-tiktok.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

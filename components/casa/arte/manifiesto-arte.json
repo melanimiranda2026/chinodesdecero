@@ -59,6 +59,5 @@
   "cocina/zhuozi_zona": "/arte/cocina/zhuozi_zona.svg",
   "dormitorio/cuarto_dormitorio": "/arte/dormitorio/cuarto_dormitorio.svg",
   "living/cuarto_living": "/arte/living/cuarto_living.svg",
-  "living/mesa_arriba": "/arte/living/mesa_arriba.svg",
-  "ui/boton_play": "/arte/ui/boton_play.png"
+  "living/mesa_arriba": "/arte/living/mesa_arriba.svg"
 }

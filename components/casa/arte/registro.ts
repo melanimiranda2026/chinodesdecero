@@ -103,8 +103,6 @@ export const FONDO_CUARTO: Record<"cocina" | "living", Capa> = {
 };
 /** La casa entera (1000x1000): los cuatro cuartos en isometría 2×2, con la puerta de entrada. Abre la web (`EntradaCasa`). */
 export const FONDO_CASA: Capa = arte("casa/casa_entera");
-/** El botón Play de la casa entera (dibujado en Krita: `arte-krita/boton play<versión>.ora`, 128 px). */
-export const ARTE_BOTON_PLAY: string = (arte("ui/boton_play") as { tipo: "img"; src: string }).src;
 /** La mesa del living vista desde arriba (1000x1000): tablero de madera sin fichas; las palabras flotan encima. */
 export const ARTE_MESA: Capa = arte("living/mesa_arriba");
 

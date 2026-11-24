@@ -73,18 +73,6 @@ Las medidas de los muebles están en `components/casa/living/lugares.ts` (`MUEBL
 
 `public/arte/casa/casa_entera` (1000 × 1000 unidades, 2000 × 2000 px) es la primera imagen de la web: los cuatro cuartos en isometría 2×2 sobre el pasto. El living va adelante con la puerta de entrada (escalón, felpudo y camino de piedras); la cocina a su izquierda, el baño a su derecha y el dormitorio al fondo. Los cuatro son los mismos dibujos de sus cuartos, achicados a la mitad. Baño y dormitorio salen de su ficha de escenario (`components/casa/escenarios/`, ver `docs/escenarios.md`): se ven amueblados como adelanto, pero todavía no se entra. Dónde va cada cuarto, la puerta y el zoom final al living salen de `components/casa/casaEntera.ts`: si repintas la casa en Krita, deja el living en su lugar.
 
-## Botón Play
-
-La casa entera abre quieta, con tu botón Play grande al centro: al tocarlo suena la casa y la vaca entra. El dibujo sale de `arte-krita/boton playv1.ora` (128 × 128 px) y el juego usa `public/arte/ui/boton_play.png` (registrado como `ARTE_BOTON_PLAY` en `components/casa/arte/registro.ts`).
-
-Para hacer una versión nueva:
-
-1. Abre el `.ora` en Krita y guarda la versión nueva como `arte-krita/boton playv2.ora` (después `v3`, `v4`…). El tamaño del lienzo puede ser el que quieras (mejor cuadrado y de al menos 128 px): se usa tal cual, sin agrandar.
-2. Corre `npm run arte:krita-importar`. Toma **la versión más alta** (`v10` gana a `v9`) y guarda **todo lo visible junto** como `public/arte/ui/boton_play.png`.
-3. Reinicia `npm run dev` y recarga.
-
-Las versiones viejas pueden quedarse en `arte-krita/`; los `.kra` no se leen ni se suben.
-
 ## La vaca
 
 Sus capas están en `public/vaca/` como WebP de 800 x 800 px y se nombran en `ARTE_VACA` (`components/casa/arte/registro.ts`): `cuerpo`, `orejas`, cinco ojos y cinco hocicos. Para cambiar una capa, reemplaza el archivo con el mismo nombre (o cambia la ruta en `ARTE_VACA`). El borde blanco de sticker lo pone el código.

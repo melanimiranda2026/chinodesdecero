@@ -23,30 +23,19 @@ async function prepararRed(page: Page) {
   return correos;
 }
 
-/** La casa entera espera quieta con el botón Play (开始) al centro: lo toca y la entrada empieza. */
-async function jugar(page: Page) {
-  const entrada = page.locator("[data-entrada]");
-  await expect(entrada).toHaveAttribute("data-fase", "espera");
-  await entrada.getByRole("button", { name: "开始" }).click();
-}
-
 /**
- * Abre `/`, ve la casa entera quieta con el Play, lo toca y espera el cuarto. La entrada se mira con movimiento
- * (dura ~2 s y se alcanza a ver); apenas se vio, vuelve el movimiento reducido para el cuarto (los objetos no
- * "respiran" y el toque no necesita force).
+ * Abre `/` y espera la casa entera y luego el cuarto. La entrada se mira con movimiento (dura ~2 s y se alcanza
+ * a ver); apenas se vio, vuelve el movimiento reducido para el cuarto (los objetos no "respiran" y el toque no
+ * necesita force).
  */
 async function abrirCasa(page: Page, cuarto: "living" | "cocina", ir: () => Promise<unknown> = () => page.goto("/")) {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await ir();
   const entrada = page.locator("[data-entrada]");
   await expect(entrada).toBeVisible();
-  // sin tocar no pasa nada: la casa espera el Play
-  await page.waitForTimeout(500);
-  await expect(entrada).toHaveAttribute("data-fase", "espera");
-  await jugar(page);
   await expect(entrada).toHaveAttribute("data-fase", /camina|zoom/);
   await page.emulateMedia({ reducedMotion: "reduce" });
-  // tras el Play la entrada termina sola: después, el cuarto
+  // la entrada termina sola (sin tocarla): después, el cuarto
   await expect(entrada).toHaveCount(0, { timeout: 10_000 });
   await expect(page.locator('[aria-label="地图"] [aria-current="true"]')).toHaveAttribute("data-cuarto", cuarto);
   if (cuarto === "living") await expect(page.locator('[data-cuarto-motor="living"]')).toBeVisible();
@@ -168,7 +157,6 @@ test("landing: la ventana del juego a la vista, tocar el 沙发, sin scroll hori
   await prepararRed(page);
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "Tus primeras palabras en chino, jugando" })).toBeAttached();
-  await jugar(page);
   const ventana = page.locator("[data-ventana]");
   // la ventana del juego se ve en la primera pantalla y está dentro de la página, no encima
   await expect(ventana).toBeInViewport();
@@ -196,7 +184,6 @@ test("全屏 llena la pantalla, bloquea el scroll y vuelve", async ({ page }) =>
   await prepararRed(page);
   await page.goto("/");
   const ventana = page.locator("[data-ventana]");
-  await jugar(page);
   await expect(ventana.locator('[data-cuarto-motor="living"]')).toBeVisible({ timeout: 10_000 });
   const boton = ventana.getByRole("button", { name: "全屏" });
   await boton.click();
@@ -224,12 +211,11 @@ test("metadatos, ícono y zonas táctiles de la landing", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Bajar" })).toHaveCount(0);
   // zonas táctiles de la landing ≥ 44 px
   const ventana = page.locator("[data-ventana]");
-  for (const nombre of ["静音", "全屏", "开始"]) {
+  for (const nombre of ["静音", "全屏"]) {
     const c = (await ventana.getByRole("button", { name: nombre }).boundingBox())!;
     expect(c.width, nombre).toBeGreaterThanOrEqual(44);
     expect(c.height, nombre).toBeGreaterThanOrEqual(44);
   }
-  await jugar(page);
   await expect(ventana.locator('[data-cuarto-motor="living"]')).toBeVisible({ timeout: 10_000 });
   for (const b of await ventana.locator('[aria-label="地图"] button').all()) {
     const c = (await b.boundingBox())!;
@@ -241,8 +227,7 @@ test("metadatos, ícono y zonas táctiles de la landing", async ({ page }) => {
 test("客厅: la mesa de 50 palabras cabe sin scroll horizontal, fichas ≥ 44 px y la ficha de 咖啡", async ({ page }, info) => {
   await prepararRed(page);
   await page.goto("/");
-  // la casa entera (Play) y luego el living: la mesa se abre tocando el 桌子
-  await jugar(page);
+  // la casa entera y luego el living: la mesa se abre tocando el 桌子
   await expect(living(page)).toBeVisible({ timeout: 10_000 });
   const mesa = page.getByTestId("mesa");
   await expect(async () => {

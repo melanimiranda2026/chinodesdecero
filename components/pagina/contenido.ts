@@ -47,6 +47,7 @@ export const MENU = {
   enlaces: [
     { clave: "casa", icono: "🏠", texto: "Casa", corto: "Casa", href: "/" },
     { clave: "puzzle", icono: "🧩", texto: "Puzzle", corto: "Puzzle", href: "/puzzle" },
+    { clave: "videos", icono: "📺", texto: "Videos", corto: "Videos", href: "/videos" },
     { clave: "metodo", icono: "浸", texto: "Método", corto: "Método", href: "/sobre#metodo" },
     { clave: "sobre", icono: "🐄", texto: "Sobre nosotros", corto: "Nosotros", href: "/sobre" },
   ],

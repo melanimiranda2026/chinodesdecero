@@ -16,7 +16,7 @@ describe("menú", () => {
     render(<Menu />);
     const nav = screen.getByRole("navigation", { name: "Principal" });
     const hrefs = Array.from(nav.querySelectorAll("a")).map((a) => a.getAttribute("href"));
-    expect(hrefs).toEqual(["/", "/", "/puzzle", "/sobre#metodo", "/sobre"]);
+    expect(hrefs).toEqual(["/", "/", "/puzzle", "/videos", "/sobre#metodo", "/sobre"]);
     expect(screen.getByRole("link", { name: /Casa/ }).getAttribute("href")).toBe("/");
     expect(screen.getByRole("link", { name: /Puzzle/ }).getAttribute("href")).toBe("/puzzle");
   });

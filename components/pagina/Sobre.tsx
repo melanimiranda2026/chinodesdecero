@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Adorno } from "./Adorno";
 import { CONTACTO_PRIVACIDAD } from "./Correo";
 import { Metodo } from "./Metodo";
-import { SOBRE, TIKTOK } from "./contenido";
+import { SOBRE, TIKTOK, YOUTUBE } from "./contenido";
 import styles from "./pagina.module.css";
 
 /** Página /sobre: quiénes somos, el método y la promesa. */
@@ -31,6 +31,9 @@ export function Sobre() {
           </Link>
           <a className={styles.boton} href={TIKTOK.url} target="_blank" rel="noopener noreferrer">
             {SOBRE.tiktok}
+          </a>
+          <a className={styles.boton} href={YOUTUBE.url} target="_blank" rel="noopener noreferrer">
+            {SOBRE.youtube}
           </a>
         </div>
       </section>

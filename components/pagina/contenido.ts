@@ -33,6 +33,9 @@ export const TIKTOK: { nombre: string; url: string; videos: VideoTikTok[] } = {
   videos: [],
 };
 
+/** Canal de YouTube (creado el 24 nov. 2026, cuenta chinesebymeli). */
+export const YOUTUBE = { url: "https://www.youtube.com/@chinoconlavaca" } as const;
+
 /** El hero de la landing (primera pantalla). El 浸 del subtítulo se dibuja aparte, con su línea de tono 4. */
 export const PORTADA = {
   marca: "chino con la vaca",
@@ -64,4 +67,5 @@ export const SOBRE = {
   contactoAntes: "¿Ideas o preguntas? Escríbenos a ",
   jugar: "Jugar ahora",
   tiktok: "Síguenos en TikTok",
+  youtube: "Míranos en YouTube",
 } as const;

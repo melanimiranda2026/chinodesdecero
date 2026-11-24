@@ -7,7 +7,7 @@ vi.mock("@/components/casa/eventos", () => ({ registrar: (...a: unknown[]) => re
 import { Metodo } from "@/components/pagina/Metodo";
 import { Pie } from "@/components/pagina/Pie";
 import { Sobre } from "@/components/pagina/Sobre";
-import { METODO, TIKTOK } from "@/components/pagina/contenido";
+import { METODO, TIKTOK, YOUTUBE } from "@/components/pagina/contenido";
 
 describe("secciones de la página", () => {
   beforeEach(() => registrar.mockClear());
@@ -28,6 +28,13 @@ describe("secciones de la página", () => {
     const t = screen.getByRole("link", { name: "TikTok" });
     expect(t.getAttribute("href")).toBe(TIKTOK.url);
     expect(t.getAttribute("target")).toBe("_blank");
+  });
+
+  it("el pie enlaza a YouTube en otra pestaña", () => {
+    render(<Pie />);
+    const y = screen.getByRole("link", { name: "YouTube" });
+    expect(y.getAttribute("href")).toBe(YOUTUBE.url);
+    expect(y.getAttribute("target")).toBe("_blank");
   });
 
   it("el pie tiene su título y el formulario de correo", () => {
@@ -58,6 +65,7 @@ describe("Sobre nosotros", () => {
     const mail = screen.getByRole("link", { name: "niu@chinoconlavaca.com" });
     expect(mail.getAttribute("href")).toBe("mailto:niu@chinoconlavaca.com");
     expect(screen.getByRole("link", { name: "Síguenos en TikTok" }).getAttribute("href")).toBe(TIKTOK.url);
+    expect(screen.getByRole("link", { name: "Míranos en YouTube" }).getAttribute("href")).toBe(YOUTUBE.url);
     expect(screen.getByRole("link", { name: "Jugar ahora" }).getAttribute("href")).toBe("/");
     expect(container.textContent?.toLowerCase()).not.toContain("aprende chino en tiktok");
     // el método vive aquí ahora (el menú enlaza a /sobre#metodo)

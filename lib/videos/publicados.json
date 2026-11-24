@@ -1,0 +1,164 @@
+{
+  "generado": "2026-11-24T02:21:32.904Z",
+  "videos": {
+    "kou-bocado": {
+      "estado": "publicado",
+      "tiktok": "7711531101122088244",
+      "fecha": "2026-11-23T21:45:16-03:00"
+    },
+    "hao-2": {
+      "estado": "publicado",
+      "tiktok": "7710995380560891157",
+      "fecha": "2026-11-22T11:00:16-03:00"
+    },
+    "pasado-3": {
+      "estado": "publicado",
+      "tiktok": "7710624277342473492",
+      "fecha": "2026-11-21T11:00:16-03:00"
+    },
+    "pasado-2": {
+      "estado": "publicado",
+      "tiktok": "7709882078770334977",
+      "fecha": "2026-11-19T11:00:16-03:00"
+    },
+    "hao-1": {
+      "estado": "publicado",
+      "tiktok": "7709511042677656853",
+      "fecha": "2026-11-18T11:00:14-03:00"
+    },
+    "pasado-1-corto": {
+      "estado": "publicado",
+      "tiktok": "7709139954076601621",
+      "fecha": "2026-11-17T11:00:16-03:00"
+    },
+    "gratis-7": {
+      "estado": "publicado",
+      "tiktok": "7708768829337242886",
+      "fecha": "2026-11-16T11:00:17-03:00"
+    },
+    "pasado-1": {
+      "estado": "publicado",
+      "tiktok": "7708397798961532181",
+      "fecha": "2026-11-15T11:00:14-03:00"
+    },
+    "gratis-6": {
+      "estado": "publicado",
+      "tiktok": "7708026717604154631",
+      "fecha": "2026-11-14T11:00:22-03:00"
+    },
+    "gratis-8": {
+      "estado": "publicado",
+      "tiktok": "7707284565370588436",
+      "fecha": "2026-11-12T11:00:22-03:00"
+    },
+    "gratis-9": {
+      "estado": "publicado",
+      "tiktok": "7706542368312528149",
+      "fecha": "2026-11-10T11:00:14-03:00"
+    },
+    "radical-2": {
+      "estado": "publicado",
+      "tiktok": "7706170970867830022",
+      "fecha": "2026-11-09T11:00:15-03:00"
+    },
+    "puzzle-4": {
+      "estado": "publicado",
+      "tiktok": "7705799813052370177",
+      "fecha": "2026-11-08T11:00:13-03:00"
+    },
+    "puzzle-2": {
+      "estado": "publicado",
+      "tiktok": "7705429088474909959",
+      "fecha": "2026-11-07T11:00:13-03:00"
+    },
+    "gratis-5": {
+      "estado": "publicado",
+      "tiktok": "7705058009440963861",
+      "fecha": "2026-11-06T11:00:14-03:00"
+    },
+    "radical-1": {
+      "estado": "publicado",
+      "tiktok": "7704853081615273237",
+      "fecha": "2026-11-05T21:45:07-03:00"
+    },
+    "puzzle-3": {
+      "estado": "publicado",
+      "tiktok": "7704686948127968532",
+      "fecha": "2026-11-05T11:00:14-03:00"
+    },
+    "gratis-repaso": {
+      "estado": "publicado",
+      "tiktok": "7703202525503163656",
+      "fecha": "2026-11-01T11:00:14-03:00"
+    },
+    "puzzle-1": {
+      "estado": "publicado",
+      "tiktok": "7702831037683928321",
+      "fecha": "2026-10-31T11:00:13-03:00"
+    },
+    "kou-salida": {
+      "estado": "programado",
+      "fecha": "2026-11-24T11:00:00-03:00"
+    },
+    "kou-familia": {
+      "estado": "programado",
+      "fecha": "2026-11-25T11:00:00-03:00"
+    },
+    "kou-literal": {
+      "estado": "programado",
+      "fecha": "2026-11-26T11:00:00-03:00"
+    },
+    "flash-chi": {
+      "estado": "programado",
+      "fecha": "2026-11-27T11:00:00-03:00"
+    },
+    "radical-boca": {
+      "estado": "programado",
+      "fecha": "2026-11-28T11:00:00-03:00"
+    },
+    "flash-he": {
+      "estado": "programado",
+      "fecha": "2026-11-28T21:45:00-03:00"
+    },
+    "flash-jiao": {
+      "estado": "programado",
+      "fecha": "2026-11-29T11:00:00-03:00"
+    },
+    "kou-habla": {
+      "estado": "programado",
+      "fecha": "2026-11-29T14:00:00-03:00"
+    },
+    "flash-yao": {
+      "estado": "programado",
+      "fecha": "2026-11-30T11:00:00-03:00"
+    },
+    "kou-sonido": {
+      "estado": "programado",
+      "fecha": "2026-11-30T14:00:00-03:00"
+    },
+    "flash-han": {
+      "estado": "programado",
+      "fecha": "2026-12-01T11:00:00-03:00"
+    },
+    "kou-cuantas": {
+      "estado": "programado",
+      "fecha": "2026-12-01T14:00:00-03:00"
+    },
+    "flash-chang": {
+      "estado": "programado",
+      "fecha": "2026-12-02T11:00:00-03:00"
+    },
+    "flash-ku": {
+      "estado": "programado",
+      "fecha": "2026-12-03T11:00:00-03:00"
+    },
+    "flash-chui": {
+      "estado": "programado",
+      "fecha": "2026-12-04T11:00:00-03:00"
+    },
+    "radical-pasto": {
+      "estado": "programado",
+      "fecha": "2026-12-05T14:00:00-03:00"
+    }
+  }
+}

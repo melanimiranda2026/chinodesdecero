@@ -2,10 +2,10 @@
  * Puente con Krita (ver docs/arte.md, "Pintar en Krita con capas").
  *
  *   npm run arte:krita            arma arte-krita/<objeto>.ora: un archivo por objeto con sus capas separadas y con
- *                                 nombre, y arte-krita/cuarto_cocina.ora y cuarto_living.ora con cada cuarto partido
+ *                                 nombre, y arte-krita/cuarto_<cuarto>.ora (cocina, living, baño, dormitorio) con cada cuarto partido
  *                                 en piezas.
  *                                 No pisa un .ora que ya exista (es tu trabajo); con `-- --forzar` lo rehace.
- *   npm run arte:krita-importar   lee los .ora que guardaste en Krita y deja en public/arte/cocina/ (o living/) un PNG
+ *   npm run arte:krita-importar   lee los .ora que guardaste en Krita y deja en public/arte/<cuarto>/ un PNG
  *                                 por cada capa que cambiaste (las que no tocaste siguen con su dibujo actual).
  *                                 El botón Play (`boton play<versión>.ora`, la versión más alta) sale entero, a su
  *                                 tamaño, como public/arte/ui/boton_play.png.
@@ -20,7 +20,7 @@ import sharp from "sharp";
 const RAIZ = process.cwd();
 const ARTE = join(RAIZ, "public", "arte", "cocina");
 /** Carpeta de public/arte/ de cada cuarto. */
-const CUARTOS: Record<string, string> = { cuarto_cocina: "cocina", cuarto_living: "living" };
+const CUARTOS: Record<string, string> = { cuarto_cocina: "cocina", cuarto_living: "living", cuarto_bano: "bano", cuarto_dormitorio: "dormitorio" };
 const KRITA = join(RAIZ, "arte-krita");
 /** Arte suelto de la página (botones): sale entero, a su tamaño. */
 const UI = join(RAIZ, "public", "arte", "ui");

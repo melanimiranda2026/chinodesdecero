@@ -1,4 +1,5 @@
 {
+  "bano/cuarto_bano": "/arte/bano/cuarto_bano.svg",
   "casa/casa_entera": "/arte/casa/casa_entera.svg",
   "cocina/beizi_agua": "/arte/cocina/beizi_agua.svg",
   "cocina/beizi_mugre": "/arte/cocina/beizi_mugre.svg",
@@ -56,6 +57,7 @@
   "cocina/wan_zanahoria": "/arte/cocina/wan_zanahoria.svg",
   "cocina/yizi_silla": "/arte/cocina/yizi_silla.svg",
   "cocina/zhuozi_zona": "/arte/cocina/zhuozi_zona.svg",
+  "dormitorio/cuarto_dormitorio": "/arte/dormitorio/cuarto_dormitorio.svg",
   "living/cuarto_living": "/arte/living/cuarto_living.svg",
   "living/mesa_arriba": "/arte/living/mesa_arriba.svg",
   "ui/boton_play": "/arte/ui/boton_play.png"

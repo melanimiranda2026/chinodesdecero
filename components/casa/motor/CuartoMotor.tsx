@@ -13,7 +13,7 @@ import { useEscenario } from "../useEscenario";
 import { Vaca, VacaSentada } from "../Vaca";
 import { Bandeja } from "./Bandeja";
 import { FichaGanada } from "./FichaGanada";
-import { completo, fichaId, fichasDe, horaDe, todasLasFichas } from "./progreso";
+import { completo, fichaId, fichasDe, horaDe, pasosDe, todasLasFichas } from "./progreso";
 import { silabasDeFichas, useCuarto } from "./useCuarto";
 import type { CuartoId, DefCuarto, ProgresoCuarto } from "./tipos";
 import cs from "../Casa.module.css";
@@ -199,7 +199,7 @@ export function CuartoMotor({
         </div>
       )}
 
-      <RelojSolar hora={horaDe(def, c.progreso)} className={styles.reloj} />
+      <RelojSolar hora={horaDe(def, c.progreso)} {...pasosDe(def, c.progreso)} className={styles.reloj} />
       <div className={styles.bandejaCaja} data-parpadea={parpadeo ? "true" : undefined} key={parpadeo}>
         <Bandeja fichas={fichasDe(def, c.progreso)} todas={todas} />
       </div>

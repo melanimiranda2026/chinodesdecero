@@ -46,10 +46,15 @@ export function completo(def: DefCuarto, p: ProgresoCuarto): boolean {
   return f.objetos.length === 0 && f.logros.length === 0;
 }
 
-export function horaDe(def: DefCuarto, p: ProgresoCuarto): number {
-  const [ini, fin] = def.hora;
+/** Pasos del cuarto: cada objeto por tocar y cada acción por lograr en cada objeto. */
+export function pasosDe(def: DefCuarto, p: ProgresoCuarto): { hechos: number; total: number } {
   const total = def.objetos.length + logrosDe(def).length;
   const f = falta(def, p);
-  const hechos = total - f.objetos.length - f.logros.length;
+  return { hechos: total - f.objetos.length - f.logros.length, total };
+}
+
+export function horaDe(def: DefCuarto, p: ProgresoCuarto): number {
+  const [ini, fin] = def.hora;
+  const { hechos, total } = pasosDe(def, p);
   return total === 0 ? ini : ini + ((fin - ini) * hechos) / total;
 }

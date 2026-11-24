@@ -1,3 +1,4 @@
+import { useId } from "react";
 import styles from "./RelojSolar.module.css";
 
 /** Dónde está el astro: sol de 6 a 18, luna de 18 a 6; t va de 0 a 1 a lo largo del arco. */
@@ -16,50 +17,84 @@ function franja(hora: number): string {
   return "晚上";
 }
 
-/** Color del cielo del arco: amanecer, día, tarde, noche. */
+/** Color del cielo bajo el arco: amanecer, día, tarde, noche. */
 function cielo(hora: number): string {
   const h = ((hora % 24) + 24) % 24;
-  if (h >= 6 && h < 9) return "#ffd9b0";
-  if (h >= 9 && h < 16) return "#bfe6f5";
-  if (h >= 16 && h < 18) return "#ffb98a";
-  return "#2f3b6b";
+  if (h >= 6 && h < 9) return "#ffe6c7";
+  if (h >= 9 && h < 16) return "#d6effa";
+  if (h >= 16 && h < 18) return "#ffd2b0";
+  return "#3a4778";
 }
 
-// Arco elíptico en un lienzo de 120 x 44: de (10, 40) a (110, 40), cima en (60, 8).
-const CX = 60, CY = 40, RX = 50, RY = 32;
+// Lienzo de 120 x 44: el camino es medio arco de (20, 38) a (100, 38) con la cima en (60, 12).
+// El sol espera en la punta izquierda y la luna en la derecha.
+const CX = 60, CY = 38, RX = 40, RY = 26;
+const SOL = { x: 9, y: 33 }, LUNA = { x: 111, y: 33 };
 
-/** `className`: ajuste de lugar o tamaño en un cuarto (en la cocina, angosto para no pisar ⤢ ni el minimapa). */
-export function RelojSolar({ hora, className }: { hora: number; className?: string }) {
-  const { astro, t } = posicionAstro(hora);
-  const ang = Math.PI * (1 - t);
-  const x = CX + RX * Math.cos(ang);
-  const y = CY - RY * Math.sin(ang);
-  const arco = `M ${CX - RX} ${CY} A ${RX} ${RY} 0 0 1 ${CX + RX} ${CY}`;
+/** Punto del camino en t (0 = junto al sol, 1 = junto a la luna). */
+export function puntoCamino(t: number): { x: number; y: number } {
+  const a = Math.PI * (1 - Math.min(1, Math.max(0, t)));
+  return { x: CX + RX * Math.cos(a), y: CY - RY * Math.sin(a) };
+}
+
+const r1 = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * Reloj del día de un cuarto: un camino del sol a la luna. Lo recorrido se pinta (del amarillo al azul de la
+ * noche), una marca dice dónde va el día y cada paso del cuarto (objeto tocado o acción lograda) es un punto que
+ * se llena. Al terminar el cuarto el camino queda lleno y la luna se enciende.
+ *
+ * - `hora`: la del cuarto; da el color del cielo y el nombre que se lee (早上, 中午…).
+ * - `hechos` / `total`: los pasos del cuarto. Sin `total`, el reloj muestra solo la hora (camino a la mitad, sin puntos).
+ * - `className`: ajuste de lugar o tamaño en un cuarto (en la cocina, angosto para no pisar ⤢ ni el minimapa).
+ */
+export function RelojSolar({ hora, hechos = 0, total = 0, className }: { hora: number; hechos?: number; total?: number; className?: string }) {
+  const id = useId().replace(/:/g, "");
+  const avance = total > 0 ? Math.min(1, hechos / total) : 0.5;
+  const lleno = total > 0 && avance >= 1;
+  const inicio = puntoCamino(0), fin = puntoCamino(1), ahora = puntoCamino(avance);
+  const camino = `M ${inicio.x} ${inicio.y} A ${RX} ${RY} 0 0 1 ${fin.x} ${fin.y}`;
+  const recorrido = `M ${inicio.x} ${inicio.y} A ${RX} ${RY} 0 0 1 ${r1(ahora.x)} ${r1(ahora.y)}`;
+  const pasos = Array.from({ length: total }, (_, i) => ({ ...puntoCamino((i + 1) / total), hecho: i < hechos }));
   return (
-    <div className={className ? `${styles.reloj} ${className}` : styles.reloj} role="img" aria-label={franja(hora)}>
+    <div
+      className={className ? `${styles.reloj} ${className}` : styles.reloj}
+      role="img"
+      aria-label={franja(hora)}
+      data-avance={r1(avance)}
+      data-lleno={lleno ? "true" : undefined}
+    >
       <svg className={styles.svg} viewBox="0 0 120 44" aria-hidden="true">
-        <path className={styles.cielo} d={`${arco} Z`} style={{ fill: cielo(hora) }} />
-        <path className={styles.arco} d={arco} />
-        <line className={styles.suelo} x1={CX - RX - 4} y1={CY} x2={CX + RX + 4} y2={CY} />
-        <g className={styles.astro} style={{ transform: `translate(${x}px, ${y}px)` }}>
-          {astro === "sol" ? (
-            <>
-              {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => (
-                <line
-                  key={a}
-                  className={styles.rayo}
-                  x1={0}
-                  y1={-8}
-                  x2={0}
-                  y2={-11}
-                  transform={`rotate(${a})`}
-                />
-              ))}
-              <circle className={styles.sol} r={6} />
-            </>
-          ) : (
-            <path className={styles.luna} d="M 3 -7 A 7 7 0 1 0 7 3 A 5.5 5.5 0 0 1 3 -7 Z" />
-          )}
+        <defs>
+          <linearGradient id={`dia${id}`} gradientUnits="userSpaceOnUse" x1={inicio.x} y1="0" x2={fin.x} y2="0">
+            <stop offset="0" stopColor="#ffc83d" />
+            <stop offset="0.55" stopColor="#f08a5d" />
+            <stop offset="1" stopColor="#3a4778" />
+          </linearGradient>
+        </defs>
+        <path className={styles.cielo} d={`${camino} Z`} style={{ fill: cielo(hora) }} />
+        <line className={styles.suelo} x1={2} y1={CY} x2={118} y2={CY} />
+        {/* el camino que falta, punteado, y encima lo recorrido */}
+        <path className={styles.falta} d={camino} />
+        {avance > 0 && <path className={styles.recorrido} d={recorrido} style={{ stroke: `url(#dia${id})` }} />}
+        {pasos.map((p, i) => (
+          <circle key={i} className={p.hecho ? styles.pasoHecho : styles.paso} cx={r1(p.x)} cy={r1(p.y)} r={2.2} data-paso={p.hecho ? "hecho" : "falta"} />
+        ))}
+        {/* el sol: brilla al empezar y se va apagando a medida que avanza el día */}
+        <g className={styles.sol} transform={`translate(${SOL.x} ${SOL.y})`} style={{ opacity: r1(1 - 0.45 * avance) }}>
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => (
+            <line key={a} className={styles.rayo} x1={0} y1={-6.5} x2={0} y2={-8.5} transform={`rotate(${a})`} />
+          ))}
+          <circle className={styles.disco} r={5} />
+        </g>
+        {/* la luna: tenue hasta que se termina el cuarto; entonces se enciende */}
+        <g className={styles.luna} transform={`translate(${LUNA.x} ${LUNA.y})`} data-encendida={lleno ? "true" : undefined}>
+          <circle className={styles.halo} r={8.5} />
+          <path className={styles.creciente} d="M 2 -6 A 6 6 0 1 0 6 2.5 A 4.6 4.6 0 0 1 2 -6 Z" />
+        </g>
+        {/* dónde va el día */}
+        <g className={styles.marca} style={{ transform: `translate(${r1(ahora.x)}px, ${r1(ahora.y)}px)` }}>
+          <circle r={4} />
         </g>
       </svg>
     </div>

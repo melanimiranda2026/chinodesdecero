@@ -13,7 +13,7 @@ export function Menu() {
       </Link>
       <ul className={styles.enlaces}>
         {MENU.enlaces.map((e) => (
-          <li key={e.clave}>
+          <li key={e.clave} className={e.clave === "metodo" ? styles.soloAncho : undefined}>
             <Link
               href={e.href}
               className={styles.enlace}

@@ -19,6 +19,8 @@ export interface DefObjeto {
   acciones: string[];
   /** Un objeto que no se usa: se abre en primer plano. */
   abre?: "mesa";
+  /** Id de la acción que lo enciende (la tele con 看): al empezar la pose suena `sfx/tele` y queda encendido. */
+  enciende?: string;
 }
 
 export interface DefAccion {

@@ -15,6 +15,8 @@ export const MUEBLES_LIVING = {
   muebleTele: { u0: 0, u1: 0.85, v0: 1.6, v1: 4.4, alto: 1.2 },
   /** alfombra bajo la mesa y las sillas */
   alfombra: { u0: 3.1, u1: 8.9, v0: 3.0, v1: 7.8 },
+  /** la tele sobre su pie: caja de u0 a u1; su vidrio (en la cara u = u1) va `marco` hacia adentro de cada borde */
+  tele: { u0: 0.26, u1: 0.4, v0: 2.0, v1: 4.0, z0: 1.55, z1: 3.2, marco: 0.1 },
 } as const;
 
 const m = MUEBLES_LIVING.mesa;

@@ -61,6 +61,7 @@ export const LIVING: DefCuarto = {
       zona: zonaDe(tele.u0, tele.u1, tele.v0, tele.v1, 0, 3.2, undefined, MESA_LIVING.y - 1),
       pie: pie(2.4, 3.0),
       acciones: ["kan"],
+      enciende: "kan",
     },
     {
       id: "zhuozi",

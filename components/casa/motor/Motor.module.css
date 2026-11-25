@@ -243,3 +243,18 @@
   .pildoras { animation: none; }
   .puertaLista { animation: none; box-shadow: 0 0 14px 6px rgba(255, 227, 107, 0.85); }
 }
+
+/* ---------- tomar a la vaca: se agarra del cuerpo (no de toda la caja, para no tapar lo de al lado) ---------- */
+.agarre {
+  position: absolute;
+  left: 28%;
+  right: 28%;
+  top: 22%;
+  bottom: 6%;
+  z-index: 2;
+  pointer-events: none;
+  touch-action: none;
+}
+.agarre[data-libre] { pointer-events: auto; cursor: grab; }
+.cuarto .vaca[data-arrastrando] { z-index: 60; }
+.cuarto .vaca[data-arrastrando] .agarre { cursor: grabbing; }

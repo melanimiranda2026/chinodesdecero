@@ -362,7 +362,7 @@ function living() {
   /** Partes del cuarto para las capas de Krita (arte-krita/cuarto_living.ora). */
   const partes: [string, number][] = [];
   const parte = (nombre: string) => partes.push([nombre, out.length]);
-  const { mesa, sofa, muebleTele: mt, alfombra: al } = MUEBLES_LIVING;
+  const { mesa, sofa, muebleTele: mt, alfombra: al, tele: tv } = MUEBLES_LIVING;
 
   parte("piso");
   out.push(...pisoDeTablas(defs));
@@ -460,13 +460,13 @@ function living() {
       out.push(`<circle cx="${f(k.x)}" cy="${f(k.y)}" r="2.8" fill="${C.oro}" ${trazo(1)}/>`);
     }
     // la tele 电视 sobre su pie
-    const [tv0, tv1, tz0, tz1] = [2.0, 4.0, 1.55, 3.2];
+    const [tv0, tv1, tz0, tz1] = [tv.v0, tv.v1, tv.z0, tv.z1];
     out.push(caja(0.18, 0.55, 2.75, 3.25, mt.alto, mt.alto + 0.08, tela, 1.4));
     out.push(caja(0.3, 0.42, 2.94, 3.06, mt.alto + 0.08, tz0 + 0.1, tela, 1.2));
-    out.push(caja(0.26, 0.4, tv0, tv1, tz0, tz1, tela, 1.8));
+    out.push(caja(tv.u0, tv.u1, tv0, tv1, tz0, tz1, tela, 1.8));
     const [gP, uP] = degradado("#5B6770", "#2F363B", true);
     defs.push(gP);
-    out.push(rectU(0.401, tv0 + 0.1, tv1 - 0.1, tz0 + 0.1, tz1 - 0.1, uP, 1.2));
+    out.push(rectU(tv.u1 + 0.001, tv0 + tv.marco, tv1 - tv.marco, tz0 + tv.marco, tz1 - tv.marco, uP, 1.2));
     out.push(linea([0.402, tv0 + 0.35, tz1 - 0.3], [0.402, tv0 + 0.75, tz1 - 0.75], "#ffffff", 2.2, 'opacity="0.35"'));
     out.push(linea([0.402, tv0 + 0.55, tz1 - 0.25], [0.402, tv0 + 0.85, tz1 - 0.6], "#ffffff", 1.8, 'opacity="0.25"'));
     // florero en la punta del mueble

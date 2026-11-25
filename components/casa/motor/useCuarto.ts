@@ -2,7 +2,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Silaba } from "@/lib/silabas";
 import { callar, decir } from "../audio/voz";
+import { sfx } from "../audio/sonido";
 import { efectoYLuegoVoz, esperaDe } from "../audio/turnos";
+import { limitarVaca } from "../camara";
 import { ZHE_SHI } from "../cocina/frases";
 import { proyectar, type Punto } from "../cocina/iso";
 import type { AlEvento } from "../useCasa";
@@ -20,6 +22,25 @@ export const POSE_MS = 1500;
 export const SALTO_MS = 300;
 /** Lo que brilla un objeto al tocarlo. */
 const BRILLO_MS = 1000;
+/** Lo que tarda la vaca en acomodarse al soltarla (a su lugar en el piso o al pie del objeto). */
+export const SOLTAR_MS = 350;
+
+/**
+ * El objeto sobre el que se soltó la vaca: su cuerpo (unas 70 unidades sobre las patas) cae dentro de la zona del
+ * objeto, con un margen de 30 para que no haya que apuntar fino. Si hay varios, el de centro más cercano.
+ */
+export function objetoBajoVaca(def: DefCuarto, p: Punto): string | null {
+  const c = { x: p.x, y: p.y - 70 };
+  let mejor: string | null = null;
+  let dist = Infinity;
+  for (const o of def.objetos) {
+    const z = o.zona, m = 30;
+    if (c.x < z.x - m || c.x > z.x + z.w + m || c.y < z.y - m || c.y > z.y + z.h + m) continue;
+    const d = Math.hypot(c.x - (z.x + z.w / 2), c.y - (z.y + z.h / 2));
+    if (d < dist) { dist = d; mejor = o.id; }
+  }
+  return mejor;
+}
 
 /** Donde la vaca espera al entrar: en el piso, adelante a la derecha (u 8.6, v 8.8; todos los cuartos son la misma caja). */
 export const VACA_INICIAL: Punto = (() => {
@@ -72,6 +93,13 @@ export interface CuartoApi {
   /** El progreso más reciente (el propio, aunque el de afuera aún no vuelva). */
   progreso: ProgresoCuarto;
   tocarObjeto(id: string): Promise<void>;
+  /**
+   * Se soltó a la vaca después de arrastrarla (patas en x, y). Sobre un objeto: va a su pie y es como tocarlo.
+   * En otra parte: se queda ahí, dentro del piso libre.
+   */
+  soltarVaca(x: number, y: number): Promise<void>;
+  /** Objetos encendidos (la tele después de 看); duran mientras se está en el cuarto. */
+  encendidos: string[];
   hacer(accionId: string, objetoId: string): Promise<void>;
   /** Fichas por mostrar girando, en orden. */
   cola: Silaba[][];
@@ -97,6 +125,7 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
   const [elegido, setElegido] = useState<string | null>(null);
   const [brillo, setBrillo] = useState<string | null>(null);
   const [cola, setCola] = useState<Silaba[][]>([]);
+  const [encendidos, setEncendidos] = useState<string[]>([]);
   const [reducido] = useState(movimientoReducido);
 
   const { luego, espera } = useTiempos();
@@ -284,6 +313,11 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
           setPasoMs(SALTO_MS);
           setVaca(o.asiento);
         }
+        // la voz ya terminó: el efecto de encender (la tele) no queda encima del mandarín
+        if (o.enciende === a.id) {
+          setEncendidos((e) => (e.includes(o.id) ? e : [...e, o.id]));
+          sfx("tele", "cocina");
+        }
         setPose(a.pose);
         await espera(POSE_MS);
       } finally {
@@ -321,8 +355,21 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
     [],
   );
 
+  const soltarVaca = useCallback(
+    async (x: number, y: number) => {
+      if (ocupadoRef.current || !activoRef.current) return;
+      const d = defRef.current;
+      const id = objetoBajoVaca(d, { x, y });
+      setPasoMs(SOLTAR_MS);
+      if (!id) return setVaca(limitarVaca(x, y));
+      setVaca(d.objetos.find((o) => o.id === id)!.pie);
+      await tocarObjeto(id);
+    },
+    [ocupadoRef, setVaca, tocarObjeto],
+  );
+
   const sacarDeCola = useCallback(() => setCola((c) => c.slice(1)), []);
   const puedeSonar = useCallback(() => hablando.current === 0, []);
 
-  return { vaca, pasoMs, pose, globo, hocico, ocupado, elegido, brillo, progreso, tocarObjeto, hacer, cola, sacarDeCola, puedeSonar };
+  return { vaca, pasoMs, pose, globo, hocico, ocupado, elegido, brillo, progreso, tocarObjeto, soltarVaca, encendidos, hacer, cola, sacarDeCola, puedeSonar };
 }

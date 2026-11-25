@@ -4,13 +4,14 @@ import { COLOR_TONO } from "@/lib/tonos";
 import { callar } from "../audio/voz";
 import { sfx } from "../audio/sonido";
 import { apuntar } from "../camara";
-import { CuartoMotor, type ControlCuarto } from "../motor/CuartoMotor";
+import { CuartoMotor, type ControlCuarto, type EstadoDecorado } from "../motor/CuartoMotor";
 import type { ProgresoCuarto } from "../motor/tipos";
 import type { AlEvento } from "../useCasa";
 import { LIVING } from "./cuarto";
 import { Mesa } from "./Mesa";
 import { MESA_LIVING } from "./lugares";
 import { PALABRAS } from "./palabras";
+import { Tele } from "./Tele";
 import styles from "./Living.module.css";
 
 const pct = (n: number) => `${n / 10}%`;
@@ -66,6 +67,14 @@ const DECORADO = (
       );
     })}
   </svg>
+);
+
+/** Lo que va sobre los muebles: las fichas de la mesa y, después de 看, la tele encendida. */
+const decorado = ({ encendidos }: EstadoDecorado) => (
+  <>
+    {DECORADO}
+    {encendidos.includes("dianshi") && <Tele />}
+  </>
 );
 
 /**
@@ -142,7 +151,7 @@ export const Living = memo(function Living({
         ref={ref}
         camara={entra ? CAMARA_MESA : undefined}
         sorpresa={entra}
-        decorado={DECORADO}
+        decorado={decorado}
         hijos={
           fase === "mesa" ? (
             <Mesa abiertas={abiertas} alAbrir={alAbrir} alCerrar={volver} />

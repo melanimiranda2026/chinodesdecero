@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Correo } from "./Correo";
 import { Adorno } from "./Adorno";
-import { TIKTOK } from "./contenido";
+import { TIKTOK, YOUTUBE } from "./contenido";
 import styles from "./pagina.module.css";
 
 export function Pie() {
@@ -26,6 +26,10 @@ export function Pie() {
         chino con la vaca · Método Jìn <span className={styles.hzChico}>浸</span> · <Link href="/sobre">Sobre nosotros</Link> ·{" "}
         <a href={TIKTOK.url} target="_blank" rel="noopener noreferrer">
           TikTok
+        </a>{" "}
+        ·{" "}
+        <a href={YOUTUBE.url} target="_blank" rel="noopener noreferrer">
+          YouTube
         </a>
       </p>
     </footer>

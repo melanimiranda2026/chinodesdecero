@@ -648,6 +648,24 @@ describe("Casa: la entrada y la puerta del living", () => {
     expect(enLiving()).toBe(false);
   });
 
+  it("living completo: si /api/suscribir falla (503), el correo válido igual abre la cocina (nunca sin salida)", async () => {
+    guardar({ cuartos: { living: LIVING_COMPLETO } });
+    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response('{"error":"configuracion"}', { status: 503 }));
+    render(<Casa />);
+    await pasarEntrada();
+    fireEvent.click(puerta());
+    const capa = document.querySelector('[data-capa="salida"]') as HTMLElement;
+    fireEvent.change(within(capa).getByRole("textbox"), { target: { value: "vaca@ejemplo.com" } });
+    await act(async () => {
+      fireEvent.submit(capa.querySelector("form")!);
+      await avanzar(10);
+    });
+    expect(f).toHaveBeenCalled();
+    expect(document.querySelector('[data-capa="salida"]')).toBeNull();
+    expect(enCocina()).toBe(true);
+    f.mockRestore();
+  });
+
   it("un toque salta la entrada: es el primer toque (audio) y, si queda en la cocina, la vaca saluda 你好", async () => {
     vi.mocked(desbloquearAudio).mockClear();
     guardarEnCocina();

@@ -41,6 +41,17 @@ describe("LIVING", () => {
       expect(Math.hypot(l.x - o.pie.x, l.y - o.pie.y), `${o.id} limitarVaca`).toBeLessThan(1);
     }
   });
+  it("los asientos (沙发, 椅子) tienen dónde sentarse: sobre el mueble (en su ancho), más arriba que el pie; la tele no", () => {
+    for (const id of ["shafa", "yizi"]) {
+      const o = LIVING.objetos.find((x) => x.id === id)!;
+      expect(o.asiento, id).toBeDefined();
+      const { x, y } = o.asiento!;
+      expect(x >= o.zona.x && x <= o.zona.x + o.zona.w, `${id} asiento en el ancho de la zona`).toBe(true);
+      expect(y, `${id} asiento sobre el piso del pie`).toBeLessThan(o.pie.y);
+      expect(y, `${id} asiento no más abajo que el mueble`).toBeLessThanOrEqual(o.zona.y + o.zona.h);
+    }
+    expect(LIVING.objetos.find((x) => x.id === "dianshi")!.asiento).toBeUndefined();
+  });
   it("cada audio que el living dice existe en disco", () => {
     const ids = [
       ...LIVING.objetos.flatMap((o) => [idAudio(o.nombre), idAudio([...ZHE_SHI, ...o.nombre])]),

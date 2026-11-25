@@ -13,10 +13,14 @@ export interface DefObjeto {
   zona: Zona;
   /** Dónde se paran las patas de la vaca para usarlo. */
   pie: Punto;
+  /** Dónde queda la vaca sentada (pose "sentada"): el centro del asiento, a su altura. Sin él, se sienta en el pie. */
+  asiento?: Punto;
   /** Ids de `DefCuarto.acciones` que ofrece. */
   acciones: string[];
   /** Un objeto que no se usa: se abre en primer plano. */
   abre?: "mesa";
+  /** Id de la acción que lo enciende (la tele con 看): al empezar la pose suena `sfx/tele` y queda encendido. */
+  enciende?: string;
 }
 
 export interface DefAccion {

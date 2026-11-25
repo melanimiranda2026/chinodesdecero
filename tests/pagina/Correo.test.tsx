@@ -49,7 +49,7 @@ describe("Correo", () => {
     fireEvent.click(screen.getByRole("button", { name: "Avísame" }));
     expect((await screen.findByRole("alert")).textContent).toMatch(/No pudimos guardar tu correo/);
     await waitFor(() => expect((screen.getByRole("button", { name: "Avísame" }) as HTMLButtonElement).disabled).toBe(false));
-    expect(cargarAvance().correo).toBeUndefined();
+    expect(screen.queryByRole("status")).toBeNull();
   });
   it("si el enlace no se pudo enviar (502), lo dice y no muestra ¡Listo!", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(respuesta(502));
@@ -159,6 +159,55 @@ describe("Correo", () => {
     llenar();
     enviar();
     expect((await screen.findByRole("alert")).textContent).toMatch(/Espera un rato/);
+  });
+
+  describe("el servidor falla pero el correo es válido: queda en este navegador y la puerta del living se abre", () => {
+    const casos: [string, () => void, RegExp][] = [
+      ["503", () => vi.spyOn(globalThis, "fetch").mockResolvedValue(respuesta(503)), /No pudimos guardar tu correo/],
+      ["429", () => vi.spyOn(globalThis, "fetch").mockResolvedValue(respuesta(429)), /Espera un rato/],
+      ["500", () => vi.spyOn(globalThis, "fetch").mockResolvedValue(respuesta(500)), /No pudimos guardar tu correo/],
+      ["sin red", () => vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch")), /No pudimos conectarnos/],
+    ];
+    for (const [nombre, preparar, texto] of casos) {
+      it(`${nombre}: guarda el correo aquí, avisa a la casa y no dice ¡Listo!`, async () => {
+        preparar();
+        const avisos: unknown[] = [];
+        const oir = (e: Event) => avisos.push((e as CustomEvent).detail);
+        window.addEventListener(EVENTO_AVANCE, oir);
+        render(<Correo origen="salida" />);
+        llenar(" a@b.cl ");
+        enviar();
+        const alerta = await screen.findByRole("alert");
+        window.removeEventListener(EVENTO_AVANCE, oir);
+        expect(alerta.textContent).toMatch(texto);
+        expect(alerta.textContent).toMatch(/guardado en este navegador/);
+        expect(alerta.textContent).not.toMatch(/¡Listo!|Te llegará/);
+        expect(screen.queryByRole("status")).toBeNull();
+        expect(cargarAvance().correo).toBe("a@b.cl");
+        expect(avisos).toEqual([{ correo: "a@b.cl", avisar: false }]);
+      });
+    }
+    it("400: no lo guarda ni avisa (hay que corregirlo)", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(respuesta(400));
+      const avisos: unknown[] = [];
+      const oir = (e: Event) => avisos.push((e as CustomEvent).detail);
+      window.addEventListener(EVENTO_AVANCE, oir);
+      render(<Correo origen="salida" />);
+      llenar();
+      enviar();
+      expect((await screen.findByRole("alert")).textContent).toMatch(/no parece correcto/);
+      window.removeEventListener(EVENTO_AVANCE, oir);
+      expect(cargarAvance().correo).toBeUndefined();
+      expect(avisos).toEqual([]);
+    });
+    it("un correo mal escrito no pasa aunque el servidor falle", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(respuesta(503));
+      render(<Correo origen="salida" />);
+      llenar("hola@sin-punto");
+      enviar();
+      await screen.findByRole("alert");
+      expect(cargarAvance().correo).toBeUndefined();
+    });
   });
 
   it("lleva la nota de privacidad con el contacto para borrar el correo", () => {

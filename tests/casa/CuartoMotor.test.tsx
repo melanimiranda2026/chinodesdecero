@@ -17,6 +17,8 @@ vi.mock("@/components/casa/audio/sonido", () => ({
 import { callar, decir } from "@/components/casa/audio/voz";
 import { sfx } from "@/components/casa/audio/sonido";
 import { CuartoMotor } from "@/components/casa/motor/CuartoMotor";
+import { ARTE_VACA_SENTADA } from "@/components/casa/arte/registro";
+import { BORDE } from "@/components/casa/Vaca";
 import { PASO_MS, POSE_MS } from "@/components/casa/motor/useCuarto";
 import { fichaId, progresoVacio } from "@/components/casa/motor/progreso";
 import type { DefCuarto, ProgresoCuarto } from "@/components/casa/motor/tipos";
@@ -34,7 +36,7 @@ const DEF: DefCuarto = {
   hora: [7, 11],
   salida: "cocina",
   objetos: [
-    { id: "shafa", nombre: SOFA, zona: { x: 500, y: 300, w: 200, h: 120 }, pie: { x: 560, y: 520 }, acciones: ["zuo"] },
+    { id: "shafa", nombre: SOFA, zona: { x: 500, y: 300, w: 200, h: 120 }, pie: { x: 560, y: 520 }, asiento: { x: 600, y: 380 }, acciones: ["zuo"] },
     { id: "yizi", nombre: SILLA, zona: { x: 420, y: 650, w: 100, h: 100 }, pie: { x: 470, y: 820 }, acciones: ["zuo"] },
     { id: "zhuozi", nombre: MESA, zona: { x: 380, y: 450, w: 250, h: 150 }, pie: { x: 330, y: 700 }, acciones: [], abre: "mesa" },
   ],
@@ -405,4 +407,127 @@ describe("CuartoMotor", () => {
     expect(frames).toMatch(/opacity/);
     expect(frames).not.toMatch(/scale|transform/);
   });
+  it("pistas: lo no tocado brilla (nuevo), lo tocado con acciones pendientes brilla suave y lo terminado no brilla", async () => {
+    const { container } = montar({ tocados: ["yizi"], logros: [] });
+    const pista = (id: string) => container.querySelector<HTMLElement>(`[data-objeto="${id}"]`)!.dataset.pista;
+    expect(pista("shafa")).toBe("nuevo");
+    expect(pista("zhuozi")).toBe("nuevo");
+    expect(pista("yizi")).toBe("pendiente");
+    fireEvent.click(zona("桌子"));
+    // la mesa no tiene acciones: una vez tocada ya no brilla
+    expect(pista("zhuozi")).toBeUndefined();
+    fireEvent.click(zona("沙发"));
+    expect(pista("shafa")).toBe("pendiente");
+    await avanzar(400);
+    fireEvent.click(pildora());
+    await avanzar(PASO_MS + POSE_MS + 100);
+    expect(pista("shafa")).toBeUndefined();
+  });
+
+  it("pistas en CSS: halo cálido que no recibe toques; con movimiento reducido no late", () => {
+    const css = readFileSync(join(process.cwd(), "components/casa/motor/Motor.module.css"), "utf8");
+    const halo = css.match(/\.zona\[data-pista\]::after \{([\s\S]*?)\n\}/)?.[1] ?? "";
+    expect(halo).toMatch(/pointer-events: none/);
+    expect(halo).toMatch(/#ffe36b|255, 227, 107/);
+    expect(css).toMatch(/\.zona\[data-pista="nuevo"\]::after \{[^}]*animation/);
+    const reducido = [...css.matchAll(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/g)].map((m) => m[1]).join("\n");
+    expect(reducido).toMatch(/\.zona\[data-pista\]::after \{ animation: none/);
+  });
+  it("sentada: después de la frase la vaca se sube al asiento con el dibujo sentado y luego vuelve al pie, de pie", async () => {
+    let terminar: (v: boolean) => void = () => {};
+    vi.mocked(decir).mockImplementation((s) =>
+      textoHanzi(s) === "我坐下" ? new Promise<boolean>((r) => { terminar = r; }) : Promise.resolve(true),
+    );
+    const { container } = montar();
+    const sentada = () => container.querySelector<HTMLImageElement>("[data-vaca] img[data-vaca-sentada]");
+    const dePie = () => container.querySelector("[data-vaca] [data-capa=cuerpo]");
+    fireEvent.click(zona("沙发"));
+    await avanzar(400);
+    fireEvent.click(pildora());
+    await avanzar(PASO_MS + 100);
+    // durante la frase: de pie, en el pie del sofá
+    expect(parseFloat(vaca(container).style.left)).toBeCloseTo(56, 2);
+    expect(sentada()).toBeNull();
+    await act(async () => { terminar(true); });
+    // la pose: en el asiento y con el dibujo de la vaca sentada (borde de sticker), sin las capas de pie
+    expect(parseFloat(vaca(container).style.left)).toBeCloseTo(60, 2);
+    expect(parseFloat(vaca(container).style.top)).toBeCloseTo(38, 2);
+    expect(sentada()!.getAttribute("src")).toBe(ARTE_VACA_SENTADA);
+    const borde = sentada()!.parentElement!.style.filter;
+    expect(borde.match(/drop-shadow/g)?.length).toBe(BORDE.match(/drop-shadow/g)!.length);
+    expect(dePie()).toBeNull();
+    await avanzar(POSE_MS + 100);
+    expect(vaca(container).getAttribute("data-pose")).toBeNull();
+    expect(parseFloat(vaca(container).style.left)).toBeCloseTo(56, 2);
+    expect(parseFloat(vaca(container).style.top)).toBeCloseTo(52, 2);
+    expect(sentada()).toBeNull();
+    expect(dePie()).not.toBeNull();
+  });
+
+  it("sentada sin asiento en los datos: se sienta donde está (dibujo sentado en el pie)", async () => {
+    const { container } = montar();
+    fireEvent.click(zona("椅子"));
+    await avanzar(400);
+    fireEvent.click(pildora());
+    await avanzar(PASO_MS + 100);
+    expect(vaca(container).getAttribute("data-pose")).toBe("sentada");
+    expect(parseFloat(vaca(container).style.left)).toBeCloseTo(47, 2);
+    expect(container.querySelector("[data-vaca] img[data-vaca-sentada]")).not.toBeNull();
+  });
+
+  it("pestaña oculta con la vaca sentada en el asiento: baja de pie al pie del objeto", async () => {
+    const { container, desactivar } = montar();
+    fireEvent.click(zona("沙发"));
+    await avanzar(400);
+    fireEvent.click(pildora());
+    await avanzar(PASO_MS + 100);
+    expect(vaca(container).getAttribute("data-pose")).toBe("sentada");
+    desactivar();
+    expect(vaca(container).getAttribute("data-pose")).toBeNull();
+    expect(parseFloat(vaca(container).style.left)).toBeCloseTo(56, 2);
+    expect(parseFloat(vaca(container).style.top)).toBeCloseTo(52, 2);
+  });
+
+  it("la ficha que gana una acción (坐 en el 2.º asiento) aparece recién cuando la vaca se paró; el logro cuenta tras la frase", async () => {
+    const { container, alCambiar } = montar({ tocados: ["shafa", "yizi", "zhuozi"], logros: ["zuo@shafa"] });
+    const carta = () => container.querySelector("[data-ficha-ganada]");
+    fireEvent.click(zona("椅子"));
+    await avanzar(400);
+    fireEvent.click(pildora());
+    await avanzar(PASO_MS + 100);
+    // la frase terminó: el logro y la ficha ya cuentan, pero la carta no tapa la pose
+    expect(vaca(container).getAttribute("data-pose")).toBe("sentada");
+    expect(ultimo(alCambiar)[1]).toEqual([fichaId(ZUO)]);
+    expect(carta()).toBeNull();
+    await avanzar(POSE_MS - 200);
+    expect(carta()).toBeNull();
+    await avanzar(300);
+    expect(vaca(container).getAttribute("data-pose")).toBeNull();
+    expect(carta()!.getAttribute("aria-label")).toBe("坐");
+    await avanzar(1700);
+    expect(carta()).toBeNull();
+  });
+
+  it("pestaña oculta a mitad de la pose: la carta de la ficha se muestra una sola vez (ni se pierde ni se duplica)", async () => {
+    const { container, desactivar } = montar({ tocados: ["shafa", "yizi", "zhuozi"], logros: ["zuo@shafa"] });
+    // cada carta montada es un elemento nuevo: se cuentan las de 坐
+    const vistas = new Set<Element>();
+    const obs = new MutationObserver(() => {
+      const c = container.querySelector("[data-ficha-ganada]");
+      if (c?.getAttribute("aria-label") === "坐") vistas.add(c);
+    });
+    obs.observe(container, { childList: true, subtree: true });
+    fireEvent.click(zona("椅子"));
+    await avanzar(400);
+    fireEvent.click(pildora());
+    await avanzar(PASO_MS + 100);
+    expect(container.querySelector("[data-ficha-ganada]")).toBeNull();
+    desactivar();
+    expect(container.querySelector("[data-ficha-ganada]")!.getAttribute("aria-label")).toBe("坐");
+    await avanzar(POSE_MS + 4000);
+    obs.disconnect();
+    expect(container.querySelector("[data-ficha-ganada]")).toBeNull();
+    expect(vistas.size).toBe(1);
+  });
+
 });

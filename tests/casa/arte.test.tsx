@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { ARTE, ARTE_MESA, ARTE_PRIMER_PLANO, ARTE_REFRI, ARTE_REFRI_FONDO, ARTE_VACA, FONDO_CASA, FONDO_CUARTO } from "@/components/casa/arte/registro";
+import { ARTE, ARTE_MESA, ARTE_PRIMER_PLANO, ARTE_REFRI, ARTE_REFRI_FONDO, ARTE_VACA, ARTE_VACA_SENTADA, FONDO_CASA, FONDO_CUARTO } from "@/components/casa/arte/registro";
 import { MESA_LIVING, PARADA_VACA } from "@/components/casa/living/lugares";
 import { alPiso } from "@/components/casa/cocina/iso";
 import { Capa, FondoCuarto } from "@/components/casa/arte/Capa";
@@ -22,6 +22,10 @@ describe("registro de arte", () => {
     const { container } = render(<Vaca ojos="abiertos" hocico="sonrisa" orejas="normales" />);
     const srcs = [...container.querySelectorAll("img")].map((i) => i.getAttribute("src"));
     expect(srcs.sort()).toEqual([...rutas].sort());
+  });
+  it("la vaca sentada (una sola imagen con cara) existe en public/ (WebP)", () => {
+    expect(ARTE_VACA_SENTADA).toMatch(/^\/vaca\/.+\.webp$/);
+    expect(existsSync(join(process.cwd(), "public", ARTE_VACA_SENTADA))).toBe(true);
   });
   it("panzi", () => {
     expect(ARTE.panzi.visibles("lleno")).toEqual(["plato", "jiaozi"]);

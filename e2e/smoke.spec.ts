@@ -278,3 +278,24 @@ test("客厅: la mesa de 50 palabras cabe sin scroll horizontal, fichas ≥ 44 p
   expect(await sinScrollHorizontal(page)).toBe(true);
   await page.screenshot({ path: `${process.env.SMOKE_SHOTS ?? "test-results"}/ficha-${info.project.name}.png` });
 });
+
+test("en el living se toma a la vaca y se lleva a la tele; con 看 la tele se enciende", async ({ page }) => {
+  await prepararRed(page);
+  await abrirCasa(page, "living");
+  const agarre = living(page).locator("[data-agarre]");
+  const a = (await agarre.boundingBox())!;
+  const t = (await living(page).locator('[data-objeto="dianshi"]').boundingBox())!;
+  const desde = { x: a.x + a.width / 2, y: a.y + a.height / 2 };
+  // el agarre va en el cuerpo: se apunta con el cuerpo a la parte de abajo de la tele
+  const hasta = { x: t.x + t.width * 0.6, y: t.y + t.height * 0.85 };
+  await page.mouse.move(desde.x, desde.y);
+  await page.mouse.down();
+  for (let k = 1; k <= 10; k++) await page.mouse.move(desde.x + ((hasta.x - desde.x) * k) / 10, desde.y + ((hasta.y - desde.y) * k) / 10);
+  await expect(living(page).locator("[data-vaca]")).toHaveAttribute("data-arrastrando", "true");
+  await page.mouse.up();
+  // soltarla en la tele es como tocarla: gana 电视 y aparece 看
+  await expect(bandeja(page).getByRole("img", { name: "电视", exact: true })).toBeVisible({ timeout: 10_000 });
+  await expect(living(page).locator("[data-tele]")).toHaveCount(0);
+  await hacer(page, "dianshi", "kan");
+  await expect(living(page).locator('[data-tele="encendida"]')).toBeVisible();
+});

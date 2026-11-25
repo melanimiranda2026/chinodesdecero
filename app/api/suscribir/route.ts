@@ -9,8 +9,7 @@ import { cuerpoGrande } from "@/lib/limite";
 import { claveCorreo, claveIp, consumirLimite, ipDe, LIMITES } from "@/lib/limites";
 import { avancePendiente } from "@/components/casa/avance-validar";
 import { TEXTO_CONSENTIMIENTO } from "@/lib/consentimiento";
-
-const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { correoValido } from "@/lib/correo";
 
 const sinConfiguracion = () => NextResponse.json({ error: "configuracion" }, { status: 503 });
 const ok = () => NextResponse.json({ ok: true });
@@ -37,7 +36,7 @@ export async function POST(req: Request) {
   if (typeof cuerpo?.sitio === "string" && cuerpo.sitio.trim() !== "") return ok();
 
   const email = typeof cuerpo?.email === "string" ? cuerpo.email.trim().toLowerCase() : "";
-  if (!email || email.length > 254 || !CORREO.test(email)) {
+  if (!correoValido(email)) {
     return NextResponse.json({ error: "correo" }, { status: 400 });
   }
   const consentimiento = cuerpo.consentimiento === true;

@@ -2,10 +2,10 @@
  * Puente con Krita (ver docs/arte.md, "Pintar en Krita con capas").
  *
  *   npm run arte:krita            arma arte-krita/<objeto>.ora: un archivo por objeto con sus capas separadas y con
- *                                 nombre, y arte-krita/cuarto_cocina.ora y cuarto_living.ora con cada cuarto partido
+ *                                 nombre, y arte-krita/cuarto_<cuarto>.ora (cocina, living, baño, dormitorio) con cada cuarto partido
  *                                 en piezas.
  *                                 No pisa un .ora que ya exista (es tu trabajo); con `-- --forzar` lo rehace.
- *   npm run arte:krita-importar   lee los .ora que guardaste en Krita y deja en public/arte/cocina/ (o living/) un PNG
+ *   npm run arte:krita-importar   lee los .ora que guardaste en Krita y deja en public/arte/<cuarto>/ un PNG
  *                                 por cada capa que cambiaste (las que no tocaste siguen con su dibujo actual).
  *
  * OpenRaster (.ora) es un zip con un PNG por capa y un stack.xml; Krita lo abre y lo guarda con capas.
@@ -18,8 +18,10 @@ import sharp from "sharp";
 const RAIZ = process.cwd();
 const ARTE = join(RAIZ, "public", "arte", "cocina");
 /** Carpeta de public/arte/ de cada cuarto. */
-const CUARTOS: Record<string, string> = { cuarto_cocina: "cocina", cuarto_living: "living" };
+const CUARTOS: Record<string, string> = { cuarto_cocina: "cocina", cuarto_living: "living", cuarto_bano: "bano", cuarto_dormitorio: "dormitorio" };
 const KRITA = join(RAIZ, "arte-krita");
+/** El botón Play dibujado en Krita (`boton play<versión>.ora`) queda guardado ahí, pero por ahora no se usa ni se importa. */
+const BOTON_PLAY = /^boton play.*\.ora$/i;
 const FUENTES = join(KRITA, "fuentes");
 
 /** Capas de cada objeto, de atrás hacia adelante (el mismo orden en que el juego las apila). */
@@ -256,6 +258,7 @@ async function importar() {
   let escritos = 0;
 
   for (const archivo of oras) {
+    if (BOTON_PLAY.test(archivo)) continue;
     const id = basename(archivo, ".ora");
     const archivos = unzip(readFileSync(join(KRITA, archivo)));
     const xml = archivos.get("stack.xml")?.toString("utf8");
@@ -292,8 +295,10 @@ async function importar() {
   console.log(`listo: ${escritos} PNG nuevo(s) o actualizado(s) en public/arte/`);
 }
 
-const args = process.argv.slice(2);
-(args[0] === "importar" ? importar() : exportar(args.includes("--forzar"))).catch((e) => {
-  console.error("✗", e instanceof Error ? e.message : e);
-  process.exit(1);
-});
+if (process.argv[1]?.endsWith("arte-krita.ts")) {
+  const args = process.argv.slice(2);
+  (args[0] === "importar" ? importar() : exportar(args.includes("--forzar"))).catch((e) => {
+    console.error("✗", e instanceof Error ? e.message : e);
+    process.exit(1);
+  });
+}

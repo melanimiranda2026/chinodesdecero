@@ -2,7 +2,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Silaba } from "@/lib/silabas";
 import { callar, decir } from "../audio/voz";
+import { sfx } from "../audio/sonido";
 import { efectoYLuegoVoz, esperaDe } from "../audio/turnos";
+import { limitarVaca } from "../camara";
 import { ZHE_SHI } from "../cocina/frases";
 import { proyectar, type Punto } from "../cocina/iso";
 import type { AlEvento } from "../useCasa";
@@ -16,8 +18,29 @@ import type { DefCuarto, Pose, ProgresoCuarto } from "./tipos";
 export const PASO_MS = 900;
 /** Lo que dura la pose (sentada, mirando) después de la frase. */
 export const POSE_MS = 1500;
+/** Lo que dura el saltito al asiento y de vuelta al pie (pose sentada). */
+export const SALTO_MS = 300;
 /** Lo que brilla un objeto al tocarlo. */
 const BRILLO_MS = 1000;
+/** Lo que tarda la vaca en acomodarse al soltarla (a su lugar en el piso o al pie del objeto). */
+export const SOLTAR_MS = 350;
+
+/**
+ * El objeto sobre el que se soltó la vaca: su cuerpo (unas 70 unidades sobre las patas) cae dentro de la zona del
+ * objeto, con un margen de 30 para que no haya que apuntar fino. Si hay varios, el de centro más cercano.
+ */
+export function objetoBajoVaca(def: DefCuarto, p: Punto): string | null {
+  const c = { x: p.x, y: p.y - 70 };
+  let mejor: string | null = null;
+  let dist = Infinity;
+  for (const o of def.objetos) {
+    const z = o.zona, m = 30;
+    if (c.x < z.x - m || c.x > z.x + z.w + m || c.y < z.y - m || c.y > z.y + z.h + m) continue;
+    const d = Math.hypot(c.x - (z.x + z.w / 2), c.y - (z.y + z.h / 2));
+    if (d < dist) { dist = d; mejor = o.id; }
+  }
+  return mejor;
+}
 
 /** Donde la vaca espera al entrar: en el piso, adelante a la derecha (u 8.6, v 8.8; todos los cuartos son la misma caja). */
 export const VACA_INICIAL: Punto = (() => {
@@ -57,6 +80,8 @@ export interface OpcionesCuarto {
 
 export interface CuartoApi {
   vaca: Punto;
+  /** Lo que tarda la vaca en llegar a `vaca`: la caminata o el saltito al asiento. */
+  pasoMs: number;
   pose: Pose | null;
   globo: Silaba[] | null;
   hocico: Hocico;
@@ -68,6 +93,13 @@ export interface CuartoApi {
   /** El progreso más reciente (el propio, aunque el de afuera aún no vuelva). */
   progreso: ProgresoCuarto;
   tocarObjeto(id: string): Promise<void>;
+  /**
+   * Se soltó a la vaca después de arrastrarla (patas en x, y). Sobre un objeto: va a su pie y es como tocarlo.
+   * En otra parte: se queda ahí, dentro del piso libre.
+   */
+  soltarVaca(x: number, y: number): Promise<void>;
+  /** Objetos encendidos (la tele después de 看); duran mientras se está en el cuarto. */
+  encendidos: string[];
   hacer(accionId: string, objetoId: string): Promise<void>;
   /** Fichas por mostrar girando, en orden. */
   cola: Silaba[][];
@@ -85,11 +117,15 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
   const [ocupado, ocupadoRef, setOcupado] = useVivo(false);
   const [progreso, progresoRef, setProgreso] = useVivo<ProgresoCuarto>(opc.progreso);
   const [pose, setPose] = useState<Pose | null>(null);
+  const [pasoMs, setPasoMs] = useState(PASO_MS);
+  /** Sentada en un asiento: el pie al que vuelve al pararse (también si se corta todo). */
+  const deVuelta = useRef<Punto | null>(null);
   const [globo, setGlobo] = useState<Silaba[] | null>(null);
   const [hocico, setHocico] = useState<Hocico>("sonrisa");
   const [elegido, setElegido] = useState<string | null>(null);
   const [brillo, setBrillo] = useState<string | null>(null);
   const [cola, setCola] = useState<Silaba[][]>([]);
+  const [encendidos, setEncendidos] = useState<string[]>([]);
   const [reducido] = useState(movimientoReducido);
 
   const { luego, espera } = useTiempos();
@@ -145,9 +181,15 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
     [luego],
   );
 
-  /** Guarda el progreso nuevo, avisa afuera con las fichas recién ganadas y las pone en la cola. */
+  /** Cartas de fichas ganadas por una acción: esperan a que termine la pose para no taparla. */
+  const cartasEnEspera = useRef<Silaba[][]>([]);
+
+  /**
+   * Guarda el progreso nuevo, avisa afuera con las fichas recién ganadas y las pone en la cola.
+   * `trasLaPose`: la carta que gira espera a que la vaca se pare (el logro y la ficha cuentan ya).
+   */
   const aplicar = useCallback(
-    (nuevo: ProgresoCuarto) => {
+    (nuevo: ProgresoCuarto, trasLaPose = false) => {
       const antes = progresoRef.current;
       if (nuevo === antes) return;
       const d = defRef.current;
@@ -161,7 +203,9 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
       }
       if (nuevas.length) {
         const sil = silabasDeFichas(d);
-        setCola((c) => [...c, ...nuevas.map((f) => sil.get(f)!)]);
+        const cartas = nuevas.map((f) => sil.get(f)!);
+        if (trasLaPose) cartasEnEspera.current.push(...cartas);
+        else setCola((c) => [...c, ...cartas]);
         for (const f of nuevas) eventoRef.current?.("ficha_ganada", { cuarto: d.id, ficha: f });
       }
       if (!avisado.current && !completo(d, antes) && completo(d, nuevo)) {
@@ -218,6 +262,7 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
       setOcupado(true);
       const camino = ++secuencia.current;
       try {
+        setPasoMs(PASO_MS);
         setVaca(o.pie);
         await espera(reducido ? 0 : PASO_MS);
         if (camino === secuencia.current && activoRef.current) abrirRef.current?.(o.abre);
@@ -227,6 +272,20 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
     },
     [ocupadoRef, progresoRef, setOcupado, setVaca, espera, reducido, luego, aplicar, hablar],
   );
+
+  /** Sin pose y, si estaba en un asiento, de vuelta en su pie. */
+  const pararse = useCallback(() => {
+    setPose(null);
+    if (deVuelta.current) {
+      setPasoMs(SALTO_MS);
+      setVaca(deVuelta.current);
+      deVuelta.current = null;
+    }
+    // ya de pie: ahora sí giran las cartas ganadas por la acción (una vez: la espera se vacía)
+    const cartas = cartasEnEspera.current;
+    cartasEnEspera.current = [];
+    if (cartas.length) setCola((c) => [...c, ...cartas]);
+  }, [setVaca]);
 
   const hacer = useCallback(
     async (accionId: string, objetoId: string) => {
@@ -239,25 +298,36 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
       setElegido(null);
       const sec = ++secuencia.current;
       try {
+        setPasoMs(PASO_MS);
         setVaca(o.pie);
         await espera(reducido ? 0 : PASO_MS);
         if (sec !== secuencia.current) return;
         await hablar(a.frase);
         // el logro solo cuenta si la frase terminó sin corte
         if (sec !== secuencia.current) return;
-        aplicar(lograr(progresoRef.current, a.id, o.id));
+        aplicar(lograr(progresoRef.current, a.id, o.id), true);
         eventoRef.current?.("accion_lograda", { cuarto: d.id, accion: a.id, objeto: o.id });
-        // primero el audio, después la pose
+        // primero el audio, después la pose: sentada, se sube al asiento de un saltito (reducido: aparece ahí)
+        if (a.pose === "sentada" && o.asiento) {
+          deVuelta.current = o.pie;
+          setPasoMs(SALTO_MS);
+          setVaca(o.asiento);
+        }
+        // la voz ya terminó: el efecto de encender (la tele) no queda encima del mandarín
+        if (o.enciende === a.id) {
+          setEncendidos((e) => (e.includes(o.id) ? e : [...e, o.id]));
+          sfx("tele", "cocina");
+        }
         setPose(a.pose);
         await espera(POSE_MS);
       } finally {
         if (sec === secuencia.current) {
-          setPose(null);
+          pararse();
           setOcupado(false);
         }
       }
     },
-    [ocupadoRef, progresoRef, setOcupado, setVaca, espera, reducido, hablar, aplicar],
+    [ocupadoRef, progresoRef, setOcupado, setVaca, espera, reducido, hablar, aplicar, pararse],
   );
 
   // pestaña oculta o cambio de cuarto: se corta todo y la vaca queda libre y de pie
@@ -270,10 +340,10 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
     callar();
     setGlobo(null);
     setHocico("sonrisa");
-    setPose(null);
+    pararse();
     setElegido(null);
     setOcupado(false);
-  }, [opc.activo, setOcupado]);
+  }, [opc.activo, setOcupado, pararse]);
 
   // al desmontar (cambio de cuarto): lo que venía (el nombre tras el pop, alAbrir, la frase) ya no corre y se calla
   useEffect(
@@ -285,8 +355,21 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
     [],
   );
 
+  const soltarVaca = useCallback(
+    async (x: number, y: number) => {
+      if (ocupadoRef.current || !activoRef.current) return;
+      const d = defRef.current;
+      const id = objetoBajoVaca(d, { x, y });
+      setPasoMs(SOLTAR_MS);
+      if (!id) return setVaca(limitarVaca(x, y));
+      setVaca(d.objetos.find((o) => o.id === id)!.pie);
+      await tocarObjeto(id);
+    },
+    [ocupadoRef, setVaca, tocarObjeto],
+  );
+
   const sacarDeCola = useCallback(() => setCola((c) => c.slice(1)), []);
   const puedeSonar = useCallback(() => hablando.current === 0, []);
 
-  return { vaca, pose, globo, hocico, ocupado, elegido, brillo, progreso, tocarObjeto, hacer, cola, sacarDeCola, puedeSonar };
+  return { vaca, pasoMs, pose, globo, hocico, ocupado, elegido, brillo, progreso, tocarObjeto, soltarVaca, encendidos, hacer, cola, sacarDeCola, puedeSonar };
 }

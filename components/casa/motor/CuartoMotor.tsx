@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
+import { useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type PointerEvent as EventoPuntero, type ReactNode, type Ref } from "react";
 import { textoHanzi } from "@/lib/silabas";
 import { sfx } from "../audio/sonido";
 import { FondoCuarto } from "../arte/Capa";
@@ -10,11 +10,11 @@ import { Globo } from "../Globo";
 import { RelojSolar } from "../RelojSolar";
 import type { AlEvento } from "../useCasa";
 import { useEscenario } from "../useEscenario";
-import { Vaca } from "../Vaca";
+import { Vaca, VacaSentada } from "../Vaca";
 import { Bandeja } from "./Bandeja";
 import { FichaGanada } from "./FichaGanada";
-import { completo, fichaId, fichasDe, horaDe, todasLasFichas } from "./progreso";
-import { PASO_MS, silabasDeFichas, useCuarto } from "./useCuarto";
+import { completo, fichaId, fichasDe, horaDe, pasosDe, todasLasFichas } from "./progreso";
+import { objetoBajoVaca, silabasDeFichas, useCuarto } from "./useCuarto";
 import type { CuartoId, DefCuarto, ProgresoCuarto } from "./tipos";
 import cs from "../Casa.module.css";
 import styles from "./Motor.module.css";
@@ -24,6 +24,11 @@ const pct = (n: number) => `${n / 10}%`;
 const VER_TODO: Camara = { x: 500, y: 500, s: 1 };
 /** Lo que parpadean las siluetas de la bandeja al tocar la puerta cerrada. */
 const PARPADEO_MS = 1200;
+/** Menos de esto (px de pantalla) es un toque, no un arrastre. */
+const UMBRAL_ARRASTRE = 8;
+
+/** Lo que el cuarto le cuenta a sus dibujos sobre los muebles (la tele encendida). */
+export type EstadoDecorado = { encendidos: string[] };
 
 /** Nombre de cada cuarto en hanzi (el de la puerta). */
 const NOMBRE_CUARTO: Record<CuartoId, string> = { living: "客厅", cocina: "厨房", bano: "浴室", dormitorio: "卧室" };
@@ -64,7 +69,7 @@ export function CuartoMotor({
   /** La vaca se sorprende: orejas arriba, ojos grandes y un saltito (al llegar a la mesa). */
   sorpresa?: boolean;
   /** Dibujos sobre los muebles, dentro del mundo (el zoom los lleva); debajo de las zonas de toque. */
-  decorado?: ReactNode;
+  decorado?: ReactNode | ((e: EstadoDecorado) => ReactNode);
   ref?: Ref<ControlCuarto>;
 }) {
   const c = useCuarto(def, { progreso: progresoGuardado, alCambiar, alEvento, activo, alAbrir });
@@ -96,11 +101,58 @@ export function CuartoMotor({
   const pPildora = elegido ? enPantalla(vista, elegido.zona.x + elegido.zona.w / 2, elegido.zona.y, aspecto) : null;
   const pGlobo = enPantalla(vista, c.vaca.x, c.vaca.y - 170, aspecto);
   const ficha = c.cola[0];
+  /** Qué se puede tocar: lo no tocado late (nuevo); lo tocado con acciones por hacer queda con un brillo suave. */
+  const pistaDe = (o: DefCuarto["objetos"][number]): "nuevo" | "pendiente" | undefined =>
+    !c.progreso.tocados.includes(o.id)
+      ? "nuevo"
+      : o.acciones.some((a) => !c.progreso.logros.includes(`${a}@${o.id}`))
+        ? "pendiente"
+        : undefined;
 
+  // ---- tomar a la vaca y soltarla: sobre un objeto es como tocarlo; en el piso, se queda ahí ----
+  const mundo = useRef<HTMLDivElement>(null);
+  const agarre = useRef<{ id: number; cx: number; cy: number; x0: number; y0: number; movio: boolean } | null>(null);
+  const [arrastre, setArrastre] = useState<{ x: number; y: number } | null>(null);
+  /** px de pantalla → unidades del cuarto (el ancho del mundo ya incluye el zoom). */
+  const aUnidades = (px: number) => {
+    const w = mundo.current?.getBoundingClientRect().width ?? 0;
+    return w ? (px / w) * 1000 : 0;
+  };
+  const libre = !c.ocupado && !c.pose;
+  const vacaAbajo = (e: EventoPuntero<HTMLElement>) => {
+    if (!libre || !activo) return;
+    e.stopPropagation();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* jsdom / navegadores viejos */
+    }
+    agarre.current = { id: e.pointerId, cx: e.clientX, cy: e.clientY, x0: c.vaca.x, y0: c.vaca.y, movio: false };
+  };
+  const vacaMueve = (e: EventoPuntero<HTMLElement>) => {
+    const a = agarre.current;
+    if (!a || a.id !== e.pointerId) return;
+    const dx = e.clientX - a.cx, dy = e.clientY - a.cy;
+    if (!a.movio && Math.hypot(dx, dy) < UMBRAL_ARRASTRE) return;
+    a.movio = true;
+    setArrastre({ x: a.x0 + aUnidades(dx), y: a.y0 + aUnidades(dy) });
+  };
+  const vacaSuelta = (e: EventoPuntero<HTMLElement>, cancelado: boolean) => {
+    const a = agarre.current;
+    if (!a || a.id !== e.pointerId) return;
+    agarre.current = null;
+    setArrastre(null);
+    if (!a.movio || cancelado) return;
+    void c.soltarVaca(a.x0 + aUnidades(e.clientX - a.cx), a.y0 + aUnidades(e.clientY - a.cy));
+  };
+  /** Mientras se arrastra, el objeto de abajo brilla y la vaca se sorprende. */
+  const objetivo = arrastre ? objetoBajoVaca(def, arrastre) : null;
+
+  const vacaVista = arrastre ?? c.vaca;
   const estiloVaca: CSSProperties = {
-    left: pct(c.vaca.x),
-    top: pct(c.vaca.y),
-    transition: `left ${PASO_MS}ms ease-in-out, top ${PASO_MS}ms ease-in-out`,
+    left: pct(vacaVista.x),
+    top: pct(vacaVista.y),
+    transition: arrastre ? "none" : `left ${c.pasoMs}ms ease-in-out, top ${c.pasoMs}ms ease-in-out`,
   };
 
   return (
@@ -111,20 +163,22 @@ export function CuartoMotor({
       data-ocupado={c.ocupado ? "true" : undefined}
     >
       <div
+        ref={mundo}
         data-mundo
         className={cs.mundo}
         style={{ transform: transformCSS(vista, aspecto), transition: medido ? undefined : "none" }}
       >
         {tieneFondo(def.id) && <FondoCuarto cuarto={def.id} />}
-        {decorado}
+        {typeof decorado === "function" ? decorado({ encendidos: c.encendidos }) : decorado}
 
         {def.objetos.map((o) => (
           <button
             key={o.id}
             type="button"
             data-objeto={o.id}
+            data-pista={pistaDe(o)}
             aria-label={textoHanzi(o.nombre)}
-            className={cx(styles.zona, c.brillo === o.id && styles.brilla)}
+            className={cx(styles.zona, (c.brillo === o.id || objetivo === o.id) && styles.brilla)}
             style={{ left: pct(o.zona.x), top: pct(o.zona.y), width: pct(o.zona.w), height: pct(o.zona.h) }}
             onClick={() => void c.tocarObjeto(o.id)}
           />
@@ -146,18 +200,33 @@ export function CuartoMotor({
         <div
           data-vaca
           data-pose={c.pose ?? undefined}
+          data-arrastrando={arrastre ? "true" : undefined}
           role="img"
           aria-label="牛"
-          className={cx(cs.vaca, styles.vaca, c.pose === "sentada" && cs.vacaSentada)}
+          className={cx(cs.vaca, styles.vaca)}
           style={estiloVaca}
         >
           <div className={cs.sombra} />
-          <Vaca
-            ojos={sorpresa ? "sorpresa" : c.pose === "mira" ? "izquierda" : "abiertos"}
-            hocico={c.hocico}
-            orejas={sorpresa ? "arriba" : "normales"}
-            salta={sorpresa}
+          {/* se toma del cuerpo (no de toda la caja): así no tapa los objetos que tiene al lado */}
+          <div
+            data-agarre
+            className={styles.agarre}
+            data-libre={libre ? "true" : undefined}
+            onPointerDown={vacaAbajo}
+            onPointerMove={vacaMueve}
+            onPointerUp={(e) => vacaSuelta(e, false)}
+            onPointerCancel={(e) => vacaSuelta(e, true)}
           />
+          {c.pose === "sentada" ? (
+            <VacaSentada />
+          ) : (
+            <Vaca
+              ojos={sorpresa || objetivo ? "sorpresa" : c.pose === "mira" ? "izquierda" : "abiertos"}
+              hocico={c.hocico}
+              orejas={sorpresa ? "arriba" : "normales"}
+              salta={sorpresa}
+            />
+          )}
         </div>
       </div>
 
@@ -187,7 +256,7 @@ export function CuartoMotor({
         </div>
       )}
 
-      <RelojSolar hora={horaDe(def, c.progreso)} className={styles.reloj} />
+      <RelojSolar hora={horaDe(def, c.progreso)} {...pasosDe(def, c.progreso)} className={styles.reloj} />
       <div className={styles.bandejaCaja} data-parpadea={parpadeo ? "true" : undefined} key={parpadeo}>
         <Bandeja fichas={fichasDe(def, c.progreso)} todas={todas} />
       </div>

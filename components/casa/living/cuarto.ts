@@ -9,8 +9,8 @@ import type { DefCuarto, Zona } from "../motor/tipos";
 import { MESA_LIVING, MUEBLES_LIVING, PARADA_VACA } from "./lugares";
 
 const r1 = (n: number) => Math.round(n * 10) / 10;
-const pie = (u: number, v: number): Punto => {
-  const p = proyectar(u, v);
+const pie = (u: number, v: number, z = 0): Punto => {
+  const p = proyectar(u, v, z);
   return { x: r1(p.x), y: r1(p.y) };
 };
 
@@ -40,6 +40,8 @@ export const LIVING: DefCuarto = {
       // el frente del sofá se recorta donde empieza la mesa
       zona: zonaDe(sofa.u0, sofa.u1, sofa.v0, sofa.v1, 0, 2.05, undefined, MESA_LIVING.y - 1),
       pie: pie(3.5, 2.8),
+      // sobre los cojines del asiento (v 0.72 a 1.5, arriba a z 1.08 en `arte-iso.ts`), al centro del sofá
+      asiento: pie((sofa.u0 + sofa.u1) / 2, 1.15, 1.08),
       acciones: ["zuo"],
     },
     {
@@ -48,6 +50,8 @@ export const LIVING: DefCuarto = {
       // el respaldo queda detrás de la mesa: la zona empieza donde la mesa termina
       zona: zonaDe(silla.u - silla.s, silla.u + silla.s, silla.v - silla.s, silla.v + silla.s, 0, silla.alto, mesaAbajo + 1),
       pie: pie(silla.u, silla.v + 1.3),
+      // sobre el cojín (z 1.15 en `arte-iso.ts`)
+      asiento: pie(silla.u, silla.v, 1.15),
       acciones: ["zuo"],
     },
     {
@@ -57,6 +61,7 @@ export const LIVING: DefCuarto = {
       zona: zonaDe(tele.u0, tele.u1, tele.v0, tele.v1, 0, 3.2, undefined, MESA_LIVING.y - 1),
       pie: pie(2.4, 3.0),
       acciones: ["kan"],
+      enciende: "kan",
     },
     {
       id: "zhuozi",

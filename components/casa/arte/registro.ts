@@ -128,3 +128,5 @@ export const ARTE_VACA = {
     neutra: "/vaca/vaca_hocico_neutra.webp",
   },
 } as const;
+/** La vaca sentada, de frente: una sola imagen con cara (no va por capas). La usa la pose 坐 de los cuartos. */
+export const ARTE_VACA_SENTADA = "/vaca/vaca_sentada.webp";

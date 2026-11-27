@@ -5,6 +5,7 @@ import { BU_DUI, DUI, GEI_WO, HAO, HEN_HAO, HEN_HAO_CHI, HEN_LENG, HEN_RE, HU_LU
 import type { ObjetoId } from "../cocina/datos";
 import { OBJETOS_QUIZ } from "../quiz";
 import { LIVING } from "../living/cuarto";
+import { FAMILIA, fraseDe } from "../living/familia";
 
 /** Todas las frases que la casa puede decir, sin repetidas por idAudio. */
 export function frasesUsadas(): Silaba[][] {
@@ -35,6 +36,8 @@ export function frasesUsadas(): Silaba[][] {
   // el living: cada objeto y su 这是, cada verbo y cada frase
   for (const o of LIVING.objetos) todas.push(o.nombre, [...ZHE_SHI, ...o.nombre]);
   for (const a of LIVING.acciones) todas.push(a.verbo, a.frase);
+  // la foto de la familia: 这是我爸爸, 这是我妈妈…
+  for (const p of FAMILIA) todas.push(fraseDe(p));
 
   const vistos = new Set<string>();
   return todas.filter((f) => {

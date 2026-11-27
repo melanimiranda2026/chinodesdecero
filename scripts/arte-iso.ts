@@ -10,7 +10,7 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { ISO, MUEBLES, proyectar } from "../components/casa/cocina/iso";
 import { OBJETOS, type ObjetoId } from "../components/casa/cocina/datos";
-import { MUEBLES_LIVING } from "../components/casa/living/lugares";
+import { MUEBLES_LIVING, PIEZAS_LIVING, PLANTA_LIVING, SILLA, SILLAS_LIVING, type SillaId } from "../components/casa/living/lugares";
 import { PUERTA_ENTRADA, transformCuarto } from "../components/casa/casaEntera";
 import { dibujarEscenarios, type Dibujo } from "./escenarios-iso";
 import { C, T, L, LOSA, archivo as archivoEn, caja, cara, cilindro, circulo, circuloPared, cojin, cantosParedes, degradado, escribirPartes, f, linea, paredesLisas, pisoDeTablas, planta, rectU, rectV, rectZ, trazo, conTrazo, camino, type Colores, type P3 } from "./iso/dibujo";
@@ -46,7 +46,7 @@ function cuarto() {
   // alfombra redonda
   out.push(circulo(6.1, 6.2, 0, 2.35, C.terracota, 2));
   out.push(circulo(6.1, 6.2, 0, 2.0, C.crema, 1.4));
-  out.push(circulo(6.1, 6.2, 0, 1.55, "#A9C995", 1.4));
+  out.push(circulo(6.1, 6.2, 0, 1.55, "#B7B666", 1.4));
   out.push(circulo(6.1, 6.2, 0, 1.0, C.crema, 1.4));
   out.push(circulo(6.1, 6.2, 0, 0.45, C.terracota, 1.4));
   for (let i = 0; i < 28; i++) {
@@ -78,14 +78,14 @@ function cuarto() {
   parte("ventana");
   // ---- ventana (pared izquierda) ----
   const [wv0, wv1, wz0, wz1] = [1.9, 4.1, 3.25, 5.35];
-  const [gVid, uVid] = degradado("#E6F6FB", "#A9D6EA", true);
+  const [gVid, uVid] = degradado("#E4DDF3", "#D3C8EA", true);
   defs.push(gVid);
   out.push(rectU(0.003, wv0, wv1, wz0, wz1, C.madera.i, 2));
   out.push(rectU(0.004, wv0 + 0.13, wv1 - 0.13, wz0 + 0.13, wz1 - 0.13, uVid, 1.6));
   // árboles afuera
   for (const [v, z, r] of [[2.4, 3.6, 0.42], [2.9, 3.5, 0.5], [3.6, 3.65, 0.38]] as const) {
     const p = proyectar(0.005, v, z);
-    out.push(`<ellipse cx="${f(p.x)}" cy="${f(p.y)}" rx="${f(r * ISO.A * 0.9)}" ry="${f(r * ISO.Z * 1.1)}" fill="#BFDDB0" stroke="none" transform="translate(${f(p.x)} ${f(p.y)}) skewY(-26.57) translate(${f(-(p.x))} ${f(-(p.y))})"/>`);
+    out.push(`<ellipse cx="${f(p.x)}" cy="${f(p.y)}" rx="${f(r * ISO.A * 0.9)}" ry="${f(r * ISO.Z * 1.1)}" fill="#CFCE8C" stroke="none" transform="translate(${f(p.x)} ${f(p.y)}) skewY(-26.57) translate(${f(-(p.x))} ${f(-(p.y))})"/>`);
   }
   out.push(linea([0.005, (wv0 + wv1) / 2, wz0 + 0.13], [0.005, (wv0 + wv1) / 2, wz1 - 0.13], C.madera.d, 4));
   out.push(linea([0.005, wv0 + 0.13, (wz0 + wz1) / 2], [0.005, wv1 - 0.13, (wz0 + wz1) / 2], C.madera.d, 4));
@@ -294,7 +294,7 @@ function cuarto() {
       out.push(linea([u - 0.2, v + 0.2, 0.5], [u + 0.2, v + 0.2, 0.5], C.madera.d, 2));
       const p = proyectar(u, v, zs);
       out.push(cilindro(p.x, p.y + 5, 21, 5, C.madera.d, C.madera.a, 1.6));
-      out.push(`<ellipse cx="${f(p.x)}" cy="${f(p.y - 2)}" rx="17" ry="8.5" fill="#A9C995" ${trazo(1.4)}/>`);
+      out.push(`<ellipse cx="${f(p.x)}" cy="${f(p.y - 2)}" rx="17" ry="8.5" fill="#B7B666" ${trazo(1.4)}/>`);
       out.push(`<ellipse cx="${f(p.x - 3)}" cy="${f(p.y - 4)}" rx="7" ry="3" fill="#C5DCB4" stroke="none"/>`);
     }
   }
@@ -311,15 +311,15 @@ function cuarto() {
 // =====================================================================================
 // EL LIVING COMEDOR (客厅): cuarto y mesa vista desde arriba, en public/arte/living/
 // =====================================================================================
-/** Telas y fichas del living (misma paleta: crema, salvia, madera, toques terracota). */
-const TELA = { a: "#F8EDD8", i: "#EAD8B8", d: "#D6BE96" };
-const TELA_CLARA = { a: "#FCF4E4", i: "#F0E1C6", d: "#DDC7A2" };
+/** Telas y fichas del living (paleta mantel): el sofá lavanda con cojines crema; fichas de colores de la paleta. */
+const TELA = C.lavanda;
+const TELA_CLARA = { a: "#FFF6EA", i: "#FCEBD6", d: "#F0D2AE" };
 const FICHAS: Colores[] = [
-  { a: "#F2A08C", i: "#E0896A", d: "#C46C50" },
-  { a: "#F8D77E", i: "#F2C14E", d: "#D9A63A" },
+  { a: "#F2C08A", i: "#E59D45", d: "#C47E2C" },
   C.salvia,
-  { a: "#C6E4F2", i: "#A8D3E6", d: "#8BBBD2" },
-  { a: "#F6C2BA", i: "#EBA79D", d: "#D48B80" },
+  C.lavanda,
+  C.menta,
+  { a: "#FFF6EA", i: "#F7D7B3", d: "#DDB68C" },
 ];
 
 
@@ -327,27 +327,48 @@ const FICHAS: Colores[] = [
  * Silla de comedor centrada en (u, v), con el respaldo del lado contrario a la mesa (`respaldo`).
  * Las que tienen el respaldo atrás (u- o v-) se dibujan antes que la mesa; las de adelante, después.
  */
+/**
+ * Silla del comedor (medidas en `SILLA`): patas, asiento de madera con un cojín de salvia abullonado y un
+ * respaldo de travesaño curvo con tres barrotes. `respaldo` es el lado donde va (lejos de la mesa).
+ */
 function sillaComedor(u: number, v: number, respaldo: "u-" | "u+" | "v-" | "v+"): string[] {
   const out: string[] = [];
-  const s = 0.36, zA = 1.05, zB = 1.15, zR = 2.35, p = 0.1; // medio lado, asiento, respaldo, grosor de pata
+  const { s, zA, zB, zR, pata: p } = SILLA;
   const [u0, u1, v0, v1] = [u - s, u + s, v - s, v + s];
   const pata = (pu: number, pv: number, z1: number) => caja(pu, pu + p, pv, pv + p, 0, z1, C.madera, 1.4);
   // patas de atrás primero (las de menor u + v)
   const esquinas: [number, number][] = [[u0, v0], [u1 - p, v0], [u0, v1 - p], [u1 - p, v1 - p]];
   const enRespaldo = (pu: number, pv: number) =>
     respaldo === "u-" ? pu === u0 : respaldo === "u+" ? pu === u1 - p : respaldo === "v-" ? pv === v0 : pv === v1 - p;
+  const enU = respaldo === "u-" || respaldo === "u+";
+  // el plano del respaldo: fijo en u (u- / u+) o en v (v- / v+), y lo largo va por el otro eje
+  const fijo = respaldo === "u-" ? u0 : respaldo === "u+" ? u1 - p : respaldo === "v-" ? v0 : v1 - p;
+  const [l0, l1] = enU ? [v0, v1] : [u0, u1];
+  const tramo = (a0: number, a1: number, z0: number, z1: number, colores = C.madera, g = 1.3) =>
+    enU ? caja(fijo, fijo + p, a0, a1, z0, z1, colores, g) : caja(a0, a1, fijo, fijo + p, z0, z1, colores, g);
   const respaldoCaja = () => {
-    const [a0, a1, b0, b1] =
-      respaldo === "u-" ? [u0, u0 + p, v0, v1] : respaldo === "u+" ? [u1 - p, u1, v0, v1] : respaldo === "v-" ? [u0, u1, v0, v0 + p] : [u0, u1, v1 - p, v1];
-    return [caja(a0, a1, b0, b1, zR - 0.42, zR, C.madera, 1.4), caja(a0, a1, b0, b1, zB + 0.35, zB + 0.47, C.madera, 1.2)];
+    const piezas: string[] = [];
+    const zT = zR - 0.34; // travesaño de arriba
+    // tres barrotes entre el asiento y el travesaño
+    for (const k of [0.3, 0.5, 0.7]) {
+      const c = l0 + (l1 - l0) * k;
+      piezas.push(tramo(c - 0.05, c + 0.05, zB + 0.05, zT, C.madera, 1.1));
+    }
+    // travesaño curvo: un poco más alto al centro (tres tramos)
+    const a = l0 + (l1 - l0) * 0.33, b = l0 + (l1 - l0) * 0.67;
+    piezas.push(tramo(l0, a, zT, zR - 0.06), tramo(b, l1, zT, zR - 0.06), tramo(a - 0.01, b + 0.01, zT, zR));
+    return piezas;
   };
   const atras = respaldo === "u-" || respaldo === "v-";
   const patas = (delRespaldo: boolean) => {
-    for (const [pu, pv] of esquinas) if (enRespaldo(pu, pv) === delRespaldo) out.push(pata(pu, pv, delRespaldo ? zR - 0.42 : zA));
+    for (const [pu, pv] of esquinas) if (enRespaldo(pu, pv) === delRespaldo) out.push(pata(pu, pv, delRespaldo ? zR : zA));
   };
   const asiento = () => {
-    out.push(caja(u0, u1, v0, v1, zA, zB, C.madera, 1.6));
-    out.push(rectZ(zB + 0.001, u0 + 0.08, u1 - 0.08, v0 + 0.08, v1 - 0.08, C.salvia.a, 1.3));
+    out.push(caja(u0, u1, v0, v1, zA - 0.1, zA, C.madera, 1.6));
+    // cojín: un poco más chico que el asiento y con los bordes redondeados por el trazo grueso
+    out.push(caja(u0 + 0.05, u1 - 0.05, v0 + 0.05, v1 - 0.05, zA, zB, C.salvia, 1.5));
+    const c = proyectar(u, v, zB);
+    out.push(`<ellipse cx="${f(c.x)}" cy="${f(c.y)}" rx="9" ry="4.5" fill="#ffffff" opacity="0.35"/>`);
   };
   // respaldo atrás: respaldo, patas y asiento; respaldo adelante: patas, asiento y al final el respaldo
   if (atras) { patas(true); out.push(...respaldoCaja()); patas(false); asiento(); }
@@ -362,7 +383,14 @@ function living() {
   /** Partes del cuarto para las capas de Krita (arte-krita/cuarto_living.ora). */
   const partes: [string, number][] = [];
   const parte = (nombre: string) => partes.push([nombre, out.length]);
-  const { mesa, sofa, muebleTele: mt, alfombra: al, tele: tv } = MUEBLES_LIVING;
+  /** Muebles con capa propia (`PIEZAS_LIVING`): desde dónde hasta dónde de `out` va cada uno. */
+  const piezas = new Map<string, [number, number]>();
+  const pieza = (id: string, dibujar: () => void) => {
+    const desde = out.length;
+    dibujar();
+    piezas.set(id, [desde, out.length]);
+  };
+  const { mesa, sofa, muebleTele: mt, alfombra: al, tele: tv, foto } = MUEBLES_LIVING;
 
   parte("piso");
   out.push(...pisoDeTablas(defs));
@@ -384,29 +412,54 @@ function living() {
   // ventana redonda (pared izquierda)
   {
     const vc = 7.0, zc = 3.75;
-    const [gVid, uVid] = degradado("#E6F6FB", "#A9D6EA", true);
+    const [gVid, uVid] = degradado("#E4DDF3", "#D3C8EA", true);
     defs.push(gVid);
     out.push(circuloPared("u", 0.003, vc, zc, 1.25, C.madera.i, 2));
     out.push(circuloPared("u", 0.004, vc, zc, 1.06, uVid, 1.6));
-    for (const [v, z, r] of [[6.55, 3.25, 0.38], [7.15, 3.15, 0.42], [7.65, 3.3, 0.26]] as const) out.push(circuloPared("u", 0.005, v, z, r, "#BFDDB0", 0));
+    for (const [v, z, r] of [[6.55, 3.25, 0.38], [7.15, 3.15, 0.42], [7.65, 3.3, 0.26]] as const) out.push(circuloPared("u", 0.005, v, z, r, "#CFCE8C", 0));
     out.push(circuloPared("u", 0.004, vc, zc, 1.06, "none", 1.6)); // el borde del vidrio queda encima de los árboles
     out.push(linea([0.005, vc, zc - 1.06], [0.005, vc, zc + 1.06], C.madera.d, 4));
     out.push(linea([0.005, vc - 1.06, zc], [0.005, vc + 1.06, zc], C.madera.d, 4));
     out.push(linea([0.005, 6.4, 4.4], [0.005, 6.75, 3.95], "#ffffff", 2.4, 'opacity="0.9"'));
     out.push(linea([0.005, 6.6, 4.5], [0.005, 6.9, 4.15], "#ffffff", 2, 'opacity="0.7"'));
   }
-  // cuadro de bambú sobre el sofá (pared derecha)
+  // cuadro de bambú (pared derecha); los tallos y las hojas van relativos a su borde izquierdo
   {
-    const [u0, u1, z0, z1] = [2.5, 4.5, 3.0, 4.7];
+    const { u0, u1, z0, z1 } = MUEBLES_LIVING.bambu;
+    const du = u0 - 2.5;
     out.push(rectV(0.004, u0, u1, z0, z1, C.madera.i, 2));
     out.push(rectV(0.005, u0 + 0.14, u1 - 0.14, z0 + 0.14, z1 - 0.14, C.crema, 1.4));
-    for (const [u, za, zb] of [[2.95, 3.25, 4.45], [3.35, 3.25, 4.2], [3.95, 3.25, 4.35]] as const) {
+    for (const [base, za, zb] of [[2.95, 3.25, 4.45], [3.35, 3.25, 4.2], [3.95, 3.25, 4.35]] as const) {
+      const u = base + du;
       out.push(linea([u, 0.006, za], [u, 0.006, zb], C.hojaOsc, 4));
       for (let z = za + 0.3; z < zb; z += 0.3) out.push(linea([u - 0.06, 0.006, z], [u + 0.06, 0.006, z], T, 1.6));
     }
-    for (const [u, z, du, dz] of [[2.95, 4.1, 0.35, 0.18], [2.95, 3.8, -0.3, 0.12], [3.35, 3.95, 0.32, 0.05], [3.95, 4.05, -0.34, 0.15], [3.95, 3.7, 0.3, 0.1], [3.95, 4.3, 0.28, 0.16]] as const)
-      out.push(linea([u, 0.006, z], [u + du, 0.006, z + dz], C.hoja, 4.5));
-    out.push(rectV(0.006, 4.12, 4.26, 3.28, 3.45, C.rojo, 0));
+    for (const [u, z, dx, dz] of [[2.95, 4.1, 0.35, 0.18], [2.95, 3.8, -0.3, 0.12], [3.35, 3.95, 0.32, 0.05], [3.95, 4.05, -0.34, 0.15], [3.95, 3.7, 0.3, 0.1], [3.95, 4.3, 0.28, 0.16]] as const)
+      out.push(linea([u + du, 0.006, z], [u + du + dx, 0.006, z + dz], C.hoja, 4.5));
+    out.push(rectV(0.006, 4.12 + du, 4.26 + du, 3.28, 3.45, C.rojo, 0));
+  }
+  // foto de la familia (pared derecha): marco de madera, paspartú crema y cinco vaquitas (papá, mamá, el hermano, la vaquita y la hermana)
+  {
+    const { u0, u1, z0, z1 } = foto;
+    out.push(rectV(0.004, u0, u1, z0, z1, C.madera.d, 2));
+    out.push(rectV(0.005, u0 + 0.1, u1 - 0.1, z0 + 0.1, z1 - 0.1, C.crema, 1.4));
+    out.push(rectV(0.006, u0 + 0.2, u1 - 0.2, z0 + 0.2, z1 - 0.2, "#CFE9F5", 1.2));
+    out.push(rectV(0.007, u0 + 0.2, u1 - 0.2, z0 + 0.2, z0 + 0.45, "#BCD4A8", 0));
+    const cabeza = (u: number, z: number, r: number, mancha: string) => {
+      out.push(circuloPared("v", 0.008, u - r * 0.85, z + r * 0.35, r * 0.4, "#F6EAD6", 1)); // oreja
+      out.push(circuloPared("v", 0.008, u + r * 0.85, z + r * 0.35, r * 0.4, "#F6EAD6", 1));
+      out.push(circuloPared("v", 0.009, u, z, r, "#FFF8EC", 1.2));
+      out.push(circuloPared("v", 0.01, u - r * 0.45, z + r * 0.45, r * 0.35, mancha, 0));
+      out.push(circuloPared("v", 0.011, u, z - r * 0.45, r * 0.5, "#F4A6A0", 1)); // hocico
+      for (const d of [-0.35, 0.35]) out.push(circuloPared("v", 0.011, u + r * d, z + r * 0.12, r * 0.12, T, 0));
+    };
+    // los papás arriba en las puntas; abajo el hermano, la vaquita (al medio, más chica) y la hermana
+    const um = (u0 + u1) / 2;
+    cabeza(u0 + 0.42, z0 + 0.84, 0.18, "#B98754");
+    cabeza(u1 - 0.42, z0 + 0.86, 0.18, "#8C5A3C");
+    cabeza(u0 + 0.5, z0 + 0.46, 0.13, "#B98754");
+    cabeza(um, z0 + 0.42, 0.11, "#B98754");
+    cabeza(u1 - 0.5, z0 + 0.46, 0.13, "#D4A16B");
   }
   // reloj de pared (pared derecha)
   {
@@ -423,14 +476,15 @@ function living() {
   out.push(...cantosParedes());
 
   parte("alfombra");
+  // mantel de picnic (como en los videos): cuadrillé naranja sobre crema, con borde naranja
   out.push(rectZ(0.001, al.u0, al.u1, al.v0, al.v1, C.terracota, 2));
-  out.push(rectZ(0.002, al.u0 + 0.22, al.u1 - 0.22, al.v0 + 0.22, al.v1 - 0.22, C.crema, 1.4));
-  out.push(rectZ(0.003, al.u0 + 0.45, al.u1 - 0.45, al.v0 + 0.45, al.v1 - 0.45, "#A9C995", 1.4));
-  out.push(rectZ(0.004, al.u0 + 0.62, al.u1 - 0.62, al.v0 + 0.62, al.v1 - 0.62, C.crema, 1.4));
-  // rombos en la franja de salvia
-  for (let u = al.u0 + 0.9; u < al.u1 - 0.7; u += 0.6)
-    for (const v of [al.v0 + 0.535, al.v1 - 0.535])
-      out.push(cara([[u - 0.12, v, 0.005], [u, v - 0.07, 0.005], [u + 0.12, v, 0.005], [u, v + 0.07, 0.005]], C.crema, 0));
+  out.push(rectZ(0.002, al.u0 + 0.18, al.u1 - 0.18, al.v0 + 0.18, al.v1 - 0.18, C.crema, 1.2));
+  {
+    const [u0, u1, v0, v1] = [al.u0 + 0.18, al.u1 - 0.18, al.v0 + 0.18, al.v1 - 0.18];
+    const paso = 0.56, ancho = 0.28, tinte = "rgba(229,157,69,0.42)";
+    for (let u = u0 + 0.14; u + ancho <= u1; u += paso) out.push(rectZ(0.003, u, u + ancho, v0, v1, tinte, 0));
+    for (let v = v0 + 0.14; v + ancho <= v1; v += paso) out.push(rectZ(0.003, u0, u1, v, v + ancho, tinte, 0));
+  }
   // flecos en los extremos
   for (let v = al.v0 + 0.12; v < al.v1; v += 0.22) {
     out.push(linea([al.u0, v, 0], [al.u0 - 0.2, v, 0], C.terracotaOsc, 1.6));
@@ -445,7 +499,7 @@ function living() {
   out.push(rectZ(0, 8.9, 9.85, 0, 1.0, "rgba(110,70,35,0.10)", 0));
 
   parte("tele");
-  {
+  pieza("tele", () => {
     const tela = { a: C.negro, i: C.negroOsc, d: "#3E3936" };
     for (const v of [mt.v0 + 0.1, mt.v1 - 0.22]) out.push(caja(mt.u1 - 0.22, mt.u1 - 0.1, v, v + 0.12, 0, 0.14, C.madera, 1.2));
     out.push(caja(mt.u0, mt.u1, mt.v0, mt.v1, 0.14, mt.alto, C.madera));
@@ -473,10 +527,10 @@ function living() {
     const p = proyectar(0.42, 4.2, mt.alto);
     out.push(cilindro(p.x, p.y, 7, 16, C.terracota, C.terracotaOsc, 1.5));
     out.push(`<path d="M${f(p.x)} ${f(p.y - 16)} q-9 -12 -3 -22 q6 8 3 22 q4 -14 11 -16 q2 9 -11 16z" fill="${C.hoja}" ${trazo(1.3)}/>`);
-  }
+  });
 
   parte("sofa");
-  {
+  pieza("sofa", () => {
     const { u0, u1, v1 } = sofa, br = 0.42;
     for (const [u, v] of [[u0 + 0.08, 0.08], [u1 - 0.2, 0.08], [u0 + 0.08, v1 - 0.18], [u1 - 0.2, v1 - 0.18]]) out.push(caja(u, u + 0.12, v, v + 0.12, 0, 0.18, C.madera, 1.2));
     out.push(caja(u0, u1, 0.03, 0.45, 0.18, 2.05, TELA)); // respaldo
@@ -489,15 +543,18 @@ function living() {
     out.push(cojin(u0 + br + 0.12, u0 + br + 0.66, 0.8, 1.06, 1.68, FICHAS[0].i));
     out.push(cojin(u1 - br - 0.66, u1 - br - 0.12, 0.8, 1.06, 1.68, FICHAS[1].i));
     out.push(caja(u1 - br, u1, 0.03, v1, 0.18, 1.3, TELA)); // brazo derecho
-  }
+  });
 
+  const silla = (id: SillaId) => {
+    const { u, v, respaldo } = SILLAS_LIVING[id];
+    pieza(`silla_${id}`, () => out.push(...sillaComedor(u, v, respaldo)));
+  };
   parte("sillas");
-  const um = (mesa.u0 + mesa.u1) / 2, vm = (mesa.v0 + mesa.v1) / 2, sep = 0.55;
-  out.push(...sillaComedor(um, mesa.v0 - sep, "v-"));
-  out.push(...sillaComedor(mesa.u0 - sep, vm, "u-"));
+  silla("atras");
+  silla("izquierda");
 
   parte("mesa");
-  {
+  pieza("mesa", () => {
     const { u0, u1, v0, v1, alto, grosor } = mesa;
     const pata = (u: number, v: number) => caja(u, u + 0.16, v, v + 0.16, 0, alto - grosor, C.madera, 1.5);
     out.push(pata(u0 + 0.12, v0 + 0.12), pata(u1 - 0.28, v0 + 0.12), pata(u0 + 0.12, v1 - 0.28), pata(u1 - 0.28, v1 - 0.28));
@@ -514,16 +571,22 @@ function living() {
         out.push(caja(u - s, u + s, v - s, v + s, alto, alto + 0.05, c, 1.3));
         out.push(rectZ(alto + 0.051, u - s + 0.06, u + s - 0.06, v - s + 0.06, v + s - 0.06, "rgba(255,255,255,0.45)", 0));
       });
-  }
+  });
 
   parte("sillas_frente");
-  out.push(...sillaComedor(um, mesa.v1 + sep, "v+"));
-  out.push(...sillaComedor(mesa.u1 + sep, vm, "u+"));
+  silla("adelante");
+  silla("derecha");
 
   parte("planta");
-  out.push(...planta(9.35, 0.5));
+  pieza("planta", () => out.push(...planta(PLANTA_LIVING.u, PLANTA_LIVING.v)));
 
   archivo("cuarto_living", [0, 0, 1000, 1000], 2000, defs, out.join(""), SALIDA_LIVING);
+  // cada mueble con capa propia, en su archivo y con el mismo encuadre: el juego lo pone sobre la vaca cuando ella queda detrás
+  for (const p of PIEZAS_LIVING) {
+    const r = piezas.get(p.id);
+    if (!r) throw new Error(`pieza sin dibujo: ${p.id}`);
+    archivo(p.arte.split("/")[1], [0, 0, 1000, 1000], 2000, defs, out.slice(r[0], r[1]).join(""), SALIDA_LIVING);
+  }
   escribirPartes("cuarto_living", partes, out, defs);
   return { defs, cuerpo: out.join("") };
 }
@@ -640,13 +703,13 @@ function palillos() {
     const m = [cx - dir[0] * 13, cy - dir[1] * 13];
     return `<path d="M${f(a[0])} ${f(a[1])} L${f(b[0])} ${f(b[1])}" stroke="${T}" stroke-width="5.6" stroke-linecap="round"/><path d="M${f(a[0])} ${f(a[1])} L${f(b[0])} ${f(b[1])}" stroke="#D59A5E" stroke-width="3.4" stroke-linecap="round"/><path d="M${f(a[0])} ${f(a[1])} L${f(m[0])} ${f(m[1])}" stroke="${C.rojo}" stroke-width="3.4" stroke-linecap="round"/>`;
   };
-  const apoyo = `<path d="M-19 -10 l7 -3 l7 3 l-7 4 z" fill="#A9C995" ${trazo(1.2)}/><path d="M-19 -10 l0 3 l7 4 l0 -3 z" fill="#8DAE7B" ${trazo(1.2)}/>`;
+  const apoyo = `<path d="M-19 -10 l7 -3 l7 3 l-7 4 z" fill="#B7B666" ${trazo(1.2)}/><path d="M-19 -10 l0 3 l7 4 l0 -3 z" fill="#8DAE7B" ${trazo(1.2)}/>`;
   capas("kuaizi", { palillos: { cuerpo: `<ellipse cx="0" cy="0" rx="24" ry="7" fill="rgba(90,55,30,0.14)"/>${apoyo}${palo(-2.5)}${palo(3)}` } });
 }
 
 function tetera() {
   const [g, u] = degradado("#B9DDCD", "#7FAF9C");
-  const cuerpo = `${sombraObj(20)}<path d="M-25 -16 Q-33 -16 -32 -24 Q-31 -31 -19 -27" fill="none" stroke="${T}" stroke-width="5.4" stroke-linecap="round"/><path d="M-25 -16 Q-33 -16 -32 -24 Q-31 -31 -19 -27" fill="none" stroke="#8DBFAC" stroke-width="3" stroke-linecap="round"/><path d="M15 -14 Q22 -16 25 -26 L29 -26 Q27 -12 17 -7 Z" fill="#9CCAB8" ${trazo(1.6)}/><path d="M-18 -3 Q-24 -16 -16 -26 Q0 -34 16 -26 Q24 -16 18 -3 Q0 3 -18 -3 Z" fill="${u}" ${trazo(1.8)}/><path d="M-19 -14 Q0 -8 19 -14" fill="none" stroke="#FFF8EC" stroke-width="2"/><path d="M-14 -11 q3 -3 6 0 t6 0 t6 0 t6 0" fill="none" stroke="#E0896A" stroke-width="1.4"/><ellipse cx="0" cy="-27" rx="11" ry="4.6" fill="#A9D3C2" ${trazo(1.6)}/><ellipse cx="0" cy="-32" rx="4" ry="3.4" fill="#E0896A" ${trazo(1.4)}/><ellipse cx="-9" cy="-20" rx="3" ry="4.5" fill="#fff" opacity="0.6"/><ellipse cx="0" cy="-1" rx="12" ry="3.5" fill="none" stroke="${T}" stroke-width="1.2" opacity="0.5"/>`;
+  const cuerpo = `${sombraObj(20)}<path d="M-25 -16 Q-33 -16 -32 -24 Q-31 -31 -19 -27" fill="none" stroke="${T}" stroke-width="5.4" stroke-linecap="round"/><path d="M-25 -16 Q-33 -16 -32 -24 Q-31 -31 -19 -27" fill="none" stroke="#8DBFAC" stroke-width="3" stroke-linecap="round"/><path d="M15 -14 Q22 -16 25 -26 L29 -26 Q27 -12 17 -7 Z" fill="#9CCAB8" ${trazo(1.6)}/><path d="M-18 -3 Q-24 -16 -16 -26 Q0 -34 16 -26 Q24 -16 18 -3 Q0 3 -18 -3 Z" fill="${u}" ${trazo(1.8)}/><path d="M-19 -14 Q0 -8 19 -14" fill="none" stroke="#FFF8EC" stroke-width="2"/><path d="M-14 -11 q3 -3 6 0 t6 0 t6 0 t6 0" fill="none" stroke="#E59D45" stroke-width="1.4"/><ellipse cx="0" cy="-27" rx="11" ry="4.6" fill="#A9D3C2" ${trazo(1.6)}/><ellipse cx="0" cy="-32" rx="4" ry="3.4" fill="#E59D45" ${trazo(1.4)}/><ellipse cx="-9" cy="-20" rx="3" ry="4.5" fill="#fff" opacity="0.6"/><ellipse cx="0" cy="-1" rx="12" ry="3.5" fill="none" stroke="${T}" stroke-width="1.2" opacity="0.5"/>`;
   capas("chahu", { tetera: { defs: [g], cuerpo } });
 }
 
@@ -806,14 +869,14 @@ function lampara() {
  */
 function ventana() {
   const a = 0.64, m = 0.78, z0 = 0.14, z1 = 1.95, zt = 2.09, dv = 0.012;
-  const [gC, uC] = degradado("#E6F6FB", "#A9D6EA", true);
+  const [gC, uC] = degradado("#E4DDF3", "#D3C8EA", true);
   const enPared = (du: number, dz: number, s: string) => {
     const p = iso(du, dv, dz);
     return `<g transform="translate(${f(p.x)} ${f(p.y)}) skewY(26.57)">${s}</g>`;
   };
   const nube = (du: number, dz: number) =>
     enPared(du, dz, `<g fill="#FFFFFF" opacity="0.9"><ellipse cx="0" cy="0" rx="9" ry="4"/><ellipse cx="6" cy="-2.5" rx="6" ry="4"/><ellipse cx="-5" cy="-1.5" rx="5" ry="3"/></g>`);
-  const arbusto = (du: number, r: number) => enPared(du, z0, `<ellipse cx="0" cy="${f(-r * 0.6)}" rx="${r}" ry="${f(r * 0.75)}" fill="#BFDDB0"/>`);
+  const arbusto = (du: number, r: number) => enPared(du, z0, `<ellipse cx="0" cy="${f(-r * 0.6)}" rx="${r}" ry="${f(r * 0.75)}" fill="#CFCE8C"/>`);
   const vano = (fill: string, g: number, d = 0.008) => caraR([[-a, d, z0], [a, d, z0], [a, d, z1], [-a, d, z1]], fill, g);
   const marco =
     caraR([[-m, 0.004, 0], [m, 0.004, 0], [m, 0.004, zt], [-m, 0.004, zt]], C.madera.i, 2) +

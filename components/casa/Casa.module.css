@@ -29,7 +29,7 @@
   aspect-ratio: 1;
   transform: translate(-50%, -50%);
   overflow: hidden;
-  background: #f8e7cc;
+  background: var(--m-crema-clara);
 }
 
 /* Si la casa es vertical (celular) el escenario la llena; el cuarto (cuadrado) se encuadra con la cámara. */
@@ -84,7 +84,7 @@
   transform: translate(-50%, -50%);
 }
 .objeto:focus-visible {
-  outline: 3px dashed #3a6fd6;
+  outline: 3px dashed var(--m-lavanda-osc);
   outline-offset: 2px;
   border-radius: 12px;
 }
@@ -244,7 +244,7 @@
   touch-action: none;
   transition: left 0.6s ease, top 0.6s ease;
 }
-.vaca:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 2px; border-radius: 16px; }
+.vaca:focus-visible { outline: 3px dashed var(--m-lavanda-osc); outline-offset: 2px; border-radius: 16px; }
 .vacaArrastrando { transition: none; cursor: grabbing; z-index: 60; }
 .vacaObjetivo { filter: drop-shadow(0 0 8px #ffe36b) drop-shadow(0 0 4px #fff); }
 /* sentada en la silla: un poco achatada desde las patas */
@@ -317,7 +317,7 @@
 /* hover solo con mouse: en el celular el hover queda pegado después del toque */
 @media (hover: hover) and (pointer: fine) { .opcion:hover { background: #fff; scale: 1.06; } }
 .opcion:active { scale: 0.96; }
-.opcion:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 3px; }
+.opcion:focus-visible { outline: 3px dashed var(--m-lavanda-osc); outline-offset: 3px; }
 .ico { font-size: clamp(18px, 3.8cqmin, 32px); }
 .opcionHz { display: block; font-family: var(--f-hanzi), sans-serif; font-weight: 400; font-size: clamp(18px, 4cqmin, 34px); line-height: 1.1; }
 .opcionPy { display: block; font-size: clamp(10px, 2cqmin, 17px); margin-top: -0.2em; }
@@ -340,10 +340,10 @@
   justify-content: center;
   font-family: var(--f-pixel), monospace;
   font-size: clamp(16px, 3cqmin, 24px);
-  background: #3a6fd6;
+  background: var(--m-lavanda-osc);
   color: #fff;
-  border: 3px solid #1d130d;
-  box-shadow: 0 4px 0 #1d130d;
+  border: 3px solid var(--m-chocolate);
+  box-shadow: 0 4px 0 var(--m-chocolate);
   padding: 0.3em 0.6em;
   cursor: pointer;
 }
@@ -351,7 +351,7 @@
 .escenario .relojCocina { width: min(38%, calc(100% - 2 * (2% + 124px))); }
 
 .alejar:disabled { opacity: 0.5; cursor: default; }
-.alejar:active { translate: 0 3px; box-shadow: 0 1px 0 #1d130d; }
+.alejar:active { translate: 0 3px; box-shadow: 0 1px 0 var(--m-chocolate); }
 
 /* ---------- quiz, minimapa y tarjetas ---------- */
 .jugar {
@@ -366,16 +366,16 @@
   gap: 0.4em;
   font-family: var(--f-pixel), monospace;
   font-size: clamp(14px, 2.8cqmin, 22px);
-  background: #e2574e;
+  background: var(--m-estanque);
   color: #fff;
-  border: 3px solid #1d130d;
-  box-shadow: 0 4px 0 #1d130d;
+  border: 3px solid var(--m-chocolate);
+  box-shadow: 0 4px 0 var(--m-chocolate);
   padding: 0.3em 0.7em;
   cursor: pointer;
 }
 .jugar:disabled { opacity: 0.5; cursor: default; }
-.jugar[data-activo] { background: #ffd24a; }
-.jugar:active { translate: 0 3px; box-shadow: 0 1px 0 #1d130d; }
+.jugar[data-activo] { background: var(--m-naranja-clara); }
+.jugar:active { translate: 0 3px; box-shadow: 0 1px 0 var(--m-chocolate); }
 .jugarHz { font-family: var(--f-hanzi), sans-serif; font-size: 1.3em; line-height: 1; }
 
 .marcador {
@@ -387,7 +387,7 @@
   font-family: var(--f-pixel), monospace;
   font-size: clamp(16px, 3cqmin, 26px);
   color: #fff;
-  text-shadow: 2px 2px 0 #1d130d;
+  text-shadow: 2px 2px 0 var(--m-chocolate);
   letter-spacing: 0.1em;
 }
 .repetir {
@@ -398,12 +398,12 @@
   min-width: 44px;
   min-height: 44px;
   font-size: clamp(20px, 4cqmin, 32px);
-  background: #fff6e6;
-  border: 3px solid #4a2a1c;
+  background: var(--m-papel);
+  border: 3px solid var(--m-tinta);
   border-radius: 50%;
   cursor: pointer;
 }
-.repetir:focus-visible, .jugar:focus-visible, .cuarto:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 3px; }
+.repetir:focus-visible, .jugar:focus-visible, .cuarto:focus-visible { outline: 3px dashed var(--m-lavanda-osc); outline-offset: 3px; }
 
 .mapa {
   position: absolute;
@@ -415,9 +415,9 @@
   grid-template-columns: 1fr 1fr;
   gap: 3px;
   padding: 5px;
-  background: #3b2a20;
-  border: 3px solid #1d130d;
-  box-shadow: 0 0 0 3px #c98e5a;
+  background: var(--m-cacao);
+  border: 3px solid var(--m-chocolate);
+  box-shadow: 0 0 0 3px var(--m-naranja);
   font-family: var(--f-pixel), monospace;
 }
 .cuarto {
@@ -453,12 +453,12 @@
   padding: 16px;
   font-family: var(--f-texto), system-ui, sans-serif;
   font-weight: 700;
-  color: #4a2a1c;
+  color: var(--m-tinta);
 }
 .tarjeta {
   margin: auto;
-  background: #fff6e6;
-  border: 4px solid #4a2a1c;
+  background: var(--m-papel);
+  border: 4px solid var(--m-tinta);
   border-radius: 26px;
   padding: clamp(16px, 5cqmin, 28px) clamp(14px, 4.6cqmin, 26px);
   max-width: 440px;
@@ -468,32 +468,32 @@
 }
 .tarjeta h2 { margin: 0.1em 0 0.2em; font-weight: 900; font-size: clamp(26px, 6cqw, 38px); }
 .tarjeta p { font-size: clamp(15px, 3.4cqmin, 17px); line-height: 1.45; margin: 0.6em 0; }
-.grande { font-family: var(--f-hanzi), sans-serif; font-size: clamp(56px, 15cqmin, 84px); line-height: 1; color: #3a6fd6; }
+.grande { font-family: var(--f-hanzi), sans-serif; font-size: clamp(56px, 15cqmin, 84px); line-height: 1; color: var(--m-lavanda-osc); }
 .principal {
   font: 900 18px var(--f-texto), system-ui, sans-serif;
   min-height: 44px;
-  background: #e2574e;
+  background: var(--m-estanque);
   color: #fff;
-  border: 3px solid #4a2a1c;
+  border: 3px solid var(--m-tinta);
   border-radius: 999px;
   padding: 0.6em 1.6em;
   cursor: pointer;
-  box-shadow: 0 4px 0 #4a2a1c;
+  box-shadow: 0 4px 0 var(--m-tinta);
   margin-top: 10px;
 }
-.principal:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 3px; }
+.principal:focus-visible { outline: 3px dashed var(--m-lavanda-osc); outline-offset: 3px; }
 
 /* Aviso breve fuera de la casa (en español). */
 .aviso {
   position: absolute; top: 8px; left: 8px; right: 8px; z-index: 20;
   display: flex; align-items: flex-start; gap: 8px;
   padding: 10px 12px; border-radius: 12px; background: #fff;
-  border: 2px dashed #4a2a1c; font-weight: 900; font-size: 15px; line-height: 1.35;
+  border: 2px dashed var(--m-tinta); font-weight: 900; font-size: 15px; line-height: 1.35;
 }
 .aviso p { margin: 0; flex: 1; }
 .aviso button {
   flex: none; min-width: 32px; min-height: 32px; border: 0; background: transparent;
-  font: inherit; font-weight: 900; cursor: pointer; color: #4a2a1c;
+  font: inherit; font-weight: 900; cursor: pointer; color: var(--m-tinta);
 }
 
 /* ---------- cambio de cuarto: fundido corto desde el papel (nunca al cargar) ---------- */
@@ -501,7 +501,7 @@
   position: absolute;
   inset: 0;
   z-index: 85;
-  background: #f8e7cc;
+  background: var(--m-crema-clara);
   pointer-events: none;
   animation: fundido 0.2s ease-out forwards;
 }

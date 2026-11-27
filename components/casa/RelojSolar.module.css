@@ -13,28 +13,28 @@
 }
 .svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .cielo { stroke: none; opacity: 0.85; transition: fill 0.8s ease; }
-.suelo { stroke: #4a2a1c; stroke-width: 2.5; stroke-linecap: round; }
+.suelo { stroke: var(--m-tinta); stroke-width: 2.5; stroke-linecap: round; }
 
 /* el camino: lo que falta punteado; lo recorrido, grueso y con el degradado del día */
-.falta { fill: none; stroke: #4a2a1c; stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 1.5 3.2; opacity: 0.55; }
+.falta { fill: none; stroke: var(--m-tinta); stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 1.5 3.2; opacity: 0.55; }
 .recorrido { fill: none; stroke-width: 4.5; stroke-linecap: round; transition: d 0.8s ease-in-out; }
 
 /* un punto por paso del cuarto */
-.paso { fill: #fff8ec; stroke: #4a2a1c; stroke-width: 1.1; opacity: 0.75; }
-.pasoHecho { fill: #ffc83d; stroke: #4a2a1c; stroke-width: 1.3; }
+.paso { fill: #fff8ec; stroke: var(--m-tinta); stroke-width: 1.1; opacity: 0.75; }
+.pasoHecho { fill: var(--m-naranja); stroke: var(--m-tinta); stroke-width: 1.3; }
 
 .sol { transition: opacity 0.8s ease; }
-.disco { fill: #ffc83d; stroke: #4a2a1c; stroke-width: 1.8; }
-.rayo { stroke: #4a2a1c; stroke-width: 1.6; stroke-linecap: round; }
+.disco { fill: var(--m-naranja); stroke: var(--m-tinta); stroke-width: 1.8; }
+.rayo { stroke: var(--m-tinta); stroke-width: 1.6; stroke-linecap: round; }
 
 .halo { fill: #fff3c4; opacity: 0; transition: opacity 0.8s ease; }
-.creciente { fill: #d9d4e8; stroke: #4a2a1c; stroke-width: 1.8; transition: fill 0.8s ease; }
+.creciente { fill: #d9d4e8; stroke: var(--m-tinta); stroke-width: 1.8; transition: fill 0.8s ease; }
 .luna[data-encendida] .halo { opacity: 0.45; animation: brilloLuna 2.4s ease-in-out infinite; }
 .luna[data-encendida] .creciente { fill: #fff3c4; }
 
 /* la marca de "ahora": un punto crema con contorno café que camina por el arco */
 .marca { transition: transform 0.8s ease-in-out; }
-.marca circle { fill: #fff8ec; stroke: #4a2a1c; stroke-width: 2; }
+.marca circle { fill: #fff8ec; stroke: var(--m-tinta); stroke-width: 2; }
 
 @keyframes brilloLuna { 50% { opacity: 0.2; } }
 

@@ -69,6 +69,14 @@ Mismo cuarto, misma proyección y misma paleta que la cocina. Archivos en `publi
 
 Las medidas de los muebles están en `components/casa/living/lugares.ts` (`MUEBLES_LIVING`). De ahí salen también `MESA_LIVING` (el rectángulo del tablero en el cuadro de 1000: zona de toque y centro del zoom) y `PARADA_VACA` (dónde se para la vaca, a la izquierda de la mesa). Si mueves la mesa ahí y corres `npm run arte:generar`, el dibujo y el juego se mueven juntos. Si repintas `cuarto_living` en Krita, deja la mesa donde está.
 
+### Delante o detrás: las piezas
+
+La vaca camina entre los muebles, así que algunos tienen además **su propia capa**: `pieza_mesa`, `pieza_silla_atras`, `pieza_silla_izquierda`, `pieza_silla_adelante`, `pieza_silla_derecha`, `pieza_sofa`, `pieza_tele` y `pieza_planta` (mismo cuadro de 1000 × 1000 que el cuarto, solo ese mueble). Cuando la vaca queda detrás de un mueble, el juego vuelve a dibujar su pieza encima de ella. Qué está delante lo decide la huella de cada mueble en el piso (`PIEZAS_LIVING` en `lugares.ts`): si la vaca no pasó el borde de adelante del mueble, queda detrás.
+
+**Si repintas un mueble en `cuarto_living`, repinta también su `pieza_*` igual** (PNG con el mismo nombre). Si no, cuando la vaca pase por detrás se verá el mueble viejo encima del nuevo.
+
+La foto de la familia (照片) va en la pared sobre el sofá. Al tocarla se abre en primer plano: papá (爸爸), mamá (妈妈), el hermano (哥哥), la hermana (姐姐) y la vaquita misma (我, sin adorno: así no es ni el hermano ni la hermana) son las vaquitas del juego; los cuatro primeros llevan un adorno dibujado en código (corbata, flor, gorra y moño), en `components/casa/living/Foto.tsx`.
+
 ## La casa entera
 
 `public/arte/casa/casa_entera` (1000 × 1000 unidades, 2000 × 2000 px) es la primera imagen de la web: los cuatro cuartos en isometría 2×2 sobre el pasto. El living va adelante con la puerta de entrada (escalón, felpudo y camino de piedras); la cocina a su izquierda, el baño a su derecha y el dormitorio al fondo. Los cuatro son los mismos dibujos de sus cuartos, achicados a la mitad. Baño y dormitorio salen de su ficha de escenario (`components/casa/escenarios/`, ver `docs/escenarios.md`): se ven amueblados como adelanto, pero todavía no se entra. Dónde va cada cuarto, la puerta y el zoom final al living salen de `components/casa/casaEntera.ts`: si repintas la casa en Krita, deja el living en su lugar.

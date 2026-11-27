@@ -20,10 +20,11 @@ function franja(hora: number): string {
 /** Color del cielo bajo el arco: amanecer, día, tarde, noche. */
 function cielo(hora: number): string {
   const h = ((hora % 24) + 24) % 24;
-  if (h >= 6 && h < 9) return "#ffe6c7";
-  if (h >= 9 && h < 16) return "#d6effa";
-  if (h >= 16 && h < 18) return "#ffd2b0";
-  return "#3a4778";
+  // paleta mantel: amanecer crema, día lavanda pálido, tarde naranja suave, noche lavanda oscura
+  if (h >= 6 && h < 9) return "#f7d7b3";
+  if (h >= 9 && h < 16) return "#e4ddf3";
+  if (h >= 16 && h < 18) return "#f2c08a";
+  return "#7e62b8";
 }
 
 // Lienzo de 120 x 44: el camino es medio arco de (20, 38) a (100, 38) con la cima en (60, 12).
@@ -67,9 +68,9 @@ export function RelojSolar({ hora, hechos = 0, total = 0, className }: { hora: n
       <svg className={styles.svg} viewBox="0 0 120 44" aria-hidden="true">
         <defs>
           <linearGradient id={`dia${id}`} gradientUnits="userSpaceOnUse" x1={inicio.x} y1="0" x2={fin.x} y2="0">
-            <stop offset="0" stopColor="#ffc83d" />
-            <stop offset="0.55" stopColor="#f08a5d" />
-            <stop offset="1" stopColor="#3a4778" />
+            <stop offset="0" stopColor="#e59d45" />
+            <stop offset="0.55" stopColor="#b7a6da" />
+            <stop offset="1" stopColor="#7e62b8" />
           </linearGradient>
         </defs>
         <path className={styles.cielo} d={`${camino} Z`} style={{ fill: cielo(hora) }} />

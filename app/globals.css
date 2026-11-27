@@ -7,6 +7,22 @@
   --t3: #2e9b57;
   --t4: #3a6fd6;
   --t5: #8c8c8c;
+
+  /* paleta "mantel" de la casa (components/casa/paleta.ts, la misma de los videos); los tonos de arriba no cambian */
+  --m-tinta: #4e2414;
+  --m-chocolate: #44120a;
+  --m-cacao: #5d321b;
+  --m-crema: #f7d7b3;
+  --m-crema-clara: #fcebd6;
+  --m-papel: #fff6ea;
+  --m-matcha: #b7b666;
+  --m-matcha-osc: #919146;
+  --m-lavanda: #b7a6da;
+  --m-lavanda-osc: #7e62b8;
+  --m-estanque: #258574;
+  --m-menta: #58ad92;
+  --m-naranja: #e59d45;
+  --m-naranja-clara: #f2c08a;
 }
 
 * {

@@ -124,7 +124,7 @@
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
 }
-.ingrediente:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 2px; border-radius: 12px; }
+.ingrediente:focus-visible { outline: 3px dashed var(--m-lavanda-osc); outline-offset: 2px; border-radius: 12px; }
 .ingrediente[data-usado] { opacity: 0.3; cursor: default; }
 
 /* lo que se arrastra sigue al dedo */

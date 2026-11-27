@@ -1,9 +1,9 @@
 "use client";
-import { useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type PointerEvent as EventoPuntero, type ReactNode, type Ref } from "react";
+import { Fragment, useEffect, useImperativeHandle, useMemo, useRef, useState, type CSSProperties, type PointerEvent as EventoPuntero, type ReactNode, type Ref } from "react";
 import { textoHanzi } from "@/lib/silabas";
 import { sfx } from "../audio/sonido";
-import { FondoCuarto } from "../arte/Capa";
-import { FONDO_CUARTO } from "../arte/registro";
+import { Capa, FondoCuarto, VISTA_CUARTO } from "../arte/Capa";
+import { arte, FONDO_CUARTO } from "../arte/registro";
 import { aspectoDe, encuadrar, enPantalla, transformCSS, type Camara } from "../camara";
 import { proyectar } from "../cocina/iso";
 import { Globo } from "../Globo";
@@ -14,8 +14,9 @@ import { Vaca, VacaSentada } from "../Vaca";
 import { Bandeja } from "./Bandeja";
 import { FichaGanada } from "./FichaGanada";
 import { completo, fichaId, fichasDe, horaDe, pasosDe, todasLasFichas } from "./progreso";
+import { piezasDelante, vacaEnElPiso } from "./profundidad";
 import { objetoBajoVaca, silabasDeFichas, useCuarto } from "./useCuarto";
-import type { CuartoId, DefCuarto, ProgresoCuarto } from "./tipos";
+import type { CuartoId, DefCuarto, Primerplano, ProgresoCuarto } from "./tipos";
 import cs from "../Casa.module.css";
 import styles from "./Motor.module.css";
 
@@ -26,6 +27,9 @@ const VER_TODO: Camara = { x: 500, y: 500, s: 1 };
 const PARPADEO_MS = 1200;
 /** Menos de esto (px de pantalla) es un toque, no un arrastre. */
 const UMBRAL_ARRASTRE = 8;
+
+/** La capa de cada pieza va sobre la vaca a partir de este z-index (la vaca tiene 30, las zonas de toque 20). */
+const Z_PIEZAS = 31;
 
 /** Lo que el cuarto le cuenta a sus dibujos sobre los muebles (la tele encendida). */
 export type EstadoDecorado = { encendidos: string[] };
@@ -61,15 +65,19 @@ export function CuartoMotor({
   /** Tocar la puerta con el cuarto completo. */
   alSalir: () => void;
   /** Objeto con `abre`. */
-  alAbrir?: (que: "mesa") => void;
+  alAbrir?: (que: Primerplano) => void;
   /** Capas extra (la mesa a pantalla completa). */
   hijos?: ReactNode;
   /** A dónde mira la cámara (el zoom del living a la mesa); por defecto, todo el cuarto. */
   camara?: Camara;
   /** La vaca se sorprende: orejas arriba, ojos grandes y un saltito (al llegar a la mesa). */
   sorpresa?: boolean;
-  /** Dibujos sobre los muebles, dentro del mundo (el zoom los lleva); debajo de las zonas de toque. */
-  decorado?: ReactNode | ((e: EstadoDecorado) => ReactNode);
+  /**
+   * Dibujos sobre un mueble con capa propia, por id de pieza (las fichas de la mesa, la tele encendida): van con
+   * su mueble, así cuando la vaca queda detrás también quedan encima de ella. Una clave que no es de ningún
+   * mueble va siempre debajo de la vaca. Todo, debajo de las zonas de toque.
+   */
+  decorado?: (e: EstadoDecorado) => Partial<Record<string, ReactNode>>;
   ref?: Ref<ControlCuarto>;
 }) {
   const c = useCuarto(def, { progreso: progresoGuardado, alCambiar, alEvento, activo, alAbrir });
@@ -149,6 +157,12 @@ export function CuartoMotor({
   const objetivo = arrastre ? objetoBajoVaca(def, arrastre) : null;
 
   const vacaVista = arrastre ?? c.vaca;
+
+  // ---- delante o detrás de los muebles (al arrastrarla, la vaca va encima de todo) ----
+  const piezas = def.piezas ?? [];
+  const capasPieza = useMemo(() => (def.piezas ?? []).map((p) => arte(p.arte)), [def.piezas]);
+  const delante = arrastre ? new Set<string>() : piezasDelante(piezas, vacaEnElPiso(c.vaca.x, c.vaca.y), c.sentadaEn);
+  const sobre = decorado?.({ encendidos: c.encendidos }) ?? {};
   const estiloVaca: CSSProperties = {
     left: pct(vacaVista.x),
     top: pct(vacaVista.y),
@@ -169,7 +183,21 @@ export function CuartoMotor({
         style={{ transform: transformCSS(vista, aspecto), transition: medido ? undefined : "none" }}
       >
         {tieneFondo(def.id) && <FondoCuarto cuarto={def.id} />}
-        {typeof decorado === "function" ? decorado({ encendidos: c.encendidos }) : decorado}
+        {/* cada mueble con capa propia: detrás de la vaca solo su decorado (ya está en el fondo); delante, su capa y el decorado encima de ella */}
+        {piezas.map((p, i) =>
+          delante.has(p.id) ? (
+            <div key={p.id} data-pieza={p.id} className={styles.pieza} style={{ zIndex: Z_PIEZAS + i }}>
+              <Capa capa={capasPieza[i]} vista={VISTA_CUARTO} nombre={`pieza_${p.id}`} />
+              {sobre[p.id]}
+            </div>
+          ) : (
+            <Fragment key={p.id}>{sobre[p.id]}</Fragment>
+          ),
+        )}
+        {/* decorado que no va con ningún mueble con capa: siempre debajo de la vaca */}
+        {Object.entries(sobre)
+          .filter(([id]) => !piezas.some((p) => p.id === id))
+          .map(([id, n]) => <Fragment key={id}>{n}</Fragment>)}
 
         {def.objetos.map((o) => (
           <button
@@ -218,7 +246,9 @@ export function CuartoMotor({
             onPointerCancel={(e) => vacaSuelta(e, true)}
           />
           {c.pose === "sentada" ? (
-            <VacaSentada />
+            <div className={styles.seSienta}>
+              <VacaSentada />
+            </div>
           ) : (
             <Vaca
               ojos={sorpresa || objetivo ? "sorpresa" : c.pose === "mira" ? "izquierda" : "abiertos"}

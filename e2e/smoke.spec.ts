@@ -61,7 +61,7 @@ async function tocarObjeto(page: Page, id: string, hz: string) {
 }
 
 /** Hace una acción sobre un objeto: toca el objeto, luego su píldora, y espera a que la vaca termine la frase y la pose. */
-async function hacer(page: Page, objeto: string, accion: string) {
+async function hacer(page: Page, objeto: string, accion: string, durante?: () => Promise<void>) {
   const pildora = living(page).locator(`[data-pildora="${accion}"]`);
   await expect(async () => {
     await libre(page);
@@ -70,6 +70,7 @@ async function hacer(page: Page, objeto: string, accion: string) {
     // empezó: la vaca está ocupada caminando, diciendo la frase o en la pose
     await expect(living(page)).toHaveAttribute("data-ocupado", "true", { timeout: 2000 });
   }).toPass({ timeout: 20_000 });
+  await durante?.();
   await libre(page);
   await expect(pildora).toHaveCount(0);
 }
@@ -81,9 +82,9 @@ test("de la casa entera a la cocina pasando por el living, y al recargar vuelve 
   await abrirCasa(page, "living");
   const puerta = living(page).locator("[data-puerta]");
   await expect(puerta).not.toHaveAttribute("data-lista");
-  await expect(bandeja(page).locator("[data-silueta]")).toHaveCount(6);
+  await expect(bandeja(page).locator("[data-silueta]")).toHaveCount(7);
 
-  // 2. los cuatro objetos (la mesa se abre y se cierra) y las tres acciones
+  // 2. los cinco objetos (la mesa y la foto se abren y se cierran) y las tres acciones
   await tocarObjeto(page, "shafa", "沙发");
   await tocarObjeto(page, "yizi", "椅子");
   await tocarObjeto(page, "dianshi", "电视");
@@ -92,9 +93,21 @@ test("de la casa entera a la cocina pasando por el living, y al recargar vuelve 
   await expect(mesa).toBeVisible({ timeout: 15_000 });
   await mesa.getByRole("button", { name: "返回" }).click();
   await expect(mesa).toHaveCount(0);
+  await tocarObjeto(page, "zhaopian", "照片");
+  const foto = page.getByTestId("foto");
+  await expect(foto).toBeVisible({ timeout: 15_000 });
+  // la vaca fue bajo la foto, detrás de la mesa: la mesa se dibuja encima de ella
+  await expect(living(page).locator('[data-pieza="mesa"]')).toHaveCount(1);
+  await foto.getByRole("button", { name: "返回" }).click();
+  await expect(foto).toHaveCount(0);
 
   await hacer(page, "shafa", "zuo");
-  await hacer(page, "yizi", "zuo");
+  // sentada en la silla de la izquierda (se mira a mitad de la pose): la silla queda detrás y la mesa delante
+  await hacer(page, "yizi", "zuo", async () => {
+    await expect(living(page).locator('[data-vaca][data-pose="sentada"]')).toBeVisible({ timeout: 8000 });
+    await expect(living(page).locator('[data-pieza="mesa"]')).toHaveCount(1);
+    await expect(living(page).locator('[data-pieza="silla_izquierda"]')).toHaveCount(0);
+  });
   await expect(bandeja(page).getByRole("img", { name: "坐", exact: true })).toBeVisible();
   await hacer(page, "dianshi", "kan");
   await expect(bandeja(page).getByRole("img", { name: "看", exact: true })).toBeVisible();
@@ -138,7 +151,7 @@ test("en el living, el reloj solar, la bandeja y el minimapa no tapan objetos, l
   };
   const zonas: Record<string, Caja> = {};
   const objetos = living(page).locator("[data-objeto]");
-  await expect(objetos).toHaveCount(4);
+  await expect(objetos).toHaveCount(5);
   for (const o of await objetos.all()) zonas[(await o.getAttribute("data-objeto"))!] = tocable(await caja(o, "objeto"));
   zonas.puerta = tocable(await caja(living(page).locator("[data-puerta]"), "puerta"));
 
@@ -298,4 +311,23 @@ test("en el living se toma a la vaca y se lleva a la tele; con 看 la tele se en
   await expect(living(page).locator("[data-tele]")).toHaveCount(0);
   await hacer(page, "dianshi", "kan");
   await expect(living(page).locator('[data-tele="encendida"]')).toBeVisible();
+});
+
+test("en el living, la foto de la familia: 这是我妈妈 al tocar a mamá, en dos filas en el celular", async ({ page }, info) => {
+  await prepararRed(page);
+  await abrirCasa(page, "living");
+  const foto = page.getByTestId("foto");
+  await expect(async () => {
+    await libre(page);
+    await living(page).locator('[data-objeto="zhaopian"]').click({ timeout: 3000 });
+    await expect(foto).toBeVisible({ timeout: 8000 });
+  }).toPass({ timeout: 30_000 });
+  for (const hz of ["爸爸", "妈妈", "哥哥", "姐姐", "我"]) {
+    const c = (await foto.getByRole("button", { name: hz, exact: true }).boundingBox())!;
+    expect(c.width, hz).toBeGreaterThanOrEqual(44);
+  }
+  await foto.getByRole("button", { name: "妈妈", exact: true }).click();
+  await expect(foto.getByRole("status")).toHaveAttribute("aria-label", "这是我妈妈");
+  expect(await sinScrollHorizontal(page)).toBe(true);
+  await page.screenshot({ path: `${process.env.SMOKE_SHOTS ?? "test-results"}/foto-${info.project.name}.png` });
 });

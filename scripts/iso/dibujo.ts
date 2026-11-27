@@ -6,23 +6,30 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ISO, proyectar } from "../../components/casa/cocina/iso";
+import { MATICES as M, PALETA as P } from "../../components/casa/paleta";
 
 /** Partes del cuarto por separado, solo para armar las capas de Krita (scripts/arte-krita.ts). */
 export const PARTES = join(process.cwd(), "arte-krita", "fuentes");
 
-// ---------- paleta (tomada de la imagen de inspiración: salvia, crema, madera, toques terracota) ----------
-export const T = "#6B4A35"; // tinta: contorno café
+// ---------- paleta "mantel" (components/casa/paleta.ts, la misma de los videos): chocolate, crema, matcha, lavanda, estanque ----------
+export const T = "#4E2414"; // tinta: contorno entre chocolate y cacao (más fino que el chocolate puro)
 export const C = {
-  paredIzq: "#EEDBBB", paredDer: "#F6E8CF", paredCanto: "#FBF3E4", zocalo: "#D7AE80",
-  pisoA: "#EAC69B", pisoB: "#E2BB8D", pisoLinea: "#C99B68", losaIzq: "#C99560", losaDer: "#AD7C4B",
-  salvia: { a: "#BCD4A8", i: "#A5C391", d: "#8DAE7B", linea: "#6F9161" },
-  meson: { a: "#FBF5E8", i: "#EADDC3", d: "#D8C7A7" },
-  madera: { a: "#E6B985", i: "#D4A16B", d: "#B98754" },
-  azulejo: "#EEF2E4", azulejoLinea: "#CFDCC2",
-  acero: "#C9D2D4", aceroOsc: "#A3AFB2", negro: "#4D4845", negroOsc: "#34302E",
-  vidrio: "#D2ECF4", vidrioOsc: "#A8D3E6",
-  terracota: "#E0896A", terracotaOsc: "#C46C50", mostaza: "#F2C14E", rojo: "#D9604C", oro: "#E8B64C",
-  hoja: "#8DB36F", hojaOsc: "#6E9653", crema: "#FFF8EC",
+  paredIzq: P.crema, paredDer: P.cremaClara, paredCanto: M.papel, zocalo: M.cacaoClaro,
+  pisoA: "#E2B583", pisoB: "#D8A874", pisoLinea: "#B8834F", losaIzq: M.cacaoClaro, losaDer: P.cacao,
+  // el friso y lo verde: matcha
+  salvia: { a: M.matchaClaro, i: P.matcha, d: P.matchaOscuro, linea: "#77772F" },
+  meson: { a: M.papel, i: P.cremaClara, d: P.crema },
+  madera: { a: "#D39A62", i: "#B97E48", d: "#97602F" },
+  azulejo: "#F3F1DF", azulejoLinea: M.matchaClaro,
+  acero: "#CFCBD8", aceroOsc: "#A69FB8", negro: "#4A2A22", negroOsc: "#33190F",
+  // vidrio: lavanda pálida (el cielo de la paleta)
+  vidrio: "#E4DDF3", vidrioOsc: M.lavandaClara,
+  terracota: P.naranja, terracotaOsc: M.naranjaOscura, mostaza: M.naranjaClara, rojo: "#D9773A", oro: "#E8B055",
+  // plantas: menta y estanque
+  hoja: P.menta, hojaOsc: P.estanque, crema: M.papel,
+  // tela de los sillones y cojines: lavanda
+  lavanda: { a: M.lavandaClara, i: P.lavanda, d: P.lavandaOscura },
+  menta: { a: M.mentaClara, i: P.menta, d: P.estanque },
 };
 
 // ---------- utilidades de SVG ----------
@@ -148,8 +155,8 @@ export function cantosParedes(): string[] {
 export function planta(u: number, v: number): string[] {
   const out: string[] = [];
   const p = proyectar(u, v, 0);
-  out.push(cilindro(p.x, p.y, 14, 52, "#F6EAD6", "#E9D8BE", 1.8));
-  out.push(`<path d="M${f(p.x - 14)} ${f(p.y - 52)} q-2 -10 6 -14 h16 q8 4 6 14" fill="#F6EAD6" ${trazo(1.8)}/>`);
+  out.push(cilindro(p.x, p.y, 14, 52, M.papel, P.cremaClara, 1.8));
+  out.push(`<path d="M${f(p.x - 14)} ${f(p.y - 52)} q-2 -10 6 -14 h16 q8 4 6 14" fill="${M.papel}" ${trazo(1.8)}/>`);
   const ramas = [[-22, -150], [-4, -175], [14, -138], [-34, -112]];
   for (const [dx, dy] of ramas) out.push(`<path d="M${f(p.x)} ${f(p.y - 60)} Q${f(p.x + dx * 0.4)} ${f(p.y + dy * 0.6)} ${f(p.x + dx)} ${f(p.y + dy)}" fill="none" stroke="#7A5A3E" stroke-width="2.4" stroke-linecap="round"/>`);
   const hojas: [number, number, number][] = [[-22, -150, -30], [-4, -175, 10], [14, -138, 40], [-34, -112, -60], [-12, -128, -20], [-28, -132, 20], [4, -158, -40], [10, -118, 60], [-18, -96, 30]];

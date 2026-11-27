@@ -23,7 +23,7 @@ export type Dibujo = { defs: string[]; cuerpo: string };
 const BLANCO: Tono = { a: "#FFFFFF", i: "#EEF3F3", d: "#D9E3E4" };
 const CREMA: Tono = { a: "#FCF4E4", i: "#F0E1C6", d: "#DDC7A2" };
 const MADERA_OSC: Tono = { a: "#D4A16B", i: "#B98754", d: "#9E7044" };
-const FRASCOS = [C.terracota, C.salvia.i, "#F6C2BA", "#A8D3E6", C.mostaza];
+const FRASCOS = [C.terracota, C.salvia.i, "#F6C2BA", "#D3C8EA", C.mostaza];
 
 // ---------- paredes: un punto o un rectángulo sobre la pared izquierda (u = 0) o la derecha (v = 0) ----------
 /** Punto a lo largo de la pared (`s`), a la altura z, despegado `e` de ella. */
@@ -70,14 +70,14 @@ function paredes(def: DefEscenario): string[] {
 function ventana(c: Extract<Colgado, { tipo: "ventana" }>, defs: string[]): string[] {
   const out: string[] = [];
   const { pared: p, desde: a, hasta: b, z0, z1 } = c;
-  const [gVid, uVid] = degradado("#E6F6FB", "#A9D6EA", true);
+  const [gVid, uVid] = degradado("#E4DDF3", "#D3C8EA", true);
   defs.push(gVid);
   out.push(rectPared(p, 0.003, a - 0.12, b + 0.12, z0 - 0.12, z1 + 0.12, C.madera.i, 2));
   out.push(rectPared(p, 0.004, a, b, z0, z1, uVid, 1.6));
   // árboles de afuera y el marco en cruz
   const s = (a + b) / 2, zm = (z0 + z1) / 2;
   for (const [ds, dz, r] of [[-0.35, -0.45, 0.32], [0.2, -0.55, 0.38], [0.6, -0.4, 0.22]] as const)
-    out.push(circuloPared(p === "izq" ? "u" : "v", 0.005, s + ds * (b - a) / 2, zm + dz * (z1 - z0) / 2, r * (b - a) / 2, "#BFDDB0", 0));
+    out.push(circuloPared(p === "izq" ? "u" : "v", 0.005, s + ds * (b - a) / 2, zm + dz * (z1 - z0) / 2, r * (b - a) / 2, "#CFCE8C", 0));
   out.push(rectPared(p, 0.004, a, b, z0, z1, "none", 1.6));
   out.push(linea(enPared(p, 0.005, s, z0), enPared(p, 0.005, s, z1), C.madera.d, 3.5));
   out.push(linea(enPared(p, 0.005, a, zm), enPared(p, 0.005, b, zm), C.madera.d, 3.5));
@@ -176,7 +176,7 @@ function tina(b: Base, cortina: string): string[] {
   out.push(rectZ(z1, b.u0, b.u1, b.v0, b.v1, BLANCO.a, 2));
   out.push(rectZ(z1 + 0.001, b.u0 + t, b.u1 - t, b.v0 + t, b.v1 - t, "#CFEAF2", 1.5));
   for (const [u, v, r] of [[1.2, 0.9, 0.28], [1.7, 1.25, 0.34], [2.3, 0.85, 0.24], [2.9, 1.3, 0.3], [3.4, 0.9, 0.22], [2.1, 1.55, 0.2]] as const)
-    out.push(circulo(b.u0 + u, b.v0 + v, z1 + 0.02, r, "#FFFFFF", 1.1, 'stroke="#A8D3E6"'));
+    out.push(circulo(b.u0 + u, b.v0 + v, z1 + 0.02, r, "#FFFFFF", 1.1, 'stroke="#D3C8EA"'));
   // patitas
   for (const u of [b.u0 + 0.3, b.u1 - 0.4]) out.push(caja(u, u + 0.14, b.v1 - 0.02, b.v1 + 0.08, 0, 0.18, MADERA_OSC, 1.1));
   // la barra y la cortina recogida junto a la pared izquierda, delante de la tina
@@ -214,7 +214,7 @@ function lavamanos(b: Base, defs: string[]): string[] {
   out.push(linea([b.u0 + 0.22, vm, z + 0.45], [b.u0 + 0.55, vm, z + 0.45], C.aceroOsc, 3.5));
   const vs = proyectar(b.u0 + 0.3, b.v0 + 0.25, z);
   out.push(`<path d="M${f(vs.x - 4)} ${f(vs.y - 30)} l-5 -16 M${f(vs.x + 3)} ${f(vs.y - 30)} l4 -18" stroke="${C.terracota}" stroke-width="3" stroke-linecap="round" fill="none"/>`);
-  out.push(cilindro(vs.x, vs.y, 7, 24, "#D2ECF4", "#A8D3E6", 1.3));
+  out.push(cilindro(vs.x, vs.y, 7, 24, "#E4DDF3", "#D3C8EA", 1.3));
   return out;
 }
 
@@ -288,7 +288,7 @@ function closet(b: Base, alto: number): string[] {
   const puertas: [number, number][] = [[b.v0 + 0.1, vm - 0.04], [vm + 0.04, b.v1 - 0.1]];
   puertas.forEach(([a, c], i) => {
     out.push(rectU(b.u1 + 0.001, a, c, 0.35, alto - 0.12, C.madera.i, 1.4));
-    out.push(rectU(b.u1 + 0.002, a + 0.2, c - 0.2, 0.6, alto - 0.4, i === 1 ? "#D2ECF4" : C.madera.d, 1.2));
+    out.push(rectU(b.u1 + 0.002, a + 0.2, c - 0.2, 0.6, alto - 0.4, i === 1 ? "#E4DDF3" : C.madera.d, 1.2));
     if (i === 1) out.push(linea([b.u1 + 0.003, a + 0.45, alto - 0.8], [b.u1 + 0.003, a + 0.9, alto - 1.6], "#ffffff", 2.2, 'opacity="0.8"'));
     const k = proyectar(b.u1 + 0.01, i === 0 ? c - 0.12 : a + 0.12, alto * 0.48);
     out.push(`<rect x="${f(k.x - 2)}" y="${f(k.y - 9)}" width="4" height="18" rx="2" fill="${C.oro}" ${trazo(1)}/>`);

@@ -5,14 +5,14 @@
   padding: 4px;
   background: linear-gradient(180deg, #fffdf4 0%, #f6efd9 100%);
   color: #243049;
-  border: 2.5px solid #5a3a26;
+  border: 2.5px solid var(--m-cacao);
   border-radius: 10px;
   box-shadow:
     inset 0 -2px 0 rgba(90, 58, 38, 0.18),
     0 3px 0 #f6efd9,
-    0 4px 0 #5a3a26,
-    0 9px 0 #2f8f6d,
-    0 10px 0 #5a3a26,
+    0 4px 0 var(--m-cacao),
+    0 9px 0 var(--m-estanque),
+    0 10px 0 var(--m-cacao),
     0 14px 12px rgba(40, 22, 12, 0.3);
   container-type: inline-size;
 }
@@ -88,7 +88,7 @@
   padding: 2px;
   border-width: 1.5px;
   border-radius: 5px;
-  box-shadow: 0 2px 0 #2f8f6d, 0 3px 0 #5a3a26;
+  box-shadow: 0 2px 0 var(--m-estanque), 0 3px 0 var(--m-cacao);
 }
 .mini .cara { border-width: 1px; border-radius: 3px; }
 .mini .hz { font-size: min(16px, 66cqi); }
@@ -110,7 +110,9 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background: #f8e7cc;
+  /* clip: con el zoom, un objeto enfocado (la foto) queda fuera y el navegador correría el cuarto para mostrarlo */
+  overflow: clip;
+  background: var(--m-crema-clara);
 }
 /* la vaca no se arrastra aquí: el toque pasa a lo que tape un poco */
 .cuarto .vaca { pointer-events: none; cursor: default; }
@@ -145,7 +147,7 @@
 }
 .zona:focus-visible,
 .puerta:focus-visible,
-.pildora:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 2px; }
+.pildora:focus-visible { outline: 3px dashed var(--m-lavanda-osc); outline-offset: 2px; }
 .brilla {
   background: rgba(255, 227, 107, 0.22);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85), 0 0 18px 6px rgba(255, 227, 107, 0.75);
@@ -187,16 +189,16 @@
   min-width: 44px;
   min-height: 44px;
   padding: 0.2em 0.8em;
-  background: var(--papel, #fff6e6);
-  color: var(--tinta, #4a2a1c);
-  border: 3px solid var(--tinta, #4a2a1c);
+  background: var(--papel, var(--m-papel));
+  color: var(--tinta, var(--m-tinta));
+  border: 3px solid var(--tinta, var(--m-tinta));
   border-radius: 999px;
-  box-shadow: 0 4px 0 var(--tinta, #4a2a1c);
+  box-shadow: 0 4px 0 var(--tinta, var(--m-tinta));
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
 }
-.pildora:active { translate: 0 2px; box-shadow: 0 2px 0 var(--tinta, #4a2a1c); }
+.pildora:active { translate: 0 2px; box-shadow: 0 2px 0 var(--tinta, var(--m-tinta)); }
 .pildoraHz { font-family: var(--f-hanzi), sans-serif; font-size: 26px; }
 
 /* la puerta al cuarto de salida, en la pared */
@@ -213,7 +215,7 @@
   background: rgba(255, 246, 230, 0.75);
   border: 2.5px dashed rgba(74, 42, 28, 0.55);
   border-radius: 14px 14px 4px 4px;
-  color: var(--tinta, #4a2a1c);
+  color: var(--tinta, var(--m-tinta));
   cursor: pointer;
   opacity: 0.8;
   -webkit-tap-highlight-color: transparent;
@@ -223,7 +225,7 @@
 .puertaLista {
   opacity: 1;
   border-style: solid;
-  border-color: var(--tinta, #4a2a1c);
+  border-color: var(--tinta, var(--m-tinta));
   animation: puertaBrilla 1.6s ease-in-out infinite alternate;
 }
 .puertaLista .puertaIcono { filter: none; }
@@ -236,7 +238,7 @@
 .bandejaCaja { display: contents; }
 .bandejaCaja[data-parpadea] .silueta { animation: siluetaParpadea 0.4s ease-in-out 3; }
 @keyframes siluetaParpadea {
-  50% { background: rgba(255, 227, 107, 0.75); border-color: #4a2a1c; }
+  50% { background: rgba(255, 227, 107, 0.75); border-color: var(--m-tinta); }
 }
 @media (prefers-reduced-motion: reduce) {
   .zona[data-pista]::after { animation: none; }
@@ -258,3 +260,18 @@
 .agarre[data-libre] { pointer-events: auto; cursor: grab; }
 .cuarto .vaca[data-arrastrando] { z-index: 60; }
 .cuarto .vaca[data-arrastrando] .agarre { cursor: grabbing; }
+
+/* un mueble con capa propia, dibujado encima de la vaca cuando ella queda detrás; no recibe toques */
+.pieza { position: absolute; inset: 0; pointer-events: none; }
+
+/* se sienta: cae al asiento con un rebote suave (aplasta y vuelve) */
+.seSienta { transform-origin: 50% 92%; animation: seSienta 0.42s cubic-bezier(0.3, 0.7, 0.4, 1) both; }
+@keyframes seSienta {
+  0% { transform: translateY(-14%) scale(0.94, 1.06); }
+  55% { transform: translateY(0) scale(1.07, 0.9); }
+  80% { transform: scale(0.98, 1.03); }
+  100% { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .seSienta { animation: none; }
+}

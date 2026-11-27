@@ -80,7 +80,7 @@
   height: 44px;
   border: 0;
   border-left: 3px solid var(--tinta);
-  background: #ffd24a;
+  background: var(--m-naranja-clara);
   color: var(--tinta);
   font: 900 22px/1 var(--f-texto), system-ui, sans-serif;
   cursor: pointer;

@@ -46,7 +46,7 @@ function montar(inicial: ProgresoCuarto = progresoVacio()) {
         activo
         alCambiar={(n, nuevas) => { alCambiar(n, nuevas); setP(n); }}
         alSalir={() => {}}
-        decorado={({ encendidos }) => (encendidos.includes("dianshi") ? <div data-prueba-tele /> : null)}
+        decorado={({ encendidos }) => ({ tele: encendidos.includes("dianshi") ? <div data-prueba-tele /> : null })}
       />
     );
   }

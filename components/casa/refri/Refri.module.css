@@ -39,7 +39,7 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.comida:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 2px; border-radius: 12px; }
+.comida:focus-visible { outline: 3px dashed var(--m-lavanda-osc); outline-offset: 2px; border-radius: 12px; }
 .dibujo { position: absolute; inset: 0; display: block; transform-origin: 50% 100%; }
 .rebota { animation: rebota 0.5s cubic-bezier(0.3, 1.6, 0.5, 1); }
 @keyframes rebota {
@@ -70,7 +70,7 @@
   color: var(--tinta);
   -webkit-tap-highlight-color: transparent;
 }
-.cajon:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 2px; border-radius: 12px; }
+.cajon:focus-visible { outline: 3px dashed var(--m-lavanda-osc); outline-offset: 2px; border-radius: 12px; }
 .cajon:active { translate: 0 2px; }
 
 /* escarcha: copos lentos que caen del estante de arriba (solo CSS) */
@@ -120,7 +120,7 @@
   cursor: pointer;
   box-shadow: 0 4px 0 var(--tinta);
 }
-.boton:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 3px; }
+.boton:focus-visible { outline: 3px dashed var(--m-lavanda-osc); outline-offset: 3px; }
 .boton:active { translate: 0 2px; box-shadow: 0 2px 0 var(--tinta); }
 .hz { font-family: var(--f-hanzi), sans-serif; font-weight: 400; font-size: 22px; }
 .py { font-size: 12px; }

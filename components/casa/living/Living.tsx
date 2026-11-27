@@ -5,11 +5,13 @@ import { callar } from "../audio/voz";
 import { sfx } from "../audio/sonido";
 import { apuntar } from "../camara";
 import { CuartoMotor, type ControlCuarto, type EstadoDecorado } from "../motor/CuartoMotor";
-import type { ProgresoCuarto } from "../motor/tipos";
+import type { Primerplano, ProgresoCuarto } from "../motor/tipos";
 import type { AlEvento } from "../useCasa";
 import { LIVING } from "./cuarto";
+import { proyectar } from "../cocina/iso";
+import { Foto } from "./Foto";
 import { Mesa } from "./Mesa";
-import { MESA_LIVING } from "./lugares";
+import { MESA_LIVING, MUEBLES_LIVING } from "./lugares";
 import { PALABRAS } from "./palabras";
 import { Tele } from "./Tele";
 import styles from "./Living.module.css";
@@ -23,10 +25,19 @@ export const ZOOM_MS = 600;
 /** Zoom de la cámara sobre la mesa (en vertical lo amortigua `encuadrar`). */
 const ZOOM_MESA = 2.4;
 
-type Fase = "cuarto" | "zoom" | "mesa";
+/** En el cuarto, entrando (zoom) o con algo abierto a pantalla completa (la mesa, la foto). */
+type Fase = "cuarto" | "zoom" | "abierto";
 
 const CENTRO_MESA = { x: MESA_LIVING.x + MESA_LIVING.w / 2, y: MESA_LIVING.y + MESA_LIVING.h / 2 };
-const CAMARA_MESA = apuntar(CENTRO_MESA.x, CENTRO_MESA.y, ZOOM_MESA);
+const { foto } = MUEBLES_LIVING;
+const CENTRO_FOTO = proyectar((foto.u0 + foto.u1) / 2, 0, (foto.z0 + foto.z1) / 2);
+/** A dónde entra la cámara para cada primer plano. */
+const CAMARA: Record<Primerplano, ReturnType<typeof apuntar>> = {
+  mesa: apuntar(CENTRO_MESA.x, CENTRO_MESA.y, ZOOM_MESA),
+  foto: apuntar(CENTRO_FOTO.x, CENTRO_FOTO.y, 3),
+};
+/** El objeto que abre cada primer plano (el foco vuelve ahí al cerrar). */
+const OBJETO: Record<Primerplano, string> = { mesa: "zhuozi", foto: "zhaopian" };
 
 /** Unas pocas palabras chiquitas sobre la mesa (decorativas): posición en % del tablero, color por tono. */
 const SOBRE_LA_MESA = [
@@ -69,13 +80,11 @@ const DECORADO = (
   </svg>
 );
 
-/** Lo que va sobre los muebles: las fichas de la mesa y, después de 看, la tele encendida. */
-const decorado = ({ encendidos }: EstadoDecorado) => (
-  <>
-    {DECORADO}
-    {encendidos.includes("dianshi") && <Tele />}
-  </>
-);
+/** Lo que va sobre cada mueble: las fichas de la mesa y, después de 看, la tele encendida. */
+const decorado = ({ encendidos }: EstadoDecorado) => ({
+  mesa: DECORADO,
+  tele: encendidos.includes("dianshi") ? <Tele /> : null,
+});
 
 /**
  * El living comedor (客厅), armado por el motor desde `LIVING`: sofá, silla, tele y la mesa. Tocar la mesa: la
@@ -100,6 +109,7 @@ export const Living = memo(function Living({
   ref?: Ref<ControlCuarto>;
 }) {
   const [fase, setFase] = useState<Fase>("cuarto");
+  const [que, setQue] = useState<Primerplano>("mesa");
   const faseRef = useRef<Fase>("cuarto");
   const cambiarFase = (f: Fase) => {
     faseRef.current = f;
@@ -112,20 +122,21 @@ export const Living = memo(function Living({
   };
   useEffect(() => limpiar, []);
 
-  /** El motor ya dijo 这是桌子 y la vaca llegó a la mesa: zoom y luego la mesa a pantalla completa. */
-  const entrarALaMesa = () => {
+  /** El motor ya dijo el nombre (这是桌子, 这是照片) y la vaca llegó: zoom y luego el primer plano a pantalla completa. */
+  const entrar = (q: Primerplano) => {
     if (faseRef.current !== "cuarto") return;
     sfx("whoosh", "cocina"); // el nombre ya terminó: nunca encima del mandarín
+    setQue(q);
     cambiarFase("zoom");
-    tiempos.current.push(setTimeout(() => cambiarFase("mesa"), ZOOM_MS));
+    tiempos.current.push(setTimeout(() => cambiarFase("abierto"), ZOOM_MS));
   };
 
   const raiz = useRef<HTMLDivElement>(null);
   const volver = () => {
     limpiar();
     cambiarFase("cuarto");
-    // el foco vuelve al 桌子 (la mesa a pantalla completa se va)
-    raiz.current?.querySelector<HTMLElement>('[data-objeto="zhuozi"]')?.focus({ preventScroll: true });
+    // el foco vuelve al objeto que lo abrió (el primer plano se va)
+    raiz.current?.querySelector<HTMLElement>(`[data-objeto="${OBJETO[que]}"]`)?.focus({ preventScroll: true });
   };
 
   // pestaña oculta: se sale de la mesa (o del zoom) y se calla la voz
@@ -139,7 +150,7 @@ export const Living = memo(function Living({
   const entra = fase !== "cuarto";
 
   return (
-    <div ref={raiz} className={styles.living} data-living data-fase={fase}>
+    <div ref={raiz} className={styles.living} data-living data-fase={fase === "abierto" ? que : fase}>
       <CuartoMotor
         def={LIVING}
         progreso={progreso}
@@ -147,14 +158,14 @@ export const Living = memo(function Living({
         alCambiar={alCambiar}
         alEvento={alEvento}
         alSalir={alSalir}
-        alAbrir={entrarALaMesa}
+        alAbrir={entrar}
         ref={ref}
-        camara={entra ? CAMARA_MESA : undefined}
-        sorpresa={entra}
+        camara={entra ? CAMARA[que] : undefined}
+        sorpresa={entra && que === "mesa"}
         decorado={decorado}
         hijos={
-          fase === "mesa" ? (
-            <Mesa abiertas={abiertas} alAbrir={alAbrir} alCerrar={volver} />
+          fase === "abierto" ? (
+            que === "mesa" ? <Mesa abiertas={abiertas} alAbrir={alAbrir} alCerrar={volver} /> : <Foto alCerrar={volver} />
           ) : (
             // durante el zoom nada más se toca
             fase === "zoom" && <div className={styles.bloqueo} aria-hidden="true" />

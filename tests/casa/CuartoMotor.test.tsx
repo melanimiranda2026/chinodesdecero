@@ -381,7 +381,7 @@ describe("CuartoMotor", () => {
         alSalir={() => {}}
         camara={{ x: 500, y: 500, s: 2 }}
         sorpresa
-        decorado={<svg data-deco />}
+        decorado={() => ({ deco: <svg data-deco /> })}
       />,
     );
     const mundo = r.container.querySelector<HTMLElement>("[data-mundo]")!;

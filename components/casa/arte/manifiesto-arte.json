@@ -59,5 +59,13 @@
   "cocina/zhuozi_zona": "/arte/cocina/zhuozi_zona.svg",
   "dormitorio/cuarto_dormitorio": "/arte/dormitorio/cuarto_dormitorio.svg",
   "living/cuarto_living": "/arte/living/cuarto_living.svg",
-  "living/mesa_arriba": "/arte/living/mesa_arriba.svg"
+  "living/mesa_arriba": "/arte/living/mesa_arriba.svg",
+  "living/pieza_mesa": "/arte/living/pieza_mesa.svg",
+  "living/pieza_planta": "/arte/living/pieza_planta.svg",
+  "living/pieza_silla_adelante": "/arte/living/pieza_silla_adelante.svg",
+  "living/pieza_silla_atras": "/arte/living/pieza_silla_atras.svg",
+  "living/pieza_silla_derecha": "/arte/living/pieza_silla_derecha.svg",
+  "living/pieza_silla_izquierda": "/arte/living/pieza_silla_izquierda.svg",
+  "living/pieza_sofa": "/arte/living/pieza_sofa.svg",
+  "living/pieza_tele": "/arte/living/pieza_tele.svg"
 }

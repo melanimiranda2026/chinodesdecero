@@ -20,7 +20,7 @@
   max-height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  background: var(--papel, #fff6e6);
+  background: var(--papel, var(--m-papel));
   color: var(--tinta);
   border: 5px solid var(--tinta);
   border-radius: 24px;
@@ -34,7 +34,7 @@
   animation: fichaEntra 0.45s cubic-bezier(0.3, 1.5, 0.5, 1);
 }
 .ficha:focus { outline: none; }
-.ficha:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 4px; }
+.ficha:focus-visible { outline: 3px dashed var(--m-lavanda-osc); outline-offset: 4px; }
 @keyframes fichaEntra { from { opacity: 0; transform: translateY(24px) scale(0.92); } }
 
 .cabeza { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -64,7 +64,7 @@
   cursor: pointer;
   box-shadow: 0 3px 0 var(--tinta);
 }
-.boton:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 3px; }
+.boton:focus-visible { outline: 3px dashed var(--m-lavanda-osc); outline-offset: 3px; }
 .boton:active { translate: 0 2px; box-shadow: 0 1px 0 var(--tinta); }
 
 .palabra { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 4px; }
@@ -242,14 +242,14 @@
   padding: 4px;
   background: linear-gradient(180deg, #fffdf4 0%, #f6efd9 100%);
   color: #243049;
-  border: 2.5px solid #5a3a26;
+  border: 2.5px solid var(--m-cacao);
   border-radius: 10px;
   box-shadow:
     inset 0 -2px 0 rgba(90, 58, 38, 0.18),
     0 3px 0 #f6efd9,
-    0 4px 0 #5a3a26,
-    0 9px 0 #2f8f6d,
-    0 10px 0 #5a3a26,
+    0 4px 0 var(--m-cacao),
+    0 9px 0 var(--m-estanque),
+    0 10px 0 var(--m-cacao),
     0 14px 12px rgba(40, 22, 12, 0.3);
   margin-bottom: 10px;
   cursor: pointer;
@@ -260,8 +260,8 @@
   animation: deriva 5.5s ease-in-out infinite alternate;
   animation-delay: var(--retraso, 0s);
 }
-.teja:focus-visible { outline: 3px dashed #3a6fd6; outline-offset: 3px; }
-.teja:active { translate: var(--ox, 0) calc(var(--oy, 0px) + 4px); box-shadow: 0 2px 0 #f6efd9, 0 3px 0 #5a3a26, 0 5px 0 #2f8f6d, 0 6px 0 #5a3a26, 0 8px 8px rgba(40, 22, 12, 0.3); }
+.teja:focus-visible { outline: 3px dashed var(--m-lavanda-osc); outline-offset: 3px; }
+.teja:active { translate: var(--ox, 0) calc(var(--oy, 0px) + 4px); box-shadow: 0 2px 0 #f6efd9, 0 3px 0 var(--m-cacao), 0 5px 0 var(--m-estanque), 0 6px 0 var(--m-cacao), 0 8px 8px rgba(40, 22, 12, 0.3); }
 @keyframes deriva {
   0% { transform: translate(0, 0); }
   50% { transform: translate(3px, -4px); }
@@ -274,9 +274,9 @@
   box-shadow:
     0 0 0 3px #f2c14e,
     0 3px 0 #fbe7a6,
-    0 4px 0 #5a3a26,
-    0 9px 0 #2f8f6d,
-    0 10px 0 #5a3a26,
+    0 4px 0 var(--m-cacao),
+    0 9px 0 var(--m-estanque),
+    0 10px 0 var(--m-cacao),
     0 0 18px 6px rgba(242, 193, 78, 0.7);
 }
 
@@ -307,7 +307,7 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background: #f8e7cc;
+  background: var(--m-crema-clara);
 }
 
 /* el zoom a la mesa dura ZOOM_MS (Living.tsx), no lo que dura el paneo de la cocina */
@@ -320,7 +320,7 @@
 .sobreMesa { position: absolute; overflow: visible; pointer-events: none; }
 .fichaChica { animation: flotaChica 3.2s ease-in-out infinite alternate; }
 @keyframes flotaChica { to { transform: translateY(-5px); } }
-.fichaFondo { fill: #fffaf0; stroke: #4a2a1c; stroke-width: 2.5; }
+.fichaFondo { fill: #fffaf0; stroke: var(--m-tinta); stroke-width: 2.5; }
 .fichaHz {
   font-family: var(--f-hanzi), sans-serif;
   font-size: 22px;

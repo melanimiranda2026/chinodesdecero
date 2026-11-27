@@ -6,13 +6,14 @@ import { sfx } from "../audio/sonido";
 import { efectoYLuegoVoz, esperaDe } from "../audio/turnos";
 import { limitarVaca } from "../camara";
 import { ZHE_SHI } from "../cocina/frases";
-import { proyectar, type Punto } from "../cocina/iso";
+import { alPiso, proyectar, type Punto } from "../cocina/iso";
 import type { AlEvento } from "../useCasa";
 import { useTiempos } from "../useTiempos";
 import { useVivo } from "../useVivo";
 import type { Hocico } from "../Vaca";
 import { completo, fichaId, fichasDe, lograr, tocar } from "./progreso";
-import type { DefCuarto, Pose, ProgresoCuarto } from "./tipos";
+import { fueraDePiezas } from "./profundidad";
+import type { DefCuarto, Pose, Primerplano, ProgresoCuarto } from "./tipos";
 
 /** La vaca camina hasta el pie del objeto. */
 export const PASO_MS = 900;
@@ -75,7 +76,7 @@ export interface OpcionesCuarto {
   alEvento?: AlEvento;
   activo: boolean;
   /** Un objeto con `abre`: se llama después de decir su nombre y de que la vaca camine a su pie. */
-  alAbrir?: (que: "mesa") => void;
+  alAbrir?: (que: Primerplano) => void;
 }
 
 export interface CuartoApi {
@@ -83,6 +84,8 @@ export interface CuartoApi {
   /** Lo que tarda la vaca en llegar a `vaca`: la caminata o el saltito al asiento. */
   pasoMs: number;
   pose: Pose | null;
+  /** El objeto en cuyo asiento está sentada (pose sentada), o null. */
+  sentadaEn: string | null;
   globo: Silaba[] | null;
   hocico: Hocico;
   ocupado: boolean;
@@ -120,6 +123,7 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
   const [pasoMs, setPasoMs] = useState(PASO_MS);
   /** Sentada en un asiento: el pie al que vuelve al pararse (también si se corta todo). */
   const deVuelta = useRef<Punto | null>(null);
+  const [sentadaEn, setSentadaEn] = useState<string | null>(null);
   const [globo, setGlobo] = useState<Silaba[] | null>(null);
   const [hocico, setHocico] = useState<Hocico>("sonrisa");
   const [elegido, setElegido] = useState<string | null>(null);
@@ -276,6 +280,7 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
   /** Sin pose y, si estaba en un asiento, de vuelta en su pie. */
   const pararse = useCallback(() => {
     setPose(null);
+    setSentadaEn(null);
     if (deVuelta.current) {
       setPasoMs(SALTO_MS);
       setVaca(deVuelta.current);
@@ -312,6 +317,7 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
           deVuelta.current = o.pie;
           setPasoMs(SALTO_MS);
           setVaca(o.asiento);
+          setSentadaEn(o.id);
         }
         // la voz ya terminó: el efecto de encender (la tele) no queda encima del mandarín
         if (o.enciende === a.id) {
@@ -361,7 +367,13 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
       const d = defRef.current;
       const id = objetoBajoVaca(d, { x, y });
       setPasoMs(SOLTAR_MS);
-      if (!id) return setVaca(limitarVaca(x, y));
+      if (!id) {
+        // en el piso libre y nunca dentro de un mueble (la mesa, las sillas)
+        const p = limitarVaca(x, y);
+        const c = fueraDePiezas(d.piezas ?? [], alPiso(p.x, p.y));
+        const q = proyectar(c.u, c.v);
+        return setVaca({ x: Math.round(q.x * 10) / 10, y: Math.round(q.y * 10) / 10 });
+      }
       setVaca(d.objetos.find((o) => o.id === id)!.pie);
       await tocarObjeto(id);
     },
@@ -371,5 +383,5 @@ export function useCuarto(def: DefCuarto, opc: OpcionesCuarto): CuartoApi {
   const sacarDeCola = useCallback(() => setCola((c) => c.slice(1)), []);
   const puedeSonar = useCallback(() => hablando.current === 0, []);
 
-  return { vaca, pasoMs, pose, globo, hocico, ocupado, elegido, brillo, progreso, tocarObjeto, soltarVaca, encendidos, hacer, cola, sacarDeCola, puedeSonar };
+  return { vaca, pasoMs, pose, sentadaEn, globo, hocico, ocupado, elegido, brillo, progreso, tocarObjeto, soltarVaca, encendidos, hacer, cola, sacarDeCola, puedeSonar };
 }

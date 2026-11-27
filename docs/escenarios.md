@@ -35,4 +35,7 @@ Cada escenario sale también partido en capas (`piso`, `paredes`, una por alfomb
 
 ## Qué falta para jugarlo
 
+Cuando un cuarto se juega, sus muebles grandes (los que la vaca puede rodear) van también en `piezas` de su `DefCuarto`: huella en el piso, alto y una capa propia. Así la vaca queda detrás de ellos cuando corresponde y no se para dentro. El living es el ejemplo (`PIEZAS_LIVING`; ver `docs/arte.md`).
+
+
 La ficha de escenario es el dibujo. Para que se pueda entrar, el cuarto necesita además su ficha del motor (objetos, acciones y palabras, como `components/casa/living/cuarto.ts`), sus audios revisados por un nativo y su lugar en `FONDO_CUARTO` (`components/casa/arte/registro.ts`). Eso es la etapa 3 (baño) y 4 (dormitorio) de la hoja de ruta.
